@@ -1,0 +1,127 @@
+# ansible-playbook -i inv.ini services/wekan.yml
+
+# Guides:
+# https://www.techrepublic.com/article/how-to-install-the-wekan-kanban-server/
+# https://blog.eldernode.com/install-wekan-kanban-server-on-ubuntu-20-04/
+
+# Fixing snaps in CTs:
+# https://forum.proxmox.com/threads/ubuntu-snaps-inside-lxc-container-on-proxmox.36463/
+
+### Wekan commands:
+# DONE # sudo apt install -y snapd nginx squashfuse
+# DONE # sudo systemctl enable --now nginx
+# (sudo systemctl status snapd) # Tends to be inactive, not sure why
+# DONE # sudo systemctl restart snapd
+# sudo snap install wekan
+# sudo snap set wekan siteurl='http://{{ ansible_host }}'
+# sudo snap set wekan port='{{ port }}'
+# DONE # sudo systemctl restart snap.wekan.mongodb
+# DONE # sudo systemctl restart snap.wekan.wekan
+# (sudo systemctl status snap.wekan.wekan) # Should be "active (running)"
+
+### (Wekan should verify webserver with 'wait_for')
+
+---
+- name: "Proxmox: Enable FUSE and Nesting for Wekan CT"
+  hosts: prox
+  gather_facts: no
+  vars:
+    wekan_id: "{{ hostvars['wekan'].id }}"
+  become: yes
+  tasks:
+  - blockinfile:
+      path: "/etc/pve/lxc/{{ wekan_id }}.conf"
+      block: |
+        features: fuse=1,mount=fuse,nesting=1
+        lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0
+
+  - name: "Reboot CT"
+    command: "pct reboot {{ wekan_id }}"
+
+- name: "Wekan: Install"
+  hosts: wekan
+  gather_facts: no
+  become: yes
+  tasks:
+  - wait_for_connection:
+      timeout: 10
+
+  - name: "Install packages"
+    apt:
+      pkg:
+      - nginx
+      - snapd
+      - squashfuse
+      update_cache: yes
+      state: latest
+    register: apt_install
+  - debug:
+      var: apt_install.stdout
+    when: apt_install.stdout is defined
+
+  - name: "Enable & start nginx"
+    systemd:
+      name: nginx
+      enabled: yes
+      state: started
+    register: enable_nginx
+  - debug:
+      var: enable_nginx.stdout
+    when: enable_nginx.stdout is defined
+      
+  - name: "Restart snapd"
+    # This is because snapd always seems to die on boot.
+    # sudo systemctl status snapd --> "inactive (dead)"
+    systemd:
+      name: snapd
+      state: restarted
+
+  # - name: "Wait for snapd to start..."
+  #   pause:
+  #     seconds: 3
+  # TODO: Detect systemctl status snapd --> active
+  # - name: "Verify snapd status"
+
+  - name: "Snap install Wekan"
+    snap:
+      name: wekan
+    register: snap_install
+    retries: 3
+    delay: 3
+    # until: snap_install.rc == 0
+  - debug:
+      var: snap_install
+    # when: snap_install.stdout is defined
+
+  - name: "Snap set Wekan URL"
+    command: "snap set wekan siteurl='http://{{ ansible_host }}'"
+    register: snap_url
+  - debug:
+      var: snap_url.stdout
+    # when: snap_url.stdout is defined
+
+  - name: "Snap set Wekan port"
+    command: "snap set wekan port='{{ port }}'"
+    register: snap_port
+  - debug:
+      var: snap_port.stdout
+    # when: snap_port.stdout is defined
+
+  - name: "Restart MongoDB and Wekan"
+    systemd:
+      name: "{{ item }}"
+      state: restarted
+    with_items:
+    - snap.wekan.mongodb
+    - snap.wekan.wekan
+
+  - name: "Verify webserver at http://{{ ansible_host }}:{{ port }} "
+    wait_for:
+      port: "{{ port }}"
+      delay: 3
+
+  # TODO: Configure webserver username & password
+  # - name: "Set username & password for webserver"
+
+  # Configure anything else?
+  # Maybe import existing wekan boards from somewhere? 

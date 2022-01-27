@@ -1,0 +1,16 @@
+# ansible-playbook -i inv.yml simple/stop_CT.yml
+
+---
+- name: "Proxmox: Stop CT"
+  hosts: prox
+  gather_facts: no
+  tasks:
+  - command: "pct stop {{ hostvars[item].id }}"
+    become: yes
+    with_items: "{{ groups['prox_hosts_all_ips'] }}"
+
+  # TODO:
+  # - name: Confirm CTs are stopped
+  #   command: 
+  #   # with_dict: "{{ all_hosts }}"
+  #   with_dict: "{{ hostvars }}"

@@ -1,0 +1,46 @@
+# ansible-playbook -i inventory.ini services/emby.yml
+
+# Expects host "emby" to be deployed according deploy/all_hosts_dict.yml
+
+---
+- name: "Deploy Emby"
+  hosts: emby
+  gather_facts: no
+  vars:
+    # TODO: Move these vars into inv.yml?
+    # What is the seperation between generic service info (port, user) & info ONLY required during installation?
+    # TODO: Detect URL + DEB from https://emby.media/linux-server.html
+    emby_url: https://github.com/MediaBrowser/Emby.Releases/releases/download/4.6.7.0/emby-server-deb_4.6.7.0_amd64.deb
+    emby_deb: ~/emby-server-deb_4.6.7.0_amd64.deb
+  tasks:
+  - name: Check if DEB file exists
+    stat:
+      path: "{{ emby_deb }}"
+    register: deb_stat
+
+  - name: "Download DEB file, if it doesn't exist"
+    get_url:
+      url: "{{ emby_url }}"
+      dest: "{{ emby_deb }}"
+    when: not deb_stat.stat.exists
+
+  - name: "Install from DEB"
+    apt:
+      deb: "{{ emby_deb }}"
+    register: install
+  - debug:
+      var: install.stdout
+    when: install.stdout != ''
+
+  - name: "Verify webserver at http://{{ ansible_host }}:{{ port }} "
+    wait_for:
+      # TODO: Allow custom port numbers?
+      # Specify during or after installation?
+      # --> Research & comment here
+      port: "{{ port }}"
+      delay: 3
+
+  # TODO: Configure the following:
+  # 
+  # - name: "Configure"
+    # command: ""

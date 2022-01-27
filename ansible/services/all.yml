@@ -1,0 +1,5 @@
+---
+- import_playbook: pihole.yml
+- import_playbook: apache.yml
+- import_playbook: emby.yml
+- import_playbook: wekan.yml

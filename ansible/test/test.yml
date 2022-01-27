@@ -1,0 +1,54 @@
+# ansible-playbook -i test/test_inv.yml test/test.yml
+
+---
+- name: "TEST"
+  hosts: localhost
+  gather_facts: no
+  tasks:
+
+  # - name: Test joining dicts
+  #   vars:
+  #     cmd:
+  #     - "ls"
+  #     - "-l"
+  #     - "-h"
+  #   command: "{{ cmd | join('\n') }}"
+  #   register: out
+  # - debug:
+  #     var: out.stdout
+
+  # - name: Print ansible_facts
+  #   debug:
+  #     var: ansible_facts
+
+  # - name: Print info from test_inv.yml SUBELEMENTS LOOPED
+  #   debug:
+  #     msg:
+  #     - "{{ item.0 }}"
+  #     - "{{ item.1 }}"
+  #   with_subelements:
+  #   - "{{ hostvars }}"
+  #   # - value
+  #   - ansible_version
+
+  # - name: Print info from test_inv.yml LOOPED
+  #   debug:
+  #     msg:
+  #     - "{{ item.value }}"
+  #     # - "Host = {{ item.key }}"
+  #     # # - "IP = {{ item.value.ansible_host }}"
+  #     # # - "ID = {{ item.value.id }}"
+  #     # # - "User = {{ item.value.user }}"
+  #     # - "IP = {{ item.ansible_host }}"
+  #     # - "ID = {{ item.id }}"
+  #     # - "User = {{ item.user }}"
+  #   with_dict: "{{ hostvars }}"
+  
+  - name: Print info from test_inv.yml
+    debug:
+      msg:
+      - "{{ hostvars['apple'] }}"
+      # - "Host = {{ hostvars['apple'].inventory_hostname }}"
+      # - "IP = {{ hostvars['apple'].ansible_host }}"
+      # - "ID = {{ hostvars['apple'].id }}"
+      # - "User = {{ hostvars['apple'].user }}"

@@ -1,0 +1,30 @@
+# ansible-playbook -i inv.yml destroy.yml
+
+---
+# Stop
+# TODO:
+# In "stop.yml", confirm that the containers are stopped.
+# This will enable the following inport, without worrying about CTs still winding down
+# - import_playbook: stop.yml
+
+# Destroy
+- name: "Proxmox: Destroy CT"
+  hosts: prox
+  gather_facts: no
+  tasks:
+  - command: "pct destroy {{ hostvars[item].id }} --destroy-unreferenced-disks --purge"
+    become: yes
+    with_items: "{{ groups['prox_hosts_all_ips'] }}"
+    register: destroy
+  - debug: "msg={{ destroy.results | map(attribute='stdout') | join('\n\n') }}"
+
+- name: "Localhost: Remove broken SSH cert"
+  hosts: localhost
+  gather_facts: no
+  tasks:
+  - command: "ssh-keygen -f ~/.ssh/known_hosts -R {{ hostvars[item].ansible_host }}"
+    # debug:
+    #   msg: "{{ hostvars[item].ansible_host }}"
+    with_items: "{{ groups['prox_hosts_all_ips'] }}"
+
+# Verify

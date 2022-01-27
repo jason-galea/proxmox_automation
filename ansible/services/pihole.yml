@@ -1,0 +1,36 @@
+# ansible-playbook -i inventory.ini services/pihole.yml
+
+# Expects host "pihole" to be deployed according deploy/all_hosts_dict.yml
+
+---
+- name: "Deploy Pihole"
+  hosts: "{{ my_vars.ip }}"
+  gather_facts: yes
+  vars_files: ../facts.yml
+
+  vars:
+    hostname: "pihole"
+    my_vars: "{{ all_hosts[hostname] }}"
+
+  tasks:
+
+  # TODO:
+  # Configure unattended install
+  # https://discourse.pi-hole.net/t/pi-hole-as-part-of-a-post-installation-script/3523
+  # https://discourse.pi-hole.net/t/what-is-setupvars-conf-and-how-do-i-use-it/3533
+  
+  - name: "Download install script"
+    get_url:
+      url: https://install.pi-hole.net
+      dest: ~/basic-install.sh
+    register: download
+  - debug: var=download.stdout
+  - name: "Install Pihole"
+    command: "sudo bash ~/basic-install.sh"
+    register: install
+  - debug: var=install.stdout
+
+  
+  # - name: "Verify webserver"
+  #   uri:
+  #     url: "http://{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"

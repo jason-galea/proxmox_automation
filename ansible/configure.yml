@@ -1,0 +1,80 @@
+---
+- name: "Proxmox: Configure containers"
+  hosts: prox_hosts_all_ips # TODO: DNS
+  gather_facts: no
+  vars:
+    password: "{{ lookup('file', 'password.txt') }}"
+    # Since we are executing on the hosts group directly, there's no need to prepend "hostvars"
+    # user: "{{ hostvars[ansible_hostname].user }}"
+    ansible_user: root
+    # This is only required for this playbook.
+    # This overrides inv.yml, which connects with user "inventory_hostname"
+    # After passwordless sudo is enabled, default user (eg. "wekan")
+    # will be able to "become: yes" without a prompt.
+    # AKA, after this playbook the ansible_user set in inv.yml will suffice
+  tasks:
+
+  - name: "Create new user(s)"
+    command: "useradd -s /usr/bin/bash -m -G sudo -p {{ password }} {{ user }}"
+    # TODO: If user already exists, pass
+    # when: ???
+
+  # - name: "Grant passwordless sudo"
+  #   copy:
+  #     dest: "/etc/sudoers.d/{{ user }}"
+  #     content: "{{ user }}  ALL=(ALL) NOPASSWD:ALL"
+  #     mode: "0644"
+  #   # TODO: If file already exists in visudo, pass
+  #   # when: ???
+
+  - name: "Grant passwordless sudo"
+    lineinfile:
+      path: /etc/sudoers
+      state: present
+      regexp: '^%sudo'
+      line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+      validate: 'visudo -cf %s'
+      # TODO: If line already exists in visudo, pass
+      # when: ???
+
+  - name: "Create $HOME/.ssh"
+    file:
+      path: "/home/{{ user }}/.ssh"
+      state: directory
+      owner: "{{ user }}"
+      group: "{{ user }}"
+      mode: "0700"
+    # TODO: If $HOME/.ssh already exists, pass
+    # when: ???
+
+  - name: "Authorise localhost SSH key"
+    copy:
+      src: ~/.ssh/id_rsa.pub
+      dest: "/home/{{ user }}/.ssh/authorized_keys"
+      # content: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+      owner: "{{ user }}"
+      group: "{{ user }}"
+      mode: "0600"
+    # TODO: If ssh key already exists, pass
+    # when: ???
+
+
+  ### Apt
+  # - name: "apt install"
+  #   apt:
+  #     pkg:
+  #     - htop
+  #     - tree
+  #     update_cache: yes
+  #   register: apt_install
+  # - debug: var=apt_install.stdout
+
+  # - name: "apt dist-upgrade"
+  #   apt:
+  #     upgrade: dist
+  #   register: apt_dist_upgrade
+  # - debug: var=apt_dist_upgrade.stdout
+
+
+  ### TODO: Auto-update
+  # - name: "Configure apt auto update"
