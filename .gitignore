@@ -1,11 +1,7 @@
 # Password file
 password.txt
 
-# Lock file
-# .terraform.lock.hcl
-
 # Local .terraform directories
-**/.terraform/*
 .terraform*
 
 # .tfstate files

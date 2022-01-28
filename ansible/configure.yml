@@ -3,8 +3,8 @@
   hosts: prox_hosts_all_ips # TODO: DNS
   gather_facts: no
   vars:
-    password: "{{ lookup('file', 'password.txt') }}"
-    # Since we are executing on the hosts group directly, there's no need to prepend "hostvars"
+    password: "{{ lookup('file', '../password.txt') }}"
+    # Since we are executing on "prox_hosts_all_ips" directly, there's no need to prepend "hostvars[]"
     # user: "{{ hostvars[ansible_hostname].user }}"
     ansible_user: root
     # This is only required for this playbook.
@@ -15,13 +15,11 @@
   tasks:
 
   - wait_for_connection:
-      timeout: 10
-    retries: 3
-    delay: 10
+      timeout: 3
+    retries: 6
+    delay: 6
     register: wait_result
     until: wait_result.failed == False
-  # - debug:
-  #     var: wait_result
 
   - name: "Create new user(s)"
     command: "useradd -s /usr/bin/bash -m -G sudo -p {{ password }} {{ user }}"
@@ -33,7 +31,7 @@
   #     dest: "/etc/sudoers.d/{{ user }}"
   #     content: "{{ user }}  ALL=(ALL) NOPASSWD:ALL"
   #     mode: "0644"
-  #   # TODO: If file already exists in visudo, pass
+  #   # TODO: If file already exists, pass
   #   # when: ???
 
   - name: "Grant passwordless sudo"
@@ -42,7 +40,7 @@
       state: present
       regexp: '^%sudo'
       line: '%sudo ALL=(ALL) NOPASSWD: ALL'
-      validate: 'visudo -cf %s'
+      validate: 'visudo -cf %s' # O___O it works, ok
       # TODO: If line already exists in visudo, pass
       # when: ???
 
