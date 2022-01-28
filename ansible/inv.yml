@@ -6,8 +6,10 @@ all:
   children:
     prox_hosts_all_ips:
       hosts:
+        portainer:
+          id: "160"
         pihole:
-          id: "161" # Using strings because these will never be used in math operations
+          id: "161"
         apache:
           id: "162"
           port: "80"

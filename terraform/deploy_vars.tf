@@ -5,6 +5,12 @@ variable "lxc_network" {
 variable "lxc_info" {
   type        = map
   default     = {
+    portainer = {
+      id      = "160",
+      cores   = 4
+      memory  = 4096
+      swap    = 512
+    },
     pihole = {
       id      = "161",
     },
@@ -13,8 +19,8 @@ variable "lxc_info" {
     },
     emby = {
       id      = "163",
-      cores   = 4
-      memory  = 2048
+      cores   = 2
+      memory  = 1024
     },
     wekan = {
       id      = "164",

@@ -2,19 +2,37 @@
 # Currently the test environment (Proxmox & OPNsense on Hyper-V) is manually configured
 # This file would automate the deploy of that test environment
 
+### This playbook expects a freshly install Proxmox VM, with IP matching inv.yml
+### For example:
+# Create VM in Hyper-V
+# Boot ISO, leave default disk, enter country/timezone, hostname/IP/Gateway/DNS
+# VM will be ready after first reboot
 
+---
+- name: "Localhost: Prepare prox for SSH"
+  hosts: localhost
+  gather_facts: no
+  vars:
+    password: "{{ lookup('file', '../password.txt') }}" # Might be useful for ssh-copy-id?
+  tasks:
+    ### (Remove previous SSH host)
+    # ssh-keygen -f "/home/jg/.ssh/known_hosts" -R "172.26.0.2"
+    # BUILTIN????
+  - name:
 
-### Steps to install proxmox:
-### Boot ISO, leave default disk, enter country/timezone, hostname/IP/Gateway/DNS
+    ### Add SSH key for root
+    # ssh-copy-id -o "StrictHostKeyChecking no" root@172.26.0.2
+    # BUILTIN????
+  - name:
+    
 
-### (Remove previous SSH host)
-# ssh-keygen -f "/home/jg/.ssh/known_hosts" -R "172.26.0.2"
-
-### Add SSH key for root
-# ssh-copy-id -o "StrictHostKeyChecking no" root@172.26.0.2
-
-### SSH as root
-# ssh root@172.26.0.2
+- name: "Localhost: Prepare prox for SSH"
+  hosts: prox
+  gather_facts: no
+  vars:
+    ansible_user: root
+  tasks:
+  - asd
 
     ### Add non-subscription repo
     # echo "" >> sources.list
