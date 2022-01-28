@@ -1,14 +1,12 @@
 # TODO:
 # - Multiple CTs with different configurations
-# - Import variables from files (preferably YAML)
-# - Static IPs
-# - Import SSH keys
 
 terraform {
   required_providers {
     proxmox = {
       source  = "telmate/proxmox"
-      version = "2.9.4" # Latest release: https://github.com/Telmate/terraform-provider-proxmox/releases
+      # version = "2.9.4" # Latest release: https://github.com/Telmate/terraform-provider-proxmox/releases
+      version = "2.8.0" # Workaround for https://github.com/Telmate/terraform-provider-proxmox/issues/480
     }
   }
 }
@@ -24,27 +22,30 @@ provider "proxmox" {
 resource "proxmox_lxc" "basic" {
   for_each        = var.lxc_info
 
-  hostname        = each.key
-  vmid            = each.value.id
   target_node     = "prox"
+  vmid            = each.value.id
   ostemplate      = "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
-  password        = file("password.txt")
-  unprivileged    = true
   ostype          = "ubuntu"
-  ssh_public_keys = file("~/.ssh/id_rsa.pub") # Authenticate localhost SSH key
+  hostname        = each.key
+  password        = file("password.txt")
+  ssh_public_keys = file("~/.ssh/id_rsa.pub") # Add localhost SSH key
+  cores           = try(each.value.cores, 2)
+  memory          = try(each.value.memory, 512)
+  swap            = try(each.value.swap, 100)
+  unprivileged    = true
   start           = true
-
-  // Terraform will crash without rootfs defined
-  rootfs {
-    storage = "local-lvm"
-    size    = "8G"
-  }
+  onboot          = true
 
   network {
     name   = "eth0"
     bridge = "vmbr0"
     # ip     = "dhcp"
-    # ip     = "10.0.0.2/24"
-    ip     = format("%s%s/%s", var.lxc_network, each.value.id, var.lxc_subnet_mask)
+    ip     = format("%s%s/24", var.lxc_network, each.value.id)
+    # ip     = var.lxc_network + each.value.id + "/24"
+  }
+
+  rootfs { # Terraform will crash without rootfs defined
+    storage = "local-lvm"
+    size    = "8G"
   }
 }

@@ -1,0 +1,12 @@
+# ansible-playbook -i inv.yml remove_ssh_hosts.yml
+
+- name: "Localhost: Remove broken SSH cert"
+  hosts: localhost
+  gather_facts: no
+  tasks:
+  - command: "ssh-keygen -f ~/.ssh/known_hosts -R {{ hostvars[item].ansible_host }}"
+    # debug:
+    #   msg: "{{ hostvars[item].ansible_host }}"
+    with_items: "{{ groups['prox_hosts_all_ips'] }}"
+
+# Verify

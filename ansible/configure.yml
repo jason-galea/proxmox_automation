@@ -14,6 +14,15 @@
     # AKA, after this playbook the ansible_user set in inv.yml will suffice
   tasks:
 
+  - wait_for_connection:
+      timeout: 10
+    retries: 3
+    delay: 10
+    register: wait_result
+    until: wait_result.failed == False
+  # - debug:
+  #     var: wait_result
+
   - name: "Create new user(s)"
     command: "useradd -s /usr/bin/bash -m -G sudo -p {{ password }} {{ user }}"
     # TODO: If user already exists, pass
