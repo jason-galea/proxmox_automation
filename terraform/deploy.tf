@@ -46,6 +46,11 @@ resource "proxmox_lxc" "basic" {
   start           = true
   onboot          = true
 
+  features {
+    nesting = try(each.value.features.nesting, false)
+  }
+
+
   network {
     name   = "eth0"
     bridge = "vmbr0"
@@ -59,4 +64,5 @@ resource "proxmox_lxc" "basic" {
     storage = "local-lvm"
     size    = "8G"
   }
+
 }

@@ -10,9 +10,13 @@ variable "lxc_info" {
     #   cores   = 4
     #   memory  = 4096
     #   swap    = 512
+    #   features  = "nesting"
     # },
     pihole = {
-      id      = "161",
+      id        = "161",
+      features  = {
+        nesting   = true
+      }
     },
     # apache = {
     #   id      = "162",
