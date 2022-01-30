@@ -50,7 +50,7 @@ resource "proxmox_lxc" "basic" {
     nesting = try(each.value.features.nesting, false)
   }
 
-
+  nameserver      = format("%s%s", var.lxc_network, var.lxc_info.pihole.id)
   network {
     name   = "eth0"
     bridge = "vmbr0"

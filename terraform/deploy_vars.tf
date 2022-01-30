@@ -14,13 +14,14 @@ variable "lxc_info" {
     # },
     pihole = {
       id        = "161",
+      # dns       = "127.0.0.1",
       features  = {
         nesting   = true
       }
     },
-    # apache = {
-    #   id      = "162",
-    # },
+    apache = {
+      id      = "162",
+    },
     # emby = {
     #   id      = "163",
     #   cores   = 2

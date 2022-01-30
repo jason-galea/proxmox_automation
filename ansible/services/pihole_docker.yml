@@ -10,19 +10,19 @@
     setupvars: "/etc/pihole/setupVars.conf"
   tasks:
 
-  ### TODO: Define & apply LXC functions   
+  ### Annoyingly, we can't simply 'docker run pihole/pihole'
+  ### All good though, with docker-compose we can specify the TZ & Web password
 
   ### Install docker
   ### https://docs.docker.com/engine/install/ubuntu/
   # sudo apt-get update -y
-  # sudo apt-get install -y ca-certificates curl gnupg lsb-release
+  # sudo apt-get install -y ca-certificates curl gnupg lsb-release git
   # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
   # echo \
     # "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
     # $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
   # sudo apt-get update -y
-  # sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-
+  # sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose
 
   ### Steps to set up pihole in docker
   ### https://hub.docker.com/r/pihole/pihole
@@ -30,16 +30,12 @@
   # git clone https://github.com/pi-hole/docker-pi-hole.git
   # cd docker-pi-hole/
   # cp docker-compose.yml.example docker-compose.yml
-  # sed -i "s/.*TZ:.*/      TZ: 'Australia/Melbourne'/" docker-compose.yml
-  # sed -i "s/.*WEBPASSWORD:.*/      WEBPASSWORD: '{{ password }}'/" docker-compose.yml
+  # sed -i "s/.*TZ:.*/      TZ: 'Australia\/Melbourne'/" docker-compose.yml
+  # sed -i "s/.*WEBPASSWORD:.*/      WEBPASSWORD: 'abc##123'/" docker-compose.yml
   ### Apply ubuntu fixes
   # sudo sed -r -i.orig 's/#?DNSStubListener=yes/DNSStubListener=no/g' /etc/systemd/resolved.conf
   # sudo sh -c 'rm /etc/resolv.conf && ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf'
   # sudo systemctl restart systemd-resolved
-
-  ### FIX ME!
-  ### https://forum.proxmox.com/threads/running-docker-containers-in-proxmox-containers.81660/
-  # 
 
   ### Build and run image
   # sudo docker-compose up -d

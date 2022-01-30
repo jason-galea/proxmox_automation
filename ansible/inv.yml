@@ -10,9 +10,9 @@ all:
         #   id: "160"
         pihole:
           id: "161"
-        # apache:
-        #   id: "162"
-        #   port: "80"
+        apache:
+          id: "162"
+          port: "80"
         # emby:
         #   id: "163"
         #   port: "8096" # HTTP
