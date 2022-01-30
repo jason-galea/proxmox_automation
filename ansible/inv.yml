@@ -6,20 +6,20 @@ all:
   children:
     prox_hosts_all_ips:
       hosts:
-        portainer:
-          id: "160"
+        # portainer:
+        #   id: "160"
         pihole:
           id: "161"
-        apache:
-          id: "162"
-          port: "80"
-        emby:
-          id: "163"
-          port: "8096" # HTTP
-          # port: "8920" # HTTPS
-        wekan:
-          id: "164"
-          port: "3001"
+        # apache:
+        #   id: "162"
+        #   port: "80"
+        # emby:
+        #   id: "163"
+        #   port: "8096" # HTTP
+        #   # port: "8920" # HTTPS
+        # wekan:
+        #   id: "164"
+        #   port: "3001"
           # features: ??? # Not worth it here, just use services/wekan.yml
         # radarr:
         #   id: "171"

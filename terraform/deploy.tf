@@ -40,8 +40,8 @@ resource "proxmox_lxc" "basic" {
   password        = file("../password.txt")
   ssh_public_keys = file("~/.ssh/id_rsa.pub") # Add localhost SSH key
   cores           = try(each.value.cores, 1)
-  memory          = try(each.value.memory, 100)
-  swap            = try(each.value.swap, 100)
+  memory          = try(each.value.memory, 100) # MB
+  swap            = try(each.value.swap, 100) # MB
   unprivileged    = true
   start           = true
   onboot          = true
@@ -52,6 +52,7 @@ resource "proxmox_lxc" "basic" {
     # ip     = "dhcp"
     ip     = format("%s%s/24", var.lxc_network, each.value.id)
     # ip     = var.lxc_network + each.value.id + "/24"
+    gw     = format("%s1", var.lxc_network)
   }
 
   rootfs { # Terraform will crash without rootfs defined

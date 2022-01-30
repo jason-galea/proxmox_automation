@@ -1,7 +1,6 @@
-# ansible-playbook -i inventory.ini services/emby.yml
+# ansible-playbook -i inv.yml services/emby.yml
 
-# Expects host "emby" to be deployed according deploy/all_hosts_dict.yml
-
+# Expects host "pihole" to be deployed according to emby.yml
 ---
 - name: "Deploy Emby"
   hosts: emby

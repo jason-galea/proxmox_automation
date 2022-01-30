@@ -1,0 +1,61 @@
+# ansible-playbook -i inv.yml services/pihole.yml
+
+# Expects host "pihole" to be deployed according to inv.yml
+
+---
+- name: "Deploy Pihole"
+  hosts: pihole
+  gather_facts: no
+  vars:
+    setupvars: "/etc/pihole/setupVars.conf"
+  tasks:
+
+  ### Install docker
+  ### https://docs.docker.com/engine/install/ubuntu/
+  # sudo apt-get update -y
+  # sudo apt-get install -y ca-certificates curl gnupg lsb-release
+  # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  # echo \
+    # "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+    # $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  # sudo apt-get update -y
+  # sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+
+
+  ### Install docker-compose
+  ### https://docs.docker.com/compose/install/
+  # sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  # sudo chmod +x /usr/local/bin/docker-compose
+  ### docker-compose BASH completion (Optional)
+  # sudo curl \
+    # -L https://raw.githubusercontent.com/docker/compose/1.29.2/contrib/completion/bash/docker-compose \
+    # -o /etc/bash_completion.d/docker-compose
+  # source ~/.bashrc
+
+
+  ### Steps to set up pihole in docker
+  ### https://hub.docker.com/r/pihole/pihole
+  ### https://github.com/pi-hole/docker-pi-hole
+  # git clone https://github.com/pi-hole/docker-pi-hole.git
+  # cd docker-pi-hole/
+  # cp docker-compose.yml.example docker-compose.yml
+  # sed -i "s/.*TZ:.*/      TZ: 'Australia/Melbourne'/" docker-compose.yml
+  # sed -i "s/.*WEBPASSWORD:.*/      WEBPASSWORD: '{{ password }}'/" docker-compose.yml
+  ### Apply ubuntu fixes
+  # sudo sed -r -i.orig 's/#?DNSStubListener=yes/DNSStubListener=no/g' /etc/systemd/resolved.conf
+  # sudo sh -c 'rm /etc/resolv.conf && ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf'
+  # sudo systemctl restart systemd-resolved
+
+  ### FIX ME!
+  ### https://forum.proxmox.com/threads/running-docker-containers-in-proxmox-containers.81660/
+  # 
+
+  ### Build and run image
+  # sudo docker-compose up -d
+
+
+  # - name: "Verify webserver"
+  #   uri:
+  #     # url: "http://{{ ansible_host }}:{{ port }}" #
+  #     url: "http://{{ ansible_host }}/admin"
+  #     delay: 3

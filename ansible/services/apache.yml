@@ -19,7 +19,7 @@
       var: install.stdout
     when: install.stdout is defined
 
-  - name: "Verify webserver at http://{{ ansible_host }}:{{ port }} "
+  - name: "Verify webserver at http://{{ ansible_host }}:{{ port }}"
     wait_for:
       port: "{{ port }}"
       delay: 3
