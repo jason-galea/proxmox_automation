@@ -2,22 +2,26 @@ If you "Sleep" while a container is running, it will break.
 It will be stuck "starting" in the GUI.
 
 To fix:
-- SSH into root@prox
+    From root@prox:
+        Kill the "lxc-start" process:
+            $ ps -aux | grep lxc
+            $ kill -9 <PID>
+        Kill "vzstart" process, EG "UPID:prox:000004DD:0000179C:61F7AD0E:vzstart:???:root@pam"
+            $ ps -aux | grep ???
+            # kill -9 <PID>
+        Remove the CT config file
+            $ rm /etc/pve/lxc/???.conf
+        Remove lock file
+            $ rm /run/lock/lxc/pve-config-???.lock
+        Remove orphaned root volume:
+            $ rm ????
+            OR:
+            WebUI --> local-lvm --> CT Volumes --> Remove
 
-- Find the lxc-start process:
-    $ ps -aux | grep lxc
 
-- Kill it
-    $ kill -9 <PID>
-
-- Remove the CT config file
-    $ rm /etc/pve/lxc/???.conf
-
-- With the config file gone, you can remove the root volume
-    $ rm ????
-    (Or just use the webUI --> local-lvm --> CT Volumes --> Remove)
-
-- Remove all terraform state files(??? I guess)
-    $ rm ./terraform/*.terraform*
+    From localhost:
+        Remove all terraform files
+            $ ls /mnt/c/Users/jg/Programming/proxmox_automation/terraform/terraform.tfstate*
+            $ rm /mnt/c/Users/jg/Programming/proxmox_automation/terraform/terraform.tfstate*
 
 

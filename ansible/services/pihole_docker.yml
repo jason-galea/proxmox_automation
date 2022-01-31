@@ -3,15 +3,12 @@
 # Expects host "pihole" to be deployed according to inv.yml
 
 ---
-- name: "Deploy Pihole"
+- name: "Deploy Pihole (via docker)"
   hosts: pihole
   gather_facts: no
   vars:
     setupvars: "/etc/pihole/setupVars.conf"
   tasks:
-
-  ### Annoyingly, we can't simply 'docker run pihole/pihole'
-  ### All good though, with docker-compose we can specify the TZ & Web password
 
   ### Install docker
   ### https://docs.docker.com/engine/install/ubuntu/
@@ -46,3 +43,5 @@
   #     # url: "http://{{ ansible_host }}:{{ port }}" #
   #     url: "http://{{ ansible_host }}/admin"
   #     delay: 3
+
+  # - name: "Change Proxmox DNS server to pihole"

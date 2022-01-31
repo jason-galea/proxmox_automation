@@ -3,69 +3,111 @@
 # Expects host "pihole" to be deployed according to inv.yml
 
 ---
-- name: "Deploy Pihole"
+- name: "Deploy Pihole (via setupVars.conf)"
   hosts: pihole
   gather_facts: no
+
   vars:
-    setupvars: "/etc/pihole/setupVars.conf"
+    repo_dir: "/home/{{ user }}/pihole"
+    # repo_script: "{{ repo_dir }}/automated install/basic-install.sh"
+    repo_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
+    answers_dir: "/etc/pihole"
+    answers_file: "{{ answers_dir }}/setupVars.conf"
+    password: "{{ lookup('file', '../../password.txt') }}" # I hate this and myself
+
   tasks:
+    # TODO: Check if git is installed already
 
-    ### Install Pihole (MANUAL):
-    # https://docs.pi-hole.net/main/basic-install/
-    # sudo apt update -y && sudo apt install -y git
+  - name: "Install git"
+    apt:
+      pkg: git
+      update_cache: yes
+      state: latest
+    become: yes
+    register: install
+  - debug:
+      var: install.stdout
+    when: install.stdout is defined
+
+    ### Clone repo
     # git clone --depth 1 https://github.com/pi-hole/pi-hole.git Pi-hole
-    # cd "Pi-hole/automated install/"
-    # sudo bash basic-install.sh
-    ### Steps for interactive install script:
-    # 1. "OK"
-    # 2. "OK"
-    # 3. Static IP? --> "YES"
-    # 4. Upstream DNS? --> Cloudflare (DNSSEC) --> (TAB) --> "OK"
-    # 5. Block list? --> (TAB to accept default "StevenBlacks") --> "OK"
-    # 6. Do you want a web interface? --> (TAB to accept default "ON") --> "OK"
-    # 7. Install lighttpd? --> (TAB to accept default "ON") --> "OK"
-    # 8. Log queries? --> (TAB to accept default "ON") --> "OK"
-    # 9. Privacy mode? --> (TAB to accept default "0 Show Everything") --> "OK" # More info: (https://docs.pi-hole.net/ftldns/privacylevels/)
-    ### ...wait for script to finish...
-    # 10. Install complete!
+  - name: "Clone pihole git repo"
+    ansible.builtin.git:
+      repo: "https://github.com/pi-hole/pi-hole.git"
+      dest: "{{ repo_dir }}"
+      depth: 1
+      version: "v5.8.1" # Need specific release for line numbers in basic-install.sh
+      force: yes # To override below modifications on re-runs
 
-    ### Install Pihole (SETUPVARS)
+    ### Run Pihole install script (MANUAL):
+      # https://docs.pi-hole.net/main/basic-install/
+      # sudo bash basic-install.sh
+      ### Steps for interactive install script:
+      ### (Items starting with "# DONE " are accounted for in setupVars.conf)
+      # DONE # 1. "OK"
+      # DONE # 2. "OK"
+      # DONE # 3. Static IP? --> "YES"
+      # DONE # 4. Upstream DNS? --> Cloudflare (DNSSEC) --> (TAB) --> "OK"
+      # 5. Block list? --> (TAB to accept default "StevenBlacks") --> "OK"
+      # DONE # 6. Do you want a web interface? --> (TAB to accept default "ON") --> "OK"
+      # 7. Install lighttpd? --> (TAB to accept default "ON") --> "OK"
+      # DONE # 8. Log queries? --> (TAB to accept default "ON") --> "OK"
+      # 9. Privacy mode? --> (TAB to accept default "0 Show Everything") --> "OK"
+      ### More info: (https://docs.pi-hole.net/ftldns/privacylevels/)
+      ### ...wait for script to finish...
+      # DONE # 10. Install complete! --> "OK"
+    ### Run Pihole install script (SETUPVARS)
     # https://discourse.pi-hole.net/t/pi-hole-as-part-of-a-post-installation-script/3523
     # https://discourse.pi-hole.net/t/what-is-setupvars-conf-and-how-do-i-use-it/3533
-    # sudo apt update -y && sudo apt install -y git
-    # git clone --depth 1 https://github.com/pi-hole/pi-hole.git Pi-hole
-    # cd "Pi-hole/automated install/"
-    ### Populate setupVars.conf
-    # sudo mkdir /etc/pihole/
-    # sudo echo -n abc##123 | sha256sum | awk '{print $1}' | sha256sum | awk '{print $1}' >> /etc/pihole/setupVars.conf
-    # sudo echo -e "WEBPASSWORD=$(cat /etc/pihole/setupVars.conf)" > /etc/pihole/setupVars.conf # Prepend
-    # sudo echo "IPV4_ADDRESS=172.26.0.161/24" >> /etc/pihole/setupVars.conf
-    # sudo echo "QUERY_LOGGING=true" >> /etc/pihole/setupVars.conf
-    # sudo echo "INSTALL_WEB=true" >> /etc/pihole/setupVars.conf
-    # sudo echo "PIHOLE_DNS_1=1.1.1.1" >> /etc/pihole/setupVars.conf
-    # sudo echo "PIHOLE_DNS_2=1.0.0.1" >> /etc/pihole/setupVars.conf
-    # sudo echo "DNSSEC=true" >> /etc/pihole/setupVars.conf
-    # sudo echo "TEMPERATUREUNIT=C" >> /etc/pihole/setupVars.conf
+  - name: "Create /etc/pihole"
+    file:
+      path: "{{ answers_dir }}"
+      state: directory
+    become: yes
+  - name: "Populate {{ answers_file }}"
+    shell: |
+      echo -n {{ password }} | sha256sum | awk '{print $1}' | sha256sum | awk '{print $1}' > {{ answers_file }}
+      echo "WEBPASSWORD=$(cat {{ answers_file }})" > {{ answers_file }}
+      echo "IPV4_ADDRESS=172.26.0.161/24" >> {{ answers_file }}
+      echo "QUERY_LOGGING=true" >> {{ answers_file }}
+      echo "INSTALL_WEB=true" >> {{ answers_file }}
+      echo "PIHOLE_DNS_1=1.1.1.1" >> {{ answers_file }}
+      echo "PIHOLE_DNS_2=1.0.0.1" >> {{ answers_file }}
+      echo "DNSSEC=true" >> {{ answers_file }}
+      echo "TEMPERATUREUNIT=C" >> {{ answers_file }}
+    become: yes
+
+  - command: "cat {{ answers_file }}"
+    register: answers
+  - name: "Display {{ answers_file }}"
+    debug:
+      var: answers.stdout
+
+    # This one is reeeaaally screwy
+  - name: "Modify script to remove interactive prompt"
+    shell: |
+      mv {{ repo_script }} {{ repo_script }}.bak
+      echo "$(head -1953 {{ repo_script }}.bak)" > {{ repo_script }}
+      echo "    useUpdateVars=true" >> {{ repo_script }}
+      echo "$(tail -678 {{ repo_script }}.bak)" >> {{ repo_script }}
+
     ### Install
+    # cd "Pi-hole/automated install/"
     # sudo bash basic-install.sh
-
-  - name: "Download install script"
-    get_url:
-      url: https://install.pi-hole.net
-      dest: ~/basic-install.sh
-    register: download
-  - debug: var=download.stdout
-    
-  # - name: "Populate {{ setupvars }}"
-
-  # - name: "Install Pihole"
-  #   command: "bash ~/basic-install.sh"
-  #   become: yes
-  #   register: install
-  # - debug: var=install.stdout
+    ### TODO: Test if "cd && bash" or just "bash" makes any difference
+  - name: "Install Pihole (Can take 3-5 minutes) "
+    command: "bash {{ repo_script }}" # Wierd, right? Maybe not.
+    become: yes
+    register: install
+  - debug:
+      var: install.stdout
   
-  # - name: "Verify webserver"
-  #   uri:
-  #     # url: "http://{{ ansible_host }}:{{ port }}" #
-  #     url: "http://{{ ansible_host }}/admin"
-  #     delay: 3
+  - name: "Verify webserver at http://{{ ansible_host }}/admin"
+    # uri:
+    #   # url: "http://{{ ansible_host }}:{{ port }}" #
+    #   url: "http://{{ ansible_host }}/admin"
+    #   delay: 3
+    wait_for:
+      port: "{{ port }}"
+    retries: 3
+    delay: 3

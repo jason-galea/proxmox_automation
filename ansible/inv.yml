@@ -12,7 +12,6 @@ all:
           id: "161"
         apache:
           id: "162"
-          port: "80"
         # emby:
         #   id: "163"
         #   port: "8096" # HTTP
@@ -20,12 +19,10 @@ all:
         # wekan:
         #   id: "164"
         #   port: "3001"
-          # features: ??? # Not worth it here, just use services/wekan.yml
         # radarr:
         #   id: "171"
         #   user: "admin"
       vars: ### Note that any host can choose to override these default values
-        unprivileged: 1 # TODO: TEST ALL SERVICES TO CONFIRM!
         network: "172.26.0."
         user: "{{ inventory_hostname }}"
         # This ^^^ seems redundant, but if we use "inventory_hostname" in the playbook instead,
@@ -46,3 +43,4 @@ all:
         # user: "{{ split(inventory_hostname, '.')[0] }}"
         # wekan.test.lan --> user = "wekan"
         ansible_host: "{{ network + id }}"
+        port: "80"

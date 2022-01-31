@@ -4,8 +4,6 @@
   gather_facts: no
   vars:
     password: "{{ lookup('file', '../password.txt') }}"
-    # Since we are executing on "prox_hosts_all_ips" directly, there's no need to prepend "hostvars[]"
-    # user: "{{ hostvars[ansible_hostname].user }}"
     ansible_user: root
     # This is only required for this playbook.
     # This overrides inv.yml, which connects with user "inventory_hostname"
@@ -16,8 +14,8 @@
 
   - wait_for_connection:
       timeout: 3
-    retries: 6
-    delay: 6
+    retries: 4
+    delay: 3
     register: wait_result
     until: wait_result.failed == False
 
@@ -44,7 +42,7 @@
       # TODO: If line already exists in visudo, pass
       # when: ???
 
-  - name: "Create $HOME/.ssh"
+  - name: "Create ~/.ssh"
     file:
       path: "/home/{{ user }}/.ssh"
       state: directory
@@ -56,8 +54,8 @@
 
   - name: "Authorise localhost SSH key"
     copy:
-      src: ~/.ssh/id_rsa.pub
-      dest: "/home/{{ user }}/.ssh/authorized_keys"
+      src: ~/.ssh/id_rsa.pub # localhost
+      dest: "/home/{{ user }}/.ssh/authorized_keys" # remote host
       # content: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
       owner: "{{ user }}"
       group: "{{ user }}"

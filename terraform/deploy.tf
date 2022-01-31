@@ -45,12 +45,12 @@ resource "proxmox_lxc" "basic" {
   unprivileged    = true
   start           = true
   onboot          = true
-
+  # nameserver      = # Blank nameserver --> Match prox --> 172.26.0.1 --> OPNsense
+  # nameserver      = format("%s%s", var.lxc_network, var.lxc_info.pihole.id) # 172.26.0.161
+  # nameserver      = "1.1.1.1"
   features {
-    nesting = try(each.value.features.nesting, false)
+    nesting = try(each.value.f_nesting, false)
   }
-
-  nameserver      = format("%s%s", var.lxc_network, var.lxc_info.pihole.id)
   network {
     name   = "eth0"
     bridge = "vmbr0"
@@ -59,10 +59,8 @@ resource "proxmox_lxc" "basic" {
     # ip     = var.lxc_network + each.value.id + "/24"
     gw     = format("%s1", var.lxc_network)
   }
-
   rootfs { # Terraform will crash without rootfs defined
     storage = "local-lvm"
     size    = "8G"
   }
-
 }
