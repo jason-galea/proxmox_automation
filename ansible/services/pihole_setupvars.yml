@@ -3,11 +3,12 @@
 # Expects host "pihole" to be deployed according to inv.yml
 
 ---
-- name: "Deploy Pihole (via setupVars.conf)"
+- name: "Deploy Pihole (via setupVars.conf) "
   hosts: pihole
   gather_facts: no
 
   vars:
+    pkg_name: "git"
     repo_dir: "/home/{{ user }}/pihole"
     # repo_script: "{{ repo_dir }}/automated install/basic-install.sh"
     repo_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
@@ -16,21 +17,23 @@
     password: "{{ lookup('file', '../../password.txt') }}" # I hate this and myself
 
   tasks:
-    # TODO: Check if git is installed already
-
-  - name: "Install git"
+    # Check and install git, print output
+  - name: Gather package facts
+    package_facts:
+      manager: auto
+  - name: "Install git if not present"
     apt:
       pkg: git
       update_cache: yes
       state: latest
     become: yes
-    register: install
+    register: install_git
+    when: "'git' not in ansible_facts.packages"
   - debug:
-      var: install.stdout
-    when: install.stdout is defined
+      var: install_git.stdout
+    when: install_git.stdout is defined
 
     ### Clone repo
-    # git clone --depth 1 https://github.com/pi-hole/pi-hole.git Pi-hole
   - name: "Clone pihole git repo"
     ansible.builtin.git:
       repo: "https://github.com/pi-hole/pi-hole.git"
@@ -65,9 +68,10 @@
       state: directory
     become: yes
   - name: "Populate {{ answers_file }}"
+    # shell: |
+    #   echo -n {{ password }} | sha256sum | awk '{print $1}' | sha256sum | awk '{print $1}' > {{ answers_file }}
+    #   echo "WEBPASSWORD=$(cat {{ answers_file }})" > {{ answers_file }}
     shell: |
-      echo -n {{ password }} | sha256sum | awk '{print $1}' | sha256sum | awk '{print $1}' > {{ answers_file }}
-      echo "WEBPASSWORD=$(cat {{ answers_file }})" > {{ answers_file }}
       echo "IPV4_ADDRESS=172.26.0.161/24" >> {{ answers_file }}
       echo "QUERY_LOGGING=true" >> {{ answers_file }}
       echo "INSTALL_WEB=true" >> {{ answers_file }}
@@ -83,7 +87,7 @@
     debug:
       var: answers.stdout
 
-    # This one is reeeaaally screwy
+    # This is reeeaaally screwy, and changes with each pihole release
   - name: "Modify script to remove interactive prompt"
     shell: |
       mv {{ repo_script }} {{ repo_script }}.bak
@@ -96,11 +100,16 @@
     # sudo bash basic-install.sh
     ### TODO: Test if "cd && bash" or just "bash" makes any difference
   - name: "Install Pihole (Can take 3-5 minutes) "
-    command: "bash {{ repo_script }}" # Wierd, right? Maybe not.
+    command: "bash {{ repo_script }}" # "bash" bypasses permissions issues
     become: yes
-    register: install
+    register: install_pihole
   - debug:
-      var: install.stdout
+      var: install_pihole.stdout
+
+  - name: "Display password"
+    debug:
+      msg: "echo {{ install_pihole.stdout_lines[-item] }}"
+    with_items: [11,10,9]
   
   - name: "Verify webserver at http://{{ ansible_host }}/admin"
     # uri:

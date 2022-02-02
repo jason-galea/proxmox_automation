@@ -39,8 +39,8 @@ resource "proxmox_lxc" "basic" {
   hostname        = each.key
   password        = file("../password.txt")
   ssh_public_keys = file("~/.ssh/id_rsa.pub") # Add localhost SSH key
-  cores           = try(each.value.cores, 1)
-  memory          = try(each.value.memory, 100) # MB
+  cores           = try(each.value.cores, 2)
+  memory          = try(each.value.memory, 512) # MB
   swap            = try(each.value.swap, 100) # MB
   unprivileged    = true
   start           = true
