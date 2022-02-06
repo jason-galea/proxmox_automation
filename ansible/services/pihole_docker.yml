@@ -9,16 +9,16 @@
 
   vars:
     # setupvars: "/etc/pihole/setupVars.conf"
+    repo_dir: "/home/{{ user }}/docker-pi-hole"
+    repo_compose: "{{ repo_dir }}/docker-compose.yml"
 
   tasks:
 
-  ### Install docker
   ### https://docs.docker.com/engine/install/ubuntu/
-  # sudo apt-get update -y
-  # sudo apt-get install -y ca-certificates curl gnupg lsb-release git
-  # - name: Gather package facts
-  #   package_facts:
-  #     manager: auto
+  - name: Gather package facts
+    package_facts:
+      manager: auto
+
   - name: "Install prerequisites"
     apt:
       pkg:
@@ -30,28 +30,33 @@
       update_cache: yes
       state: latest
     become: yes
-    register: install
-    # when: "'git' not in ansible_facts.packages"
+    register: install_prereqs
+    when: "'git' not in ansible_facts.packages"
   - debug:
       var: install_prereqs.stdout
     when: install_prereqs.stdout is defined
 
-  # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-  - command: |
-      curl -fsSL https://download.docker.com/linux/ubuntu/gpg
-      | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    # TODO: Check if GPG key already exists
+  - name: "Add docker GPG key"
+    vars:
+      gpg_file: /usr/share/keyrings/docker-archive-keyring.gpg
+    shell: |
+      rm -f {{ gpg_file }} 2>/dev/null
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o {{ gpg_file }}
     become: yes
-  # echo \
-    # "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-    # $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-  - command: |
-      echo "deb\
-        [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]\
-        https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\
-      " | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    # when: 
+    
+    # TODO: Check if source file already exists
+  - name: "Add docker source list"
+    shell: |
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
     become: yes
-  # sudo apt-get update -y
-  # sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose
+    # when: 
+    
+  - name: "Gather package facts (again)"
+    package_facts:
+      manager: auto
+
   - name: "Install docker & docker-compose"
     apt:
       pkg:
@@ -62,7 +67,8 @@
       update_cache: yes
       state: latest
     become: yes
-    register: install
+    register: install_docker
+    when: "'docker-compose' not in ansible_facts.packages"
   - debug:
       var: install_docker.stdout
     when: install_docker.stdout is defined
@@ -70,32 +76,52 @@
   ### Steps to set up pihole in docker
   ### https://hub.docker.com/r/pihole/pihole
   ### https://github.com/pi-hole/docker-pi-hole
-  # git clone https://github.com/pi-hole/docker-pi-hole.git
   - name: "Clone pihole git repo"
-    vars:
-      repo_dir: "/home/{{ user }}/docker-pi-hole"
-      repo_compose: "{{ repo_dir }}/docker-compose.yml"
-    ansible.builtin.git:
+    git:
       repo: "https://github.com/pi-hole/docker-pi-hole.git"
       dest: "{{ repo_dir }}"
-  # cd docker-pi-hole/
-  # cp docker-compose.yml.example docker-compose.yml
-  - copy:
+      force: yes
+
+  - name: "Copy example docker-compose.yml"
+    copy:
       src: "{{ repo_compose }}.example"
       dest: "{{ repo_compose }}"
-  # sed -i "s/.*TZ:.*/      TZ: 'Australia\/Melbourne'/" docker-compose.yml
-  # sed -i "s/.*WEBPASSWORD:.*/      WEBPASSWORD: 'abc##123'/" docker-compose.yml
-  - command: |
+      remote_src: yes
+
+  - name: "Add timezone and password to docker-compose.yml"
+    shell: |
       sed -i "s/.*TZ:.*/      TZ: 'Australia\/Melbourne'/" {{ repo_compose }}
       sed -i "s/.*WEBPASSWORD:.*/      WEBPASSWORD: 'abc##123'/" {{ repo_compose }}
 
-  ### Apply ubuntu fixes
-  # sudo sed -r -i.orig 's/#?DNSStubListener=yes/DNSStubListener=no/g' /etc/systemd/resolved.conf
-  # sudo sh -c 'rm /etc/resolv.conf && ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf'
-  # sudo systemctl restart systemd-resolved
+  # - name: "Apply ubuntu fixes for docker"
+  #   shell: |
+  #     sed -r -i.orig 's/#?DNSStubListener=yes/DNSStubListener=no/g' /etc/systemd/resolved.conf
+  #     sh -c 'rm /etc/resolv.conf && ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf'
+  #     systemctl restart systemd-resolved
+  #   become: yes
+  
+  - name: "Stop and disable systemd-resolved"
+    shell: |
+      systemctl stop systemd-resolved
+      systemctl disable systemd-resolved
+    become: yes
 
-  ### Build and run image
-  # sudo docker-compose up -d
+  - name: "Compose docker image"
+    docker_compose:
+      project_src: "{{ repo_dir }}"
+      # files: "{{}}"
+    become: yes
+    register: docker_compose
+  - debug:
+      var: docker_compose
+
+  # - name: "Run docker image"
+  #   docker_container:
+  #     name: "pihole"
+  #     project_src: "{{ repo_dir }}"
+  #   register: docker_run
+  # - debug:
+  #     var: docker_run
 
 
   # - name: "Verify webserver"
@@ -103,6 +129,8 @@
   #     # url: "http://{{ ansible_host }}:{{ port }}" #
   #     url: "http://{{ ansible_host }}/admin"
   #     delay: 3
+
+  # TODO: Start docker image at boot
 
   # - name: "Verify DNS from Pihole"
 
