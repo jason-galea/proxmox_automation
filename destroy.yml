@@ -1,0 +1,31 @@
+---
+- name: "Destroy environment"
+  hosts: prox_hosts
+  gather_facts: no
+  vars:
+    ansible_user: root
+  tasks:
+  - name: "Stop containers"
+    delegate_to: localhost
+    proxmox:
+      api_host: "{{ prox_host }}"
+      api_user: "{{ prox_user }}"
+      api_password: "{{ prox_password }}"
+
+      vmid: "{{ id }}"
+      state: stopped
+      force: yes
+
+  - name: "Destroy containers"
+    delegate_to: localhost
+    proxmox:
+      api_host: "{{ prox_host }}"
+      api_user: "{{ prox_user }}"
+      api_password: "{{ prox_password }}"
+
+      vmid: "{{ id }}"
+      state: absent
+
+  - name: "Remove orphaned SSH keys"
+    delegate_to: localhost
+    command: "ssh-keygen -f ~/.ssh/known_hosts -R {{ ansible_host }}"

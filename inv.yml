@@ -1,0 +1,66 @@
+all:
+  # hosts:
+  #   prox:
+  #     ansible_user: root
+  #     ansible_host: 172.26.0.2
+  children:
+    prox_hosts:
+      hosts:
+        # portainer:
+        #   id: "160"
+        pihole:
+          id: "161"
+        apache:
+          id: "162"
+        # emby:
+        #   id: "163"
+        #   port: "8096" # HTTP
+        #   # port: "8920" # HTTPS
+        # wekan:
+        #   id: "164"
+        #   port: "3001"
+        # radarr:
+        #   id: "171"
+        #   user: "admin"
+      vars:
+        ### Prox credentials
+        prox_host: 172.26.0.2
+        prox_user: root@pam
+        # prox_password: "{{ lookup('file', '../password.txt') }}"
+        prox_password: abc##123
+
+        ### CT creation vars
+        ct_node: prox
+        ct_state: present
+        ct_network: 172.26.0
+        ct_bridge: vmbr0
+        ct_ip: "{{ ct_network }}.{{ id }}"
+        ct_gateway: "{{ ct_network }}.1"
+        ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ct_ip }}/24,gw={{ ct_gateway }}"}'
+        ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
+        # ct_ostemplate: local:vztmpl/ubuntu-21.04-standard_21.04-1_amd64.tar.zst # Prox 6 doesn't have ubuntu-21.10
+        ct_hostname: "{{ inventory_hostname }}"
+        ct_password: "{{ lookup('file', '../password.txt') }}"
+        ct_pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        ct_cores: 2
+        ct_memory: 512 # MB
+        ct_swap: 100 # MB
+        ct_disk: 8 # GB
+        ct_storage: local-lvm
+        ct_unprivileged: yes
+        ct_onboot: yes
+        ct_features:
+        - nesting=1
+        
+        ### Ansible vars
+        ansible_user: "{{ inventory_hostname }}"
+        ansible_host: "{{ ct_ip }}"
+        
+        ### Service vars
+        # user: "{{ inventory_hostname }}"
+        # This ^^^ seems redundant, but if we use "inventory_hostname" in the playbook instead,
+        # we are unable to change usernames on a per host basis.
+        # For example, radarr/sonarr/lidarr do NOT want the user to be created in advance,
+        # as they do it themselves during installation.
+        # In that case the username cannot match the hostname.
+        port: "80"

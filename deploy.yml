@@ -1,0 +1,13 @@
+---
+# - name: "Deploy environment"
+
+  # Create CTs
+- import_playbook: "playbooks/create.yml"
+
+# Start CTs
+- import_playbook: "playbooks/start.yml"
+
+  # Prepare CTs
+  # - import_playbook: "playbooks/prepare.yml"
+
+  # Deploy pihole

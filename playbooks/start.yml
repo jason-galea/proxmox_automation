@@ -1,0 +1,23 @@
+---
+- name: "Start containers"
+  hosts: prox_hosts
+  gather_facts: no
+  vars:
+    ansible_user: root
+  tasks:
+  - delegate_to: localhost
+    proxmox:
+      api_host: "{{ prox_host }}"
+      api_user: "{{ prox_user }}"
+      api_password: "{{ prox_password }}"
+
+      vmid: "{{ id }}"
+      state: started
+
+  - name: "Verify containers are online"
+    wait_for_connection:
+      timeout: 3
+    delay: 1
+    retries: 3
+    register: verify
+    until: verify.failed == False

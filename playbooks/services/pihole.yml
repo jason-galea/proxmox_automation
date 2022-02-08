@@ -1,7 +1,3 @@
-# ansible-playbook -i inv.yml services/pihole.yml
-
-# Expects host "pihole" to be deployed according to inv.yml
-
 ---
 - name: "Deploy Pihole (via setupVars.conf) "
   hosts: pihole

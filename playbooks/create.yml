@@ -1,0 +1,30 @@
+---
+- name: "Create containers"
+  hosts: prox_hosts
+  gather_facts: no
+  # vars:
+  #   ansible_user: root
+  tasks:
+  - delegate_to: localhost
+    proxmox:
+      api_host: "{{ prox_host }}"
+      api_user: "{{ prox_user }}"
+      api_password: "{{ prox_password }}"
+
+      vmid: "{{ id }}"
+
+      node: "{{ ct_node }}"
+      state: "{{ ct_state }}" 
+      netif: "{{ ct_netif }}"
+      ostemplate: "{{ ct_ostemplate }}"
+      hostname: "{{ ct_hostname }}"
+      password: "{{ ct_password }}"
+      pubkey: "{{ ct_pubkey }}"
+      cores: "{{ ct_cores }}"
+      memory: "{{ ct_memory }}"
+      swap: "{{ ct_swap }}"
+      disk: "{{ ct_disk }}"
+      storage: "{{ ct_storage }}"
+      unprivileged: "{{ ct_unprivileged }}"
+      onboot: "{{ ct_onboot }}"
+      features: "{{ ct_features }}"
