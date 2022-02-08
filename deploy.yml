@@ -1,25 +1,35 @@
 ---
-# - hosts: localhost
-#   gather_facts: no
-#   tasks:
-#   - debug:
-#       msg: "{{ (ansible_inventory_sources[0] | dirname) }}"
-#       # var: ansible_inventory_sources
-
-# Build template 200
+# Check/Build base container template
+# Primary benefit is preinstalled packages
 # - import_playbook: "deploy/template.yml"
 
-# Create CTs
+### TODO:
+# - Convert this section to roles, to deploy pihole before the other hosts
+# - Change "ansible_host" in inv.yml to DNS names
+# - use "vars" to configure pihole with "ansible_host" = IP instead, as it is the first host
+### E.g:
+# - name: "Deploy Pihole"
+#   hosts: pihole
+#   roles:
+#   - create
+#   - start
+#   - prepare
+#   - deploy # This needs to direct each host to their own playbook
+
+# Create pihole
 - import_playbook: "deploy/create.yml"
 # - import_playbook: "deploy/clone_template.yml"
-
-# Start CTs
+# Start pihole
 - import_playbook: "deploy/start.yml"
-
-# Prepare CTs
+# Prepare pihole
 - import_playbook: "deploy/prepare.yml"
-
-# Deploy pihole
+# Deploy Pihole
 - import_playbook: "deploy/services/pihole.yml"
 
-# Configure pihole
+# Add A records to Pihole
+
+
+# Deploy other services using DNS names (The default "ansible_host" value in inv.yml)
+# - import_playbook: "deploy/services/emby.yml"
+# - import_playbook: "deploy/services/wekan.yml"
+# - import_playbook: "deploy/services/pihole.yml"

@@ -28,10 +28,16 @@ all:
         template:
           id: "200"
       vars:
+        ### Misc.
         inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
         password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
+        packages:
+        - git
+        - curl
+        - htop
+        - neofetch # :)
 
-        ### Prox credentials
+        ### Prox API creds
         prox_host: 172.26.0.2
         prox_user: root@pam
         # prox_password: "{{ lookup('file', (ansible_inventory_sources[0] | dirname) + '/password.txt') }}"
