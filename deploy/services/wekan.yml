@@ -58,7 +58,7 @@
       - snapd
       - squashfuse
       update_cache: yes
-      state: latest
+      state: present
     register: apt_install
   - debug:
       var: apt_install.stdout

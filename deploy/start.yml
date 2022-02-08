@@ -3,7 +3,7 @@
   hosts: prox_hosts
   gather_facts: no
   vars:
-    ansible_user: root
+    ansible_user: root # Workaround, before passwordless sudo
   tasks:
   - delegate_to: localhost
     proxmox:
@@ -17,7 +17,7 @@
   - name: "Verify containers are online"
     wait_for_connection:
       timeout: 3
-    delay: 1
+    # delay: 1
     retries: 3
     register: verify
     until: verify.failed == False

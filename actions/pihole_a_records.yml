@@ -1,0 +1,4 @@
+---
+- name: "Add A records to pihole"
+  hosts: pihole
+  gather_facts: no

@@ -1,33 +1,42 @@
 ---
-- name: "Deploy Pihole (via setupVars.conf) "
+- name: "Deploy Pihole"
   hosts: pihole
   gather_facts: no
 
   vars:
-    pkg_name: "git"
+    # pkg_name: "git"
     repo_dir: "/home/{{ user }}/pihole"
     # repo_script: "{{ repo_dir }}/automated install/basic-install.sh"
     repo_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
     answers_dir: "/etc/pihole"
     answers_file: "{{ answers_dir }}/setupVars.conf"
-    password: "{{ lookup('file', '../../password.txt') }}" # I hate this and myself
+    # password: "{{ lookup('file', '../../password.txt') }}" # I hate this and myself
 
   tasks:
-    # Check and install git, print output
-  - name: Gather package facts
-    package_facts:
-      manager: auto
-  - name: "Install git if not present"
+  - name: "Install packages if not present"
     apt:
-      pkg: git
+      pkg:
+      - curl
+      - unzip
+      - idn2
+      - sqlite3
+      - dns-root-data 
+      - netcat
+      - lighttpd
+      - php-common
+      - php-cgi
+      - php-sqlite3
+      - php-xml
+      - php-intl
+      - php-json
+      - git
       update_cache: yes
-      state: latest
+      state: present
     become: yes
-    register: install_git
-    when: "'git' not in ansible_facts.packages"
+    register: install
   - debug:
-      var: install_git.stdout
-    when: install_git.stdout is defined
+      var: install.stdout
+    when: install.stdout is defined
 
     ### Clone repo
   - name: "Clone pihole git repo"
@@ -78,10 +87,10 @@
       echo "TEMPERATUREUNIT=C" >> {{ answers_file }}
     become: yes
 
-  - command: "cat {{ answers_file }}"
-    register: answers
   - name: "Display {{ answers_file }}"
-    debug:
+    command: "cat {{ answers_file }}"
+    register: answers
+  - debug:
       var: answers.stdout
 
     # This is reeeaaally screwy, and changes with each pihole release
@@ -92,10 +101,6 @@
       echo "    useUpdateVars=true" >> {{ repo_script }}
       echo "$(tail -678 {{ repo_script }}.bak)" >> {{ repo_script }}
 
-    ### Install
-    # cd "Pi-hole/automated install/"
-    # sudo bash basic-install.sh
-    ### TODO: Test if "cd && bash" or just "bash" makes any difference
   - name: "Install Pihole (Can take 3-5 minutes) "
     command: "bash {{ repo_script }}" # "bash" bypasses permissions issues
     become: yes

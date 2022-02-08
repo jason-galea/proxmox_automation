@@ -2,8 +2,6 @@
 - name: "Create containers"
   hosts: prox_hosts
   gather_facts: no
-  # vars:
-  #   ansible_user: root
   tasks:
   - delegate_to: localhost
     proxmox:

@@ -3,11 +3,10 @@
   hosts: prox_hosts
   gather_facts: no
   vars:
-    password: "{{ lookup('file', '../password.txt') }}"
-    ansible_user: root # Only needed to configure passwordless sudo
+    ansible_user: root # Workaround, before passwordless sudo
   tasks:
 
-  - name: "Create new user(s)"
+  - name: "Create new user"
     command: "useradd -s /usr/bin/bash -m -G sudo -p {{ password }} {{ user }}"
     # TODO: If user already exists, pass
     # when: ???
@@ -51,6 +50,9 @@
     # TODO: If ssh key already exists, pass
     # when: ???
 
+
+  # - name: "Update mirrors"
+    # command: ???
 
   ### Apt
   # - name: "apt install"

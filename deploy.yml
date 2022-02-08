@@ -1,13 +1,25 @@
 ---
-# - name: "Deploy environment"
+# - hosts: localhost
+#   gather_facts: no
+#   tasks:
+#   - debug:
+#       msg: "{{ (ansible_inventory_sources[0] | dirname) }}"
+#       # var: ansible_inventory_sources
 
-  # Create CTs
-- import_playbook: "playbooks/create.yml"
+# Build template 200
+# - import_playbook: "deploy/template.yml"
+
+# Create CTs
+- import_playbook: "deploy/create.yml"
+# - import_playbook: "deploy/clone_template.yml"
 
 # Start CTs
-- import_playbook: "playbooks/start.yml"
+- import_playbook: "deploy/start.yml"
 
-  # Prepare CTs
-  # - import_playbook: "playbooks/prepare.yml"
+# Prepare CTs
+- import_playbook: "deploy/prepare.yml"
 
-  # Deploy pihole
+# Deploy pihole
+- import_playbook: "deploy/services/pihole.yml"
+
+# Configure pihole
