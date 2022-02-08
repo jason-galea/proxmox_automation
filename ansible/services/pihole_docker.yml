@@ -8,6 +8,7 @@
   gather_facts: no
 
   vars:
+    compose_file: "/home/{{ user }}/docker-pi-hole/docker-compose.yml"
     # setupvars: "/etc/pihole/setupVars.conf"
 
   tasks:
@@ -32,14 +33,14 @@
     become: yes
     register: install
     # when: "'git' not in ansible_facts.packages"
-  - debug:
-      var: install_prereqs.stdout
-    when: install_prereqs.stdout is defined
+  # - debug:
+  #     var: install_prereqs.stdout
+  #   when: install_prereqs.stdout is defined
 
   # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
   - command: |
-      curl -fsSL https://download.docker.com/linux/ubuntu/gpg
-      | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg\
+      | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
     become: yes
   # echo \
     # "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
@@ -48,7 +49,7 @@
       echo "deb\
         [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]\
         https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\
-      " | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+      " | tee /etc/apt/sources.list.d/docker.list > /dev/null
     become: yes
   # sudo apt-get update -y
   # sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose
@@ -72,31 +73,45 @@
   ### https://github.com/pi-hole/docker-pi-hole
   # git clone https://github.com/pi-hole/docker-pi-hole.git
   - name: "Clone pihole git repo"
-    vars:
-      repo_dir: "/home/{{ user }}/docker-pi-hole"
-      repo_compose: "{{ repo_dir }}/docker-compose.yml"
     ansible.builtin.git:
       repo: "https://github.com/pi-hole/docker-pi-hole.git"
       dest: "{{ repo_dir }}"
   # cd docker-pi-hole/
   # cp docker-compose.yml.example docker-compose.yml
-  - copy:
-      src: "{{ repo_compose }}.example"
-      dest: "{{ repo_compose }}"
+  - name: "Copy example docker-compose.yml"
+    copy:
+      src: "{{ compose_file }}.example"
+      dest: "{{ compose_file }}"
   # sed -i "s/.*TZ:.*/      TZ: 'Australia\/Melbourne'/" docker-compose.yml
   # sed -i "s/.*WEBPASSWORD:.*/      WEBPASSWORD: 'abc##123'/" docker-compose.yml
-  - command: |
-      sed -i "s/.*TZ:.*/      TZ: 'Australia\/Melbourne'/" {{ repo_compose }}
-      sed -i "s/.*WEBPASSWORD:.*/      WEBPASSWORD: 'abc##123'/" {{ repo_compose }}
+  - name: "Modify docker-compose.yml"
+    command: |
+      sed -i "s/.*TZ:.*/      TZ: 'Australia\/Melbourne'/" {{ compose_file }}
+      sed -i "s/.*WEBPASSWORD:.*/      WEBPASSWORD: 'abc##123'/" {{ compose_file }}
 
   ### Apply ubuntu fixes
   # sudo sed -r -i.orig 's/#?DNSStubListener=yes/DNSStubListener=no/g' /etc/systemd/resolved.conf
   # sudo sh -c 'rm /etc/resolv.conf && ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf'
+  - name: "Apply fixes for Ubuntu"
+    command: |
+      "sed -r -i.orig 's/#?DNSStubListener=yes/DNSStubListener=no/g' /etc/systemd/resolved.conf"
+      "sh -c 'rm /etc/resolv.conf && ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf'"
+    become: yes
   # sudo systemctl restart systemd-resolved
+  - name: "Restart resolved service"
+    service:
+      name: systemd-resolved
+      state: restarted
 
   ### Build and run image
   # sudo docker-compose up -d
-
+  - name: "Compose and run pihole docker image"
+    docker_compose:
+      project_src: docker-pi-hole
+      state: present
+    register: compose
+  - debug:
+      var: compose.stdout
 
   # - name: "Verify webserver"
   #   uri:

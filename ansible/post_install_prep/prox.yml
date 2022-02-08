@@ -44,7 +44,7 @@
     # rm /etc/apt/sources.list.d/pve-enterprise.list
 
     ### Update at install sudo
-    # apt update -y && apt dist-upgrade -y && apt install sudo -y
+    # apt update -y && apt dist-upgrade -y && apt install -y sudo
 
     ### Create user "prox":
     # useradd -s /usr/bin/bash -md /home/prox -G sudo prox
