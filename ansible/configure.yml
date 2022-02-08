@@ -14,8 +14,8 @@
 
   - wait_for_connection:
       timeout: 3
-    retries: 3
-    delay: 5
+    retries: 4
+    delay: 3
     register: wait_result
     until: wait_result.failed == False
 
