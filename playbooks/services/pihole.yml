@@ -67,8 +67,9 @@
     # shell: |
     #   echo -n {{ password }} | sha256sum | awk '{print $1}' | sha256sum | awk '{print $1}' > {{ answers_file }}
     #   echo "WEBPASSWORD=$(cat {{ answers_file }})" > {{ answers_file }}
+    #   echo "IPV4_ADDRESS=172.26.0.161/24" >> {{ answers_file }}
     shell: |
-      echo "IPV4_ADDRESS=172.26.0.161/24" >> {{ answers_file }}
+      echo "IPV4_ADDRESS=172.26.0.161/24" > {{ answers_file }}
       echo "QUERY_LOGGING=true" >> {{ answers_file }}
       echo "INSTALL_WEB=true" >> {{ answers_file }}
       echo "PIHOLE_DNS_1=1.1.1.1" >> {{ answers_file }}
@@ -102,10 +103,17 @@
   - debug:
       var: install_pihole.stdout
 
-  - name: "Display password"
-    debug:
-      msg: "echo {{ install_pihole.stdout_lines[-item] }}"
-    with_items: [11,10,9]
+  # - name: "Display password"
+  #   debug:
+  #     msg: "echo {{ install_pihole.stdout_lines[-item] }}"
+  #   with_items: [11,10,9]
+
+  - name: "Set password"
+    command: "pihole -a -p {{ password }}"
+    become: yes
+    register: password
+  - debug:
+      var: password.stdout
   
   - name: "Verify webserver at http://{{ ansible_host }}/admin"
     # uri:
