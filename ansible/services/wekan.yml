@@ -22,27 +22,32 @@
 ### (Wekan should verify webserver with 'wait_for')
 
 ---
-- name: "Proxmox: Enable FUSE and Nesting for Wekan CT"
-  hosts: prox
-  gather_facts: no
-  vars:
-    wekan_id: "{{ hostvars['wekan'].id }}"
-  become: yes
-  tasks:
-  - blockinfile:
-      path: "/etc/pve/lxc/{{ wekan_id }}.conf"
-      block: |
-        features: fuse=1,mount=fuse,nesting=1
-        lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0
 
-  - name: "Reboot CT"
-    command: "pct reboot {{ wekan_id }}"
+# - name: "Proxmox: Enable FUSE and Nesting for Wekan CT"
+#   hosts: prox
+#   gather_facts: no
+#   vars:
+#     wekan_id: "{{ hostvars['wekan'].id }}"
+#   become: yes
+#   tasks:
+#   - blockinfile:
+#       path: "/etc/pve/lxc/{{ wekan_id }}.conf"
+#       block: |
+#         features: fuse=1,mount=fuse,nesting=1
+#         lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0
+
+#   - name: "Reboot CT"
+#     command: "pct reboot {{ wekan_id }}"
 
 - name: "Wekan: Install"
   hosts: wekan
   gather_facts: no
   become: yes
   tasks:
+
+    ### TODO: Add fuse & nesting to install vars
+    ### TODO: Delegate reboot to prox
+
   - wait_for_connection:
       timeout: 10
 

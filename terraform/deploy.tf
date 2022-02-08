@@ -15,8 +15,10 @@ provider "proxmox" {
   # TODO: Move these variables into a file
   pm_tls_insecure = true
   pm_api_url = "https://172.26.0.2:8006/api2/json"
-  pm_user = "prox@pam"
-  pm_password = file("../password.txt")
+  # pm_user = "prox@pam"
+  pm_user = "root@pam"
+  # pm_password = file("../password.txt")
+  pm_password = "abc##123"
 }
 
 ### TODO: Check if CT image exists, if not then download most recent ubuntu template:
