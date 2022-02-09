@@ -1,4 +1,44 @@
 ---
 - name: "Add A records to pihole"
-  hosts: pihole
+  hosts: prox_hosts
   gather_facts: no
+  vars:
+    a_records_file: "/etc/pihole/custom.list"
+    cname_records_file: "/etc/dnsmasq.d/05-pihole-custom-cname.conf"
+  tasks:
+
+    ### E.g:
+    # 1.2.3.4 arecord.test.lan
+  - name: "Populate A records"
+    delegate_to: pihole
+    sh: |
+      echo "{{ ct_ip }} {{ ct_hostname }}.{{ domain }}" >> {{ a_records_file }}
+    become: yes
+
+  - name: "Display A records file"
+    command: "cat {{ a_records_file }}"
+    register: a_records
+  - debug:
+      msg: a_records.stdout
+
+    ### E.g:
+    # cname=cname.test.lan,arecord.test.lan
+  # - name: "Populate CNAME records"
+  #   delegate_to: pihole
+  #   sh: |
+  #     echo
+  #   become: yes
+  
+  # - name: "Display CNAME records file"
+  #   command: "cat {{ cname_records_file }}"
+  #   register: cname_records
+  # - debug:
+  #     msg: cname_records.stdout
+
+  - name: "Restart pihole dns"
+    command: "pihole restartdns"
+    register: restart
+  - debug:
+      msg: restart.stdout
+
+  - name: "Verify DNS"

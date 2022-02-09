@@ -1,8 +1,8 @@
 all:
-  # hosts:
-  #   prox:
-  #     ansible_user: root
-  #     ansible_host: 172.26.0.2
+  hosts:
+    prox:
+      ansible_user: root
+      ansible_host: 172.26.0.2
   children:
     prox_hosts:
       hosts:
@@ -10,32 +10,29 @@ all:
         #   id: "160"
         pihole:
           id: "161"
-        apache:
-          id: "162"
-        emby:
-          id: "163"
-          ct_cores: 4
-          ct_memory: 2048
-          ct_swap: 512
-          port: "8096" # HTTP
-          # port: "8920" # HTTPS
-        wekan:
-          id: "164"
-          port: "3001"
-        radarr:
-          id: "171"
-          user: "admin"
-        template:
-          id: "200"
+        # apache:
+        #   id: "162"
+        # emby:
+        #   id: "163"
+        #   ct_cores: 4
+        #   ct_memory: 2048
+        #   ct_swap: 512
+        #   port: "8096" # HTTP
+        #   # port: "8920" # HTTPS
+        # wekan:
+        #   id: "164"
+        #   port: "3001"
+        # radarr:
+        #   id: "171"
+        #   user: "admin"
+        # template:
+        #   id: "200"
       vars:
         ### Misc.
+        domain: test.lan
         inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
         password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
-        packages:
-        - git
-        - curl
-        - htop
-        - neofetch # :)
+        packages: [git, curl, htop, neofetch] # :)
 
         ### Prox API creds
         prox_host: 172.26.0.2
@@ -50,6 +47,7 @@ all:
         ct_bridge: vmbr0
         ct_ip: "{{ ct_network }}.{{ id }}"
         ct_gateway: "{{ ct_network }}.1"
+        ct_dns: "{{ ct_network }}.{{ hostvars['pihole'].id }}" # This not used during creation
         ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ct_ip }}/24,gw={{ ct_gateway }}"}'
         ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
         # ct_ostemplate: local:vztmpl/ubuntu-21.04-standard_21.04-1_amd64.tar.zst # For Proxmox 6.x

@@ -17,7 +17,6 @@
   - name: "Verify containers are online"
     wait_for_connection:
       timeout: 3
-    # delay: 1
     retries: 3
     register: verify
     until: verify.failed == False

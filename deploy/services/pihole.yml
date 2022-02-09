@@ -2,41 +2,21 @@
 - name: "Deploy Pihole"
   hosts: pihole
   gather_facts: no
-
   vars:
-    # pkg_name: "git"
     repo_dir: "/home/{{ user }}/pihole"
-    # repo_script: "{{ repo_dir }}/automated install/basic-install.sh"
     repo_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
     answers_dir: "/etc/pihole"
     answers_file: "{{ answers_dir }}/setupVars.conf"
-    # password: "{{ lookup('file', '../../password.txt') }}" # I hate this and myself
-
   tasks:
+
   - name: "Install packages if not present"
     apt:
-      pkg:
-      - curl
-      - unzip
-      - idn2
-      - sqlite3
-      - dns-root-data 
-      - netcat
-      - lighttpd
-      - php-common
-      - php-cgi
-      - php-sqlite3
-      - php-xml
-      - php-intl
-      - php-json
-      - git
+      pkg: "{{ item }}"
       update_cache: yes
       state: present
+    with_items: [curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,
+      php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json,git]
     become: yes
-    register: install
-  - debug:
-      var: install.stdout
-    when: install.stdout is defined
 
     ### Clone repo
   - name: "Clone pihole git repo"
@@ -47,36 +27,12 @@
       version: "v5.8.1" # Need specific release for line numbers in basic-install.sh
       force: yes # To override below modifications on re-runs
 
-    ### Run Pihole install script (MANUAL):
-      # https://docs.pi-hole.net/main/basic-install/
-      # sudo bash basic-install.sh
-      ### Steps for interactive install script:
-      ### (Items starting with "# DONE " are accounted for in setupVars.conf)
-      # DONE # 1. "OK"
-      # DONE # 2. "OK"
-      # DONE # 3. Static IP? --> "YES"
-      # DONE # 4. Upstream DNS? --> Cloudflare (DNSSEC) --> (TAB) --> "OK"
-      # 5. Block list? --> (TAB to accept default "StevenBlacks") --> "OK"
-      # DONE # 6. Do you want a web interface? --> (TAB to accept default "ON") --> "OK"
-      # 7. Install lighttpd? --> (TAB to accept default "ON") --> "OK"
-      # DONE # 8. Log queries? --> (TAB to accept default "ON") --> "OK"
-      # 9. Privacy mode? --> (TAB to accept default "0 Show Everything") --> "OK"
-      ### More info: (https://docs.pi-hole.net/ftldns/privacylevels/)
-      ### ...wait for script to finish...
-      # DONE # 10. Install complete! --> "OK"
-    ### Run Pihole install script (SETUPVARS)
-    # https://discourse.pi-hole.net/t/pi-hole-as-part-of-a-post-installation-script/3523
-    # https://discourse.pi-hole.net/t/what-is-setupvars-conf-and-how-do-i-use-it/3533
   - name: "Create /etc/pihole"
     file:
       path: "{{ answers_dir }}"
       state: directory
     become: yes
   - name: "Populate {{ answers_file }}"
-    # shell: |
-    #   echo -n {{ password }} | sha256sum | awk '{print $1}' | sha256sum | awk '{print $1}' > {{ answers_file }}
-    #   echo "WEBPASSWORD=$(cat {{ answers_file }})" > {{ answers_file }}
-    #   echo "IPV4_ADDRESS=172.26.0.161/24" >> {{ answers_file }}
     shell: |
       echo "IPV4_ADDRESS=172.26.0.161/24" > {{ answers_file }}
       echo "QUERY_LOGGING=true" >> {{ answers_file }}
@@ -93,7 +49,7 @@
   - debug:
       var: answers.stdout
 
-    # This is reeeaaally screwy, and changes with each pihole release
+    # This is reeeaaally screwy,and changes with each pihole release
   - name: "Modify script to remove interactive prompt"
     shell: |
       mv {{ repo_script }} {{ repo_script }}.bak
@@ -102,16 +58,11 @@
       echo "$(tail -678 {{ repo_script }}.bak)" >> {{ repo_script }}
 
   - name: "Install Pihole (Can take 3-5 minutes) "
-    command: "bash {{ repo_script }}" # "bash" bypasses permissions issues
+    command: "bash {{ repo_script }}"
     become: yes
     register: install_pihole
   - debug:
       var: install_pihole.stdout
-
-  # - name: "Display password"
-  #   debug:
-  #     msg: "echo {{ install_pihole.stdout_lines[-item] }}"
-  #   with_items: [11,10,9]
 
   - name: "Set password"
     command: "pihole -a -p {{ password }}"
@@ -121,10 +72,6 @@
       var: password.stdout
   
   - name: "Verify webserver at http://{{ ansible_host }}/admin"
-    # uri:
-    #   # url: "http://{{ ansible_host }}:{{ port }}" #
-    #   url: "http://{{ ansible_host }}/admin"
-    #   delay: 3
     wait_for:
       port: "{{ port }}"
     retries: 3

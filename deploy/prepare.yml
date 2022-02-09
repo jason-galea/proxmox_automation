@@ -7,17 +7,13 @@
   tasks:
 
   - name: "Create new user"
-    command: "useradd -s /usr/bin/bash -m -G sudo -p {{ password }} {{ user }}"
-    # TODO: If user already exists, pass
-    # when: ???
-
-  # - name: "Grant passwordless sudo"
-  #   copy:
-  #     dest: "/etc/sudoers.d/{{ user }}"
-  #     content: "{{ user }}  ALL=(ALL) NOPASSWD:ALL"
-  #     mode: "0644"
-  #   # TODO: If file already exists, pass
-  #   # when: ???
+    user:
+      name: "{{ user }}"
+      # password: "{{ password }}"
+      password: "{{ password | password_hash('sha512') }}"
+      shell: /usr/bin/bash
+      append: yes
+      groups: sudo
 
   - name: "Grant passwordless sudo"
     lineinfile:
@@ -25,9 +21,7 @@
       state: present
       regexp: '^%sudo'
       line: '%sudo ALL=(ALL) NOPASSWD: ALL'
-      validate: 'visudo -cf %s' # O___O it works, ok
-      # TODO: If line already exists in visudo, pass
-      # when: ???
+      validate: 'visudo -cf %s'
 
   - name: "Create ~/.ssh"
     file:
@@ -49,6 +43,13 @@
       mode: "0600"
     # TODO: If ssh key already exists, pass
     # when: ???
+
+  - name: "Verify DNS with ping"
+    # command: "ping -c 3 1.1.1.1"
+    command: "ping -c 3 example.com"
+    register: ping
+  - debug:
+      var: ping.stdout
 
 
   # - name: "Update mirrors"
