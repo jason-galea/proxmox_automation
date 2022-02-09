@@ -4,41 +4,80 @@
   gather_facts: no
   vars:
     a_records_file: "/etc/pihole/custom.list"
-    cname_records_file: "/etc/dnsmasq.d/05-pihole-custom-cname.conf"
+    # cname_records_file: "/etc/dnsmasq.d/05-pihole-custom-cname.conf"
   tasks:
 
-    ### E.g:
-    # 1.2.3.4 arecord.test.lan
-  - name: "Populate A records"
+  - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
     delegate_to: pihole
-    sh: |
-      echo "{{ ct_ip }} {{ ct_hostname }}.{{ domain }}" >> {{ a_records_file }}
+    shell: "echo '{{ ct_ip }} {{ fqdn }}' >> {{ a_records_file }}"
     become: yes
 
-  - name: "Display A records file"
-    command: "cat {{ a_records_file }}"
-    register: a_records
-  - debug:
-      msg: a_records.stdout
-
-    ### E.g:
-    # cname=cname.test.lan,arecord.test.lan
-  # - name: "Populate CNAME records"
+  # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
   #   delegate_to: pihole
-  #   sh: |
-  #     echo
+  #   sh: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
   #   become: yes
-  
-  # - name: "Display CNAME records file"
-  #   command: "cat {{ cname_records_file }}"
-  #   register: cname_records
-  # - debug:
-  #     msg: cname_records.stdout
 
-  - name: "Restart pihole dns"
-    command: "pihole restartdns"
+### I'm using new plays to avoid unecessary loops
+### Quick and dirty sequencing until roles are configured
+- name: "Show contents of A records file" 
+  hosts: pihole
+  tasks:
+  - command: "cat /etc/pihole/custom.list"
+    register: show
+  - debug:
+      msg: show.stdout
+
+- name: "Restart DNS" 
+  hosts: pihole
+  tasks:
+  - command: "pihole restartdns"
     register: restart
   - debug:
       msg: restart.stdout
 
-  - name: "Verify DNS"
+- name: "Verify DNS from localhost" # Should be dig, whatever
+  hosts: prox_hosts
+  tasks:
+  - delegate_to: localhost
+    shell: "nslookup {{ fqdn }} {{ domain }}.{{ hostvars['pihole'].id }} | grep Name | awk '{print $2}'"
+    register: test_localhost
+    failed_when: "test_localhost.stdout != fqdn"
+
+- name: "Update Proxmox DNS server"
+  hosts: prox
+  vars:
+    resolv: /etc/resolv.conf
+  tasks:
+  - name: "Backup {{ resolv }}"
+    copy:
+      remote_src: "{{ resolv }}"
+      dest: "{{ resolv }}.bak"
+
+  - name: "Change DNS server"
+    command: "sed -i 's/.*nameserver.*/nameserver {{ ct_dns }}/' {{ resolv }}"
+
+  - name: "Reboot Proxmox"
+    command: "reboot"
+
+  - name: "Verify Proxmox is online"
+
+### Man, using roles sure would clean up this mess.
+### Someone should really do something about that...
+- hosts: prox_hosts
+  tasks:
+  - name: "Restart all containers"
+    delegate_to: localhost
+    proxmox:
+      api_host: "{{ prox_host }}"
+      api_user: "{{ prox_user }}"
+      api_password: "{{ prox_password }}"
+
+      vmid: "{{ id }}"
+      state: restarted
+
+  - name: "Verify DNS from containers"
+    delegate_to: localhost
+    shell: "nslookup {{ fqdn }} {{ domain }}.{{ hostvars['pihole'].id }} | grep Name | awk '{print $2}'"
+    register: test_cts
+    failed_when: "test_cts.stdout != fqdn"
+

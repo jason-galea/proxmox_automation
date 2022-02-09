@@ -16,17 +16,15 @@
 #   - prepare
 #   - deploy # This needs to direct each host to their own playbook
 
-# Create pihole
-- import_playbook: "deploy/create.yml"
+### Deploy (Simple)
 # - import_playbook: "deploy/clone_template.yml"
-# Start pihole
+- import_playbook: "deploy/create.yml"
 - import_playbook: "deploy/start.yml"
-# Prepare pihole
 - import_playbook: "deploy/prepare.yml"
-# Deploy Pihole
 - import_playbook: "deploy/services/pihole.yml"
 
 # Add A records to Pihole
+- import_playbook: "actions/pihole_a_records.yml"
 
 
 # Deploy other services using DNS names (The default "ansible_host" value in inv.yml)

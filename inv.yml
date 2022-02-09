@@ -30,6 +30,7 @@ all:
       vars:
         ### Misc.
         domain: test.lan
+        fqdn: "{{ inventory_hostname }}.{{ domain }}"
         inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
         password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
         packages: [git, curl, htop, neofetch] # :)
