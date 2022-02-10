@@ -9,7 +9,7 @@
     answers_file: "{{ answers_dir }}/setupVars.conf"
   tasks:
 
-  - name: "Install packages if not present"
+  - name: "Install prerequisites"
     apt:
       pkg: "{{ item }}"
       update_cache: yes
@@ -43,11 +43,11 @@
       echo "TEMPERATUREUNIT=C" >> {{ answers_file }}
     become: yes
 
-  - name: "Display {{ answers_file }}"
-    command: "cat {{ answers_file }}"
-    register: answers
-  - debug:
-      var: answers.stdout
+  # - name: "Display {{ answers_file }}"
+  #   command: "cat {{ answers_file }}"
+  #   register: answers
+  # - debug:
+  #     var: answers.stdout
 
     # This is reeeaaally screwy,and changes with each pihole release
   - name: "Modify script to remove interactive prompt"
@@ -57,7 +57,7 @@
       echo "    useUpdateVars=true" >> {{ repo_script }}
       echo "$(tail -678 {{ repo_script }}.bak)" >> {{ repo_script }}
 
-  - name: "Install Pihole (Can take 3-5 minutes) "
+  - name: "Install Pihole"
     command: "bash {{ repo_script }}"
     become: yes
     register: install_pihole

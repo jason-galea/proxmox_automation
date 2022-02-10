@@ -10,15 +10,15 @@ all:
         #   id: "160"
         pihole:
           id: "161"
-        # apache:
-        #   id: "162"
-        # emby:
-        #   id: "163"
-        #   ct_cores: 4
-        #   ct_memory: 2048
-        #   ct_swap: 512
-        #   port: "8096" # HTTP
-        #   # port: "8920" # HTTPS
+        apache:
+          id: "162"
+        emby:
+          id: "163"
+          ct_cores: 4
+          ct_memory: 2048
+          ct_swap: 512
+          port: "8096" # HTTP
+          # port: "8920" # HTTPS
         # wekan:
         #   id: "164"
         #   port: "3001"
