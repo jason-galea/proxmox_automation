@@ -1,0 +1,33 @@
+---
+# Check/Build base container template
+# Primary benefit is preinstalled packages
+# - import_playbook: "deploy/template.yml"
+
+### TODO:
+# - Convert this section to roles, to deploy pihole before the other hosts
+# - Change "ansible_host" in inv.yml to DNS names
+# - use "vars" to configure pihole with "ansible_host" = IP instead, as it is the first host
+### E.g:
+# - name: "Deploy Pihole"
+#   hosts: pihole
+#   roles:
+#   - create
+#   - start
+#   - prepare
+#   - deploy # This needs to direct each host to their own playbook
+
+### Deploy (Simple)
+# - import_playbook: "deploy/clone_template.yml"
+- import_playbook: "deploy/create.yml"
+- import_playbook: "deploy/start.yml"
+- import_playbook: "deploy/prepare.yml"
+- import_playbook: "deploy/services/pihole.yml"
+
+# Add A records to Pihole
+- import_playbook: "actions/pihole_a_records.yml"
+
+
+# Deploy other services using DNS names (The default "ansible_host" value in inv.yml)
+# - import_playbook: "deploy/services/emby.yml"
+# - import_playbook: "deploy/services/wekan.yml"
+# - import_playbook: "deploy/services/pihole.yml"

@@ -50,7 +50,7 @@
   #     var: answers.stdout
 
     # This is reeeaaally screwy,and changes with each pihole release
-  - name: "Modify script to remove interactive prompt"
+  - name: "Modify install script to remove interactivity"
     shell: |
       mv {{ repo_script }} {{ repo_script }}.bak
       echo "$(head -1953 {{ repo_script }}.bak)" > {{ repo_script }}

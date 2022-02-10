@@ -5,7 +5,7 @@
   become: yes
   vars:
     a_records_file: "/etc/pihole/custom.list"
-    # cname_records_file: "/etc/dnsmasq.d/05-pihole-custom-cname.conf"
+    cname_records_file: "/etc/dnsmasq.d/05-pihole-custom-cname.conf"
   tasks:
   - copy:
       src: "{{ a_records_file }}"
@@ -93,7 +93,7 @@
 - hosts: prox_hosts
   gather_facts: no
   tasks:
-  - name: "Restart all containers"
+  - name: "Restart all containers" # Is this necessary?
     delegate_to: localhost
     proxmox:
       api_host: "{{ prox_host }}"

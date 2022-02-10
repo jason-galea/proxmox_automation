@@ -4,23 +4,19 @@
   gather_facts: no
   vars:
     ansible_user: root
-
-    lxc_cmd: "ps x | grep -v grep | grep lxc-start"
-    vz_cmd: "ps x | grep -v grep | grep vzstart"
-    kill_pid_cmd_affix: " | awk '{print $1}' | xargs -n 1 kill -9"
   tasks:
 
+  ### Below issues occur when hyper-v hosts goes to sleep with containers running
   - name: "Fix 'lxc-start' if stalled"
     delegate_to: prox
-    shell: "{{ lxc_cmd + kill_pid_cmd_affix }}"
+    shell: "ps x | grep -v grep | grep lxc-start | awk '{print $1}' | xargs -n 1 kill -9"
     register: lxc
     failed_when: "lxc.rc not in [0, 123]" # Ignore errors
   # - debug:
   #     var: lxc
-
   - name: "Fix 'vzstart' if stalled"
     delegate_to: prox
-    shell: "{{ vz_cmd + kill_pid_cmd_affix }}"
+    shell: "ps x | grep -v grep | grep vzstart | awk '{print $1}' | xargs -n 1 kill -9"
     register: vz
     failed_when: "vz.rc not in [0, 123]" # Ignore errors
   # - debug:
@@ -60,3 +56,6 @@
     resolv: /etc/resolv.conf
   tasks:
   - command: "sed -i 's/.*nameserver.*/nameserver {{ network }}.1/' {{ resolv }}"
+
+- name: "Revert Proxmox DNS server to OPNsense"
+  hosts: prox

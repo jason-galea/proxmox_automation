@@ -1,0 +1,82 @@
+- name: "Backup previous records"
+  copy:
+    src: "{{ a_records_file }}"
+    dest: "{{ a_records_file }}.bak"
+    remote_src: yes
+  become: yes
+
+- name: "Prepare file for new records"
+  command: "echo '' > {{ a_records_file }}"
+  become: yes
+
+- name: "Populate A records file" # E.g: 1.2.3.4 a.test.lan
+  # delegate_to: pihole
+  shell: "echo '{{ hostvars[item].ct_ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
+  with_items: "{{ groups['prox_hosts'] }}" # Gross, but it avoids a seperate play
+  become: yes
+
+# - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
+#   delegate_to: pihole
+#   shell: "echo '{{ ct_ip }} {{ fqdn }}' >> {{ a_records_file }}"
+#   become: yes
+
+# - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
+# #   delegate_to: pihole
+#   sh: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
+#   become: yes
+
+- name: "Show contents of A records file" 
+  command: "cat {{ a_records_file }}"
+  register: a_result
+- debug:
+      var: a_result.stdout
+
+# - name: "Show contents of CNAME records file" 
+#   command: "cat {{ cname_records_file }}"
+#   register: cname_result
+# - debug:
+#       var: cname_result.stdout
+
+- name: "Restart DNS"
+  # delegate_to: pihole
+  command: "pihole restartdns"
+  register: restart
+- debug:
+      var: restart.stdout
+
+- name: "Verify DNS from pihole" # Should be dig, whatever
+  # delegate_to: localhost
+  shell: "nslookup {{ hostvars[item].fqdn }} {{ ct_dns }} | grep Name | awk '{print $2}'"
+  register: verify
+  failed_when: "verify.stdout != hostvars[item].fqdn"
+  with_items: "{{ groups['prox_hosts'] }}" # Gross, as above
+
+# - debug:
+#     var: test_localhost
+
+# - name: "Backup {{ resolv }}"
+#   delegate_to: prox
+#   copy:
+#     src: "{{ resolv }}"
+#     dest: "{{ resolv }}.bak"
+#     remote_src: yes
+
+- name: "Use Pihole for DNS on Proxmox & containers"
+  # delegate_to: prox
+  vars:
+    # :/// Should this be in another role? Kinda gross
+    ansible_host: "{{ hostvars['prox'].ansible_host }}" # 172.26.0.2
+    ansible_user: "{{ hostvars['prox'].ansible_user }}" # root
+  command: "sed -i 's/.*nameserver.*/nameserver {{ ct_dns }}/' {{ resolv }}"
+
+#   ### Proxmox picked up the new DNS server instantly? Cool! 
+# - name: "Reboot Proxmox"
+#   command: "reboot"
+
+# - name: "Verify Proxmox is online"
+#   delay: 10
+#   wait_for_connection:
+#     timeout: 3
+#   retries: 3
+#   register: verify
+#   until: verify.failed == False

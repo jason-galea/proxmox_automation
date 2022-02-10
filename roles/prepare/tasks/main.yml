@@ -1,0 +1,63 @@
+- name: "Create new user"
+  user:
+    name: "{{ user }}"
+    # password: "{{ password }}"
+    password: "{{ password | password_hash('sha512') }}"
+    shell: /usr/bin/bash
+    append: yes
+    groups: sudo
+
+- name: "Grant passwordless sudo"
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^%sudo'
+    line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+
+- name: "Create ~/.ssh"
+  file:
+    path: "/home/{{ user }}/.ssh"
+    state: directory
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: "0700"
+
+- name: "Authorise localhost SSH key"
+  copy:
+    src: ~/.ssh/id_rsa.pub # localhost
+    dest: "/home/{{ user }}/.ssh/authorized_keys" # remote host
+    # content: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: "0600"
+
+- name: "Verify DNS with ping"
+  command: "ping -c 3 example.com"
+  register: ping
+- debug:
+    var: ping.stdout
+
+
+# - name: "Update mirrors"
+  # command: ???
+
+### Apt
+# - name: "apt install"
+#   apt:
+#     pkg:
+#     - htop
+#     - tree
+#     update_cache: yes
+#   register: apt_install
+# - debug: var=apt_install.stdout
+
+# - name: "apt dist-upgrade"
+#   apt:
+#     upgrade: dist
+#   register: apt_dist_upgrade
+# - debug: var=apt_dist_upgrade.stdout
+
+
+### TODO: Auto-update
+# - name: "Configure apt auto update"
