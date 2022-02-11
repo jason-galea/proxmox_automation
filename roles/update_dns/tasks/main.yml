@@ -1,0 +1,12 @@
+### TODO: Remove this role, it's not unique or reusable enough.
+### Having it as a task would greatly simplify vars & hosts,
+### and any complications from changing them
+
+# Requires "dns_server_to_apply" to be defined
+- name: "Update DNS server to {{ dns_server_to_apply }}"
+  vars:
+    ### Gross, really really gross.
+    ### I'm doing this to make this role executable by any host  
+    ansible_host: "{{ hostvars['prox'].ansible_host }}"
+    ansible_user: "{{ hostvars['prox'].ansible_user }}"
+  command: "sed -i 's/.*nameserver.*/nameserver {{ dns_server_to_apply }}/' /etc/resolv.conf"

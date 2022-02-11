@@ -73,7 +73,7 @@
   - debug:
       var: enable_nginx.stdout
     when: enable_nginx.stdout is defined
-      
+
   - name: "Restart snapd"
     # This is because snapd always seems to die on boot.
     # sudo systemctl status snapd --> "inactive (dead)"

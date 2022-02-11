@@ -1,61 +1,15 @@
----
 - name: "Destroy environment"
-  hosts: prox_hosts
+  hosts: all_cts
   gather_facts: no
   vars:
     ansible_user: root
-  tasks:
-
-  ### Below issues occur when hyper-v hosts goes to sleep with containers running
-  - name: "Fix 'lxc-start' if stalled"
-    delegate_to: prox
-    shell: "ps x | grep -v grep | grep lxc-start | awk '{print $1}' | xargs -n 1 kill -9"
-    register: lxc
-    failed_when: "lxc.rc not in [0, 123]" # Ignore errors
-  # - debug:
-  #     var: lxc
-  - name: "Fix 'vzstart' if stalled"
-    delegate_to: prox
-    shell: "ps x | grep -v grep | grep vzstart | awk '{print $1}' | xargs -n 1 kill -9"
-    register: vz
-    failed_when: "vz.rc not in [0, 123]" # Ignore errors
-  # - debug:
-  #     var: vz
-
-  - name: "Stop containers"
-    delegate_to: localhost
-    proxmox:
-      api_host: "{{ prox_host }}"
-      api_user: "{{ prox_user }}"
-      api_password: "{{ prox_password }}"
-
-      vmid: "{{ id }}"
-      state: stopped
-      force: yes
-
-  - name: "Destroy containers"
-    delegate_to: localhost
-    proxmox:
-      api_host: "{{ prox_host }}"
-      api_user: "{{ prox_user }}"
-      api_password: "{{ prox_password }}"
-
-      vmid: "{{ id }}"
-      state: absent
-
-  - name: "Remove orphaned SSH keys"
-    delegate_to: localhost
-    command: "ssh-keygen -f ~/.ssh/known_hosts -R {{ ansible_host }}"
-
-- name: "Revert Proxmox DNS server to OPNsense" # This applies DNS to all containers as well
-  hosts: prox
-  gather_facts: no
-  vars:
-    ### TODO: Restructure inventory file, so "network" (and some other vars) are globals
-    network: 172.26.0
-    resolv: /etc/resolv.conf
-  tasks:
-  - command: "sed -i 's/.*nameserver.*/nameserver {{ network }}.1/' {{ resolv }}"
+  roles:
+  - destroy
 
 - name: "Revert Proxmox DNS server to OPNsense"
-  hosts: prox
+  hosts: localhost # host is overwritten inside "update_dns" task
+  gather_facts: no
+  vars:
+    dns_server_to_apply: "{{ gateway }}"
+  roles:
+  - update_dns

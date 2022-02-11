@@ -1,3 +1,4 @@
+### PREPARE
 - name: "Backup previous records"
   copy:
     src: "{{ a_records_file }}"
@@ -5,78 +6,55 @@
     remote_src: yes
   become: yes
 
-- name: "Prepare file for new records"
-  command: "echo '' > {{ a_records_file }}"
-  become: yes
-
-- name: "Populate A records file" # E.g: 1.2.3.4 a.test.lan
-  # delegate_to: pihole
-  shell: "echo '{{ hostvars[item].ct_ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
-  with_items: "{{ groups['prox_hosts'] }}" # Gross, but it avoids a seperate play
-  become: yes
-
-# - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
-#   delegate_to: pihole
-#   shell: "echo '{{ ct_ip }} {{ fqdn }}' >> {{ a_records_file }}"
+# - name: "Wipe A records file"
+#   command: "echo '' > {{ a_records_file }}"
 #   become: yes
+# - name: "Wipe CNAME records file"
+#   command: "echo '' > {{ cname_records_file }}"
+#   become: yes
+- name: "Wipe all records"
+  command: "echo '' > {{ item }}"
+  with_items: ["{{ a_records_file }}", "{{ cname_records_file }}"]
+  become: yes
+
+### POPULATE
+# TODO: Combine these two tasks
+- name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
+  shell: "echo '{{ hostvars[item].ct_ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
+  with_items: "{{ groups['all_cts'] }}"
+  become: yes
 
 # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
-# #   delegate_to: pihole
-#   sh: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
+#   shell: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
+#   with_items: "{{ groups['all_cts'] }}"
 #   become: yes
 
-- name: "Show contents of A records file" 
+### DISPLAY
+# TODO: Combine these two tasks
+- name: "Display A records" 
   command: "cat {{ a_records_file }}"
   register: a_result
 - debug:
-      var: a_result.stdout
+    var: a_result.stdout
+  # when: a_result.stdout is defined
 
-# - name: "Show contents of CNAME records file" 
+# - name: "Display CNAME records" 
 #   command: "cat {{ cname_records_file }}"
 #   register: cname_result
 # - debug:
 #       var: cname_result.stdout
 
+### RESTART & VERIFY
 - name: "Restart DNS"
   # delegate_to: pihole
   command: "pihole restartdns"
   register: restart
 - debug:
-      var: restart.stdout
+    var: restart.stdout
 
 - name: "Verify DNS from pihole" # Should be dig, whatever
   # delegate_to: localhost
-  shell: "nslookup {{ hostvars[item].fqdn }} {{ ct_dns }} | grep Name | awk '{print $2}'"
+  shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
   register: verify
   failed_when: "verify.stdout != hostvars[item].fqdn"
-  with_items: "{{ groups['prox_hosts'] }}" # Gross, as above
-
-# - debug:
-#     var: test_localhost
-
-# - name: "Backup {{ resolv }}"
-#   delegate_to: prox
-#   copy:
-#     src: "{{ resolv }}"
-#     dest: "{{ resolv }}.bak"
-#     remote_src: yes
-
-- name: "Use Pihole for DNS on Proxmox & containers"
-  # delegate_to: prox
-  vars:
-    # :/// Should this be in another role? Kinda gross
-    ansible_host: "{{ hostvars['prox'].ansible_host }}" # 172.26.0.2
-    ansible_user: "{{ hostvars['prox'].ansible_user }}" # root
-  command: "sed -i 's/.*nameserver.*/nameserver {{ ct_dns }}/' {{ resolv }}"
-
-#   ### Proxmox picked up the new DNS server instantly? Cool! 
-# - name: "Reboot Proxmox"
-#   command: "reboot"
-
-# - name: "Verify Proxmox is online"
-#   delay: 10
-#   wait_for_connection:
-#     timeout: 3
-#   retries: 3
-#   register: verify
-#   until: verify.failed == False
+  with_items: "{{ groups['all_cts'] }}"

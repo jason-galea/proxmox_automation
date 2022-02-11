@@ -1,55 +1,81 @@
 all:
+  vars: # Global vars
+    network: 172.26.0
+    gateway: "{{ network }}.1"
+    domain: test.lan
+    dns: "{{ network }}.{{ hostvars['pihole'].id }}" # This not used during creation
+    inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
+    password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
+    required_packages: [git, curl, htop, neofetch] # :)
+
+    prox_host: "{{ network }}.2"
+    prox_user: root@pam
+    prox_password: "{{ password }}"
+
   hosts:
     prox:
+      fqdn: "{{ inventory_hostname }}.{{ domain }}"
+
       ansible_user: root
-      ansible_host: 172.26.0.2
+      ansible_host: "{{ prox_host }}"
+
   children:
-    prox_hosts:
+    infra_cts:
+      hosts:
+        pihole:
+          id: "160"
+          required_packages: [curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json,git]
+        # proxy:
+        #   id : "161"
+    service_cts:
       hosts:
         # portainer:
-        #   id: "160"
-        pihole:
-          id: "161"
+        #   id: "170"
         apache:
-          id: "162"
+          id: "171"
         emby:
-          id: "163"
+          id: "172"
           ct_cores: 4
           ct_memory: 2048
           ct_swap: 512
           port: "8096" # HTTP
           # port: "8920" # HTTPS
         # wekan:
-        #   id: "164"
+        #   id: "173"
         #   port: "3001"
+    vpn_cts:
+      hosts:
         # radarr:
-        #   id: "171"
+        #   id: "181"
         #   user: "admin"
+    templates:
+      hosts:
         # template:
         #   id: "200"
-      vars:
+    all_cts:
+      children:
+        infra_cts:
+        service_cts:
+        vpn_cts:
+        templates:
+      vars: # Default vars for all CTs
         ### Misc.
-        domain: test.lan
+        ip: "{{ network }}.{{ id }}"
         fqdn: "{{ inventory_hostname }}.{{ domain }}"
-        inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
-        password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
-        packages: [git, curl, htop, neofetch] # :)
+        user: "{{ inventory_hostname }}"
+        # This ^^^ seems redundant, but if we use "inventory_hostname" in the playbook instead,
+        # we are unable to change usernames on a per host basis.
+        # For example, radarr/sonarr/lidarr do NOT want the user to be created in advance,
+        # as they do it themselves during installation.
+        # In that case the username cannot match the hostname.
+        port: "80"
 
-        ### Prox API creds
-        prox_host: 172.26.0.2
-        prox_user: root@pam
-        # prox_password: "{{ lookup('file', (ansible_inventory_sources[0] | dirname) + '/password.txt') }}"
-        prox_password: "{{ password }}"
-
-        ### CT creation vars
+        ### CT Creation
         ct_node: prox
         ct_state: present
-        ct_network: 172.26.0
         ct_bridge: vmbr0
-        ct_ip: "{{ ct_network }}.{{ id }}"
-        ct_gateway: "{{ ct_network }}.1"
-        ct_dns: "{{ ct_network }}.{{ hostvars['pihole'].id }}" # This not used during creation
-        ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ct_ip }}/24,gw={{ ct_gateway }}"}'
+        ct_ip: "{{ network }}.{{ id }}"
+        ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ip }}/24,gw={{ gateway }}"}'
         ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
         # ct_ostemplate: local:vztmpl/ubuntu-21.04-standard_21.04-1_amd64.tar.zst # For Proxmox 6.x
         ct_hostname: "{{ inventory_hostname }}"
@@ -65,15 +91,7 @@ all:
         ct_features:
         - nesting=1
         
-        ### Ansible vars
+        ### Ansible
         ansible_user: "{{ inventory_hostname }}"
-        ansible_host: "{{ ct_ip }}"
+        ansible_host: "{{ ip }}"
         
-        ### Service vars
-        user: "{{ inventory_hostname }}"
-        # This ^^^ seems redundant, but if we use "inventory_hostname" in the playbook instead,
-        # we are unable to change usernames on a per host basis.
-        # For example, radarr/sonarr/lidarr do NOT want the user to be created in advance,
-        # as they do it themselves during installation.
-        # In that case the username cannot match the hostname.
-        port: "80"

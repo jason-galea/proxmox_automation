@@ -1,3 +1,15 @@
+- name: "Stop containers"
+  delegate_to: localhost
+  proxmox:
+    api_host: "{{ prox_host }}"
+    api_user: "{{ prox_user }}"
+    api_password: "{{ prox_password }}"
+
+    vmid: "{{ id }}"
+    state: stopped
+    # force: yes
+  # when: ???
+
 - name: "Start containers"
   delegate_to: localhost
   proxmox:
@@ -10,4 +22,4 @@
 
 - name: "Verify containers are online"
   wait_for_connection:
-    timeout: 10
+    timeout: 20

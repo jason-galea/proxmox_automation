@@ -1,0 +1,30 @@
+### TODO: Research
+# https://docs.ansible.com/ansible/latest/collections/community/general/
+# https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_module.html
+# https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_template_module.html
+# https://docs.ansible.com/ansible/latest/collections/community/general/proxmox_snap_module.html#ansible-collections-community-general-proxmox-snap-module
+
+# - name: "Check if template exists"
+
+# - name: "Create base container"
+#   delegate_to: localhost
+#   proxmox:
+#     api_host: "{{ prox_host }}"
+#     api_user: "{{ prox_user }}"
+#     api_password: "{{ prox_password }}"
+#     ???
+
+# - name: "Prepare base container"
+
+# - name: "Rank apt mirrors"
+
+# - name: "Update"
+
+
+# - name: "Install essential packages"
+
+# - name: "???"
+
+# - name: "Convert base container to template"
+
+# - name: "Verify template exists"

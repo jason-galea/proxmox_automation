@@ -1,15 +1,17 @@
 ---
-# - import_playbook: "deploy/template.yml"
 # - name: "Create container template"
+#   hosts: template
+#   roles:
+#   - template
 
-- name: "Deploy containers"
+- name: "Deploy all containers"
   gather_facts: no
-  hosts: prox_hosts
+  hosts: all_cts
   vars:
-    ansible_user: root # Workaround
+    ansible_user: root # Workaround before users have sudo
   roles:
   - create
-  - start_cts # TODO: Combine "start_cts" & "restart_cts"
+  - restart
   - prepare
 
 - name: "Install Pihole"
@@ -21,32 +23,53 @@
     answers_dir: "/etc/pihole"
     answers_file: "{{ answers_dir }}/setupVars.conf"
   roles:
+  - install_packages
   - pihole
 
-# - import_playbook: "actions/pihole_a_records.yml"
 - name: "Add A records to Pihole"
   hosts: pihole
   gather_facts: no
   vars:
+    # Should I move these into "a_records/vars/main.yml"?
+    # It would make this cleaner. Somewhat.
+    # TODO: decide
     a_records_file: /etc/pihole/custom.list
     cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
     resolv: /etc/resolv.conf
+
+    dns_server_to_apply: "{{ dns }}" # Required for "update_dns" role
   roles:
   - a_records
-  # - update_prox_dns ### TODO:
-  - restart_cts
-    ### ^^^ COMBINE THIS AND BELOW TASK!
-    ### USE "with_items: {{ groups }}" --> ansible_host
+  - update_dns
+  - restart
+
+### TODO:
+# How can I combine this & the above roles?
+# I don't like having boring old tasks in a playbook as broadly scoped as "deploy"
+# The real complication is the requirement for different hosts.
+# I could "import_playbook", but isn't that besides the point of roles?
+# Maybe put them in a "playbooks" folder?
+
+# The more I think about it, the more it makes sense.
+# The "playbooks" folder would be for tasks that require-
+# (Or at least make the most sense with) both roles & tasks.
+# Whereas high-level playbooks like "deploy" and "destroy"
+# would function ENTIRELY from seperate tasks, such as "roles" or "import_playbook"
+
+# "Much to think about" - Billy Ray Cyrus
+
+# ORRRR!!!
+# I could just accept that these particular tasks DON'T translate into roles very well
+# (Entirely because they move between different hosts/groups of hosts so often)
+# That's it, I've decided. 
 
 - name: "Verify DNS resolution from containers"
   hosts: prox_hosts
   gather_facts: no
   tasks:
-  - name: "Verify DNS from pihole" # Should be dig, whatever
-    shell: "nslookup {{ fqdn }} {{ ct_dns }} | grep Name | awk '{print $2}'"
+  - shell: "nslookup {{ fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
     register: verify
     failed_when: "verify.stdout != fqdn"
-
 
 ### Swap prox_hosts group to using DNS names
 # - name: "Use DNS names instead of IPs"
@@ -59,3 +82,5 @@
 # - import_playbook: "deploy/services/emby.yml"
 # - import_playbook: "deploy/services/wekan.yml"
 # - import_playbook: "deploy/services/pihole.yml"
+
+### Confiure reverse proxy
