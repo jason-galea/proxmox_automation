@@ -11,65 +11,17 @@
     ansible_user: root # Workaround before users have sudo
   roles:
   - create
-  - restart
+  # - restart
   - prepare
-
-- name: "Install Pihole"
-  gather_facts: no
-  hosts: pihole
-  vars:
-    repo_dir: "/home/{{ user }}/pihole"
-    repo_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
-    answers_dir: "/etc/pihole"
-    answers_file: "{{ answers_dir }}/setupVars.conf"
-  roles:
   - install_packages
-  - pihole
 
-- name: "Add A records to Pihole"
-  hosts: pihole
-  gather_facts: no
-  vars:
-    # Should I move these into "a_records/vars/main.yml"?
-    # It would make this cleaner. Somewhat.
-    # TODO: decide
-    a_records_file: /etc/pihole/custom.list
-    cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
-    resolv: /etc/resolv.conf
+  ### This drastically simplifies "deploy.yml"
+  ### Doing this remove 3 roles & 5-6 plays from this file, all relating to pihole
+  ### This way "deploy.yml" remains a high-level overview of tasks
+  ### The only downside, is that playbooks in "playbook/" cannot use roles.
+- name: "Install Pihole"
+  import_playbook: "services/pihole.yml"
 
-    dns_server_to_apply: "{{ dns }}" # Required for "update_dns" role
-  roles:
-  - a_records
-  - update_dns
-  - restart
-
-### TODO:
-# How can I combine this & the above roles?
-# I don't like having boring old tasks in a playbook as broadly scoped as "deploy"
-# The real complication is the requirement for different hosts.
-# I could "import_playbook", but isn't that besides the point of roles?
-# Maybe put them in a "playbooks" folder?
-
-# The more I think about it, the more it makes sense.
-# The "playbooks" folder would be for tasks that require-
-# (Or at least make the most sense with) both roles & tasks.
-# Whereas high-level playbooks like "deploy" and "destroy"
-# would function ENTIRELY from seperate tasks, such as "roles" or "import_playbook"
-
-# "Much to think about" - Billy Ray Cyrus
-
-# ORRRR!!!
-# I could just accept that these particular tasks DON'T translate into roles very well
-# (Entirely because they move between different hosts/groups of hosts so often)
-# That's it, I've decided. 
-
-- name: "Verify DNS resolution from containers"
-  hosts: prox_hosts
-  gather_facts: no
-  tasks:
-  - shell: "nslookup {{ fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
-    register: verify
-    failed_when: "verify.stdout != fqdn"
 
 ### Swap prox_hosts group to using DNS names
 # - name: "Use DNS names instead of IPs"

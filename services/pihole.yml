@@ -1,0 +1,193 @@
+### TODO: Decide whether to split this file?
+# Option 1: Split into task files & "import_tasks"
+# Option 2: Split into roles & have recursive directory structure :PPP
+
+
+##########################################################################################
+- name: "Install Pihole"
+  gather_facts: no
+  hosts: pihole
+  vars:
+    repo_dir: "/home/{{ user }}/pihole"
+    repo_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
+    answers_dir: "/etc/pihole"
+    answers_file: "{{ answers_dir }}/setupVars.conf"
+  tasks:
+  - name: "Clone pihole git repo"
+    ansible.builtin.git:
+      repo: "https://github.com/pi-hole/pi-hole.git"
+      dest: "{{ repo_dir }}"
+      depth: 1
+      version: "v5.8.1" # Need specific release for line numbers in basic-install.sh
+      force: yes # To override below modifications on re-runs
+
+  - name: "Create /etc/pihole"
+    file:
+      path: "{{ answers_dir }}"
+      state: directory
+    become: yes
+
+  - name: "Populate {{ answers_file }}"
+    shell: |
+      echo "IPV4_ADDRESS=172.26.0.161/24" > {{ answers_file }}
+      echo "QUERY_LOGGING=true" >> {{ answers_file }}
+      echo "INSTALL_WEB=true" >> {{ answers_file }}
+      echo "PIHOLE_DNS_1=1.1.1.1" >> {{ answers_file }}
+      echo "PIHOLE_DNS_2=1.0.0.1" >> {{ answers_file }}
+      echo "DNSSEC=true" >> {{ answers_file }}
+      echo "TEMPERATUREUNIT=C" >> {{ answers_file }}
+    become: yes
+
+  # - name: "Display {{ answers_file }}"
+  #   command: "cat {{ answers_file }}"
+  #   register: answers
+  # - debug:
+  #     var: answers.stdout
+
+    ### This is reeeaaally screwy, and depends on the pihole release
+  - name: "Remove interactivity from install script"
+    shell: |
+      mv {{ repo_script }} {{ repo_script }}.bak
+      echo "$(head -1953 {{ repo_script }}.bak)" > {{ repo_script }}
+      echo "    useUpdateVars=true" >> {{ repo_script }}
+      echo "$(tail -678 {{ repo_script }}.bak)" >> {{ repo_script }}
+
+  - name: "Install Pihole"
+    command: "bash {{ repo_script }}"
+    become: yes
+    register: install_pihole
+  - debug:
+      var: install_pihole.stdout
+
+  - name: "Set password"
+    command: "pihole -a -p {{ password }}"
+    become: yes
+    register: password
+  - debug:
+      var: password.stdout
+
+  - name: "Verify webserver at http://{{ ansible_host }}/admin"
+    wait_for:
+      port: "{{ port }}"
+      timeout: 10
+
+
+##########################################################################################
+- name: "Add A records to Pihole"
+  hosts: pihole
+  gather_facts: no
+  vars:
+    a_records_file: /etc/pihole/custom.list
+    cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
+    resolv: /etc/resolv.conf
+  tasks:
+  - name: "Backup previous records"
+    copy:
+      src: "{{ a_records_file }}"
+      dest: "{{ a_records_file }}.bak"
+      remote_src: yes
+    become: yes
+
+  # - name: "Wipe A records file"
+  #   command: "echo '' > {{ a_records_file }}"
+  #   become: yes
+  # - name: "Wipe CNAME records file"
+  #   command: "echo '' > {{ cname_records_file }}"
+  #   become: yes
+  - name: "Wipe all records"
+    command: "echo '' > {{ item }}"
+    with_items: ["{{ a_records_file }}", "{{ cname_records_file }}"]
+    become: yes
+
+  ### POPULATE
+  # TODO: Explore the "template" module
+  # TODO: Combine these two tasks
+  - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
+    shell: "echo '{{ hostvars[item].ct_ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
+    with_items: "{{ groups['all_cts'] }}"
+    become: yes
+
+  # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
+  #   shell: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
+  #   with_items: "{{ groups['all_cts'] }}"
+  #   become: yes
+
+  ### DISPLAY
+  # TODO: Combine these two tasks
+  - name: "Display A records" 
+    command: "cat {{ a_records_file }}"
+    register: a_result
+  - debug:
+      var: a_result.stdout
+    # when: a_result.stdout is defined
+
+  # - name: "Display CNAME records" 
+  #   command: "cat {{ cname_records_file }}"
+  #   register: cname_result
+  # - debug:
+  #       var: cname_result.stdout
+
+  ### RESTART & VERIFY
+  - name: "Restart DNS"
+    # delegate_to: pihole
+    command: "pihole restartdns"
+    register: restart
+  - debug:
+      var: restart.stdout
+
+  - name: "Verify DNS from pihole" # Should be dig, whatever
+    # delegate_to: localhost
+    shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
+    register: verify
+    failed_when: "verify.stdout != hostvars[item].fqdn"
+    with_items: "{{ groups['all_cts'] }}"
+
+
+
+##########################################################################################
+- name: "Change environment DNS to pihole"
+  hosts: prox
+  gather_facts: no
+  vars:
+    dns_server_to_apply: "{{ dns }}" # Required for "update_dns" role
+  # roles:
+  # - update_dns
+  tasks:
+  - command: "sed -i 's/.*nameserver.*/nameserver {{ dns_server_to_apply }}/' /etc/resolv.conf"
+
+
+##########################################################################################
+# - name: "Restart CTs"
+#   hosts: all_cts
+#   gather_facts: no
+#   tasks:
+#   - name: "Restart containers"
+#     delegate_to: localhost
+#     proxmox:
+#       api_host: "{{ prox_host }}"
+#       api_user: "{{ prox_user }}"
+#       api_password: "{{ prox_password }}"
+
+#       vmid: "{{ id }}"
+#       state: restarted
+#       # force: yes
+
+
+##########################################################################################
+- name: "Verify DNS resolution from containers"
+  hosts: all_cts
+  gather_facts: no
+  tasks:
+  - name: "Run nslookup"
+    shell: "nslookup {{ fqdn }} {{ dns }}"
+    register: nslookup
+
+  - name: "Confirm DNS resolves to the correct names"
+    delegate_to: localhost
+    shell: "echo '{{ nslookup.stdout }}' | grep Name | awk '{print $2}'"
+    register: nslookup_grepped
+    failed_when: "nslookup_grepped.stdout != fqdn"
+
+  - name: "Print full nslookup output"
+    debug:
+      var: nslookup.stdout

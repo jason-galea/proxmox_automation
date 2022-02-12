@@ -1,6 +1,0 @@
-- hosts: prox
-  gather_facts: no
-  vars:
-    dns_server_to_apply: "{{ gateway }}"
-  roles:
-  - update_dns

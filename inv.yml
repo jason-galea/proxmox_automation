@@ -1,29 +1,39 @@
 all:
-  vars: # Global vars
+  vars: ### Globals
     network: 172.26.0
     gateway: "{{ network }}.1"
     domain: test.lan
-    dns: "{{ network }}.{{ hostvars['pihole'].id }}" # This not used during creation
+    dns: "{{ hostvars['pihole'].ip }}" # This not used during creation
     inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
     password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
-    required_packages: [git, curl, htop, neofetch] # :)
+    required_packages: [curl, htop, neofetch] # :)
+    
+    ### Host specific
+    # ip: "{{ network }}.{{ id }}" # This breaks localhost apparently?
+    fqdn: "{{ inventory_hostname }}.{{ domain }}"
 
-    prox_host: "{{ network }}.2"
+    ### Prox
+    prox_host: "{{ hostvars['prox'].ip }}"
     prox_user: root@pam
     prox_password: "{{ password }}"
 
+    ### Ansible
+    # ansible_host: "{{ ip }}" # This also breaks localhost
+
   hosts:
     prox:
-      fqdn: "{{ inventory_hostname }}.{{ domain }}"
+      id: 2
+      ip: "{{ network }}.{{ id }}"
+      port: 8006 # HTTPS
 
       ansible_user: root
-      ansible_host: "{{ prox_host }}"
+      ansible_host: "{{ ip }}"
 
   children:
     infra_cts:
       hosts:
         pihole:
-          id: "160"
+          id: 160
           required_packages: [curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json,git]
         # proxy:
         #   id : "161"
@@ -31,15 +41,15 @@ all:
       hosts:
         # portainer:
         #   id: "170"
-        apache:
-          id: "171"
-        emby:
-          id: "172"
-          ct_cores: 4
-          ct_memory: 2048
-          ct_swap: 512
-          port: "8096" # HTTP
-          # port: "8920" # HTTPS
+        # apache:
+        #   id: 171
+        # emby:
+        #   id: 172
+        #   ct_cores: 4
+        #   ct_memory: 2048
+        #   ct_swap: 512
+        #   port: 8096 # HTTP
+          # port: 8920 # HTTPS
         # wekan:
         #   id: "173"
         #   port: "3001"
@@ -58,8 +68,7 @@ all:
         service_cts:
         vpn_cts:
         templates:
-      vars: # Default vars for all CTs
-        ### Misc.
+      vars: ### Default vars for all CTs
         ip: "{{ network }}.{{ id }}"
         fqdn: "{{ inventory_hostname }}.{{ domain }}"
         user: "{{ inventory_hostname }}"
@@ -68,7 +77,7 @@ all:
         # For example, radarr/sonarr/lidarr do NOT want the user to be created in advance,
         # as they do it themselves during installation.
         # In that case the username cannot match the hostname.
-        port: "80"
+        port: 80
 
         ### CT Creation
         ct_node: prox
@@ -76,8 +85,9 @@ all:
         ct_bridge: vmbr0
         ct_ip: "{{ network }}.{{ id }}"
         ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ip }}/24,gw={{ gateway }}"}'
+        ### TODO: Detect CT templates during "create" role
         ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
-        # ct_ostemplate: local:vztmpl/ubuntu-21.04-standard_21.04-1_amd64.tar.zst # For Proxmox 6.x
+        # ct_ostemplate: "local:vztmpl/ubuntu-21.04-standard_21.04-1_amd64.tar.zst" # For Proxmox 6.x
         ct_hostname: "{{ inventory_hostname }}"
         ct_password: "{{ password }}"
         ct_pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
@@ -85,6 +95,7 @@ all:
         ct_memory: 512 # MB
         ct_swap: 100 # MB
         ct_disk: 8 # GB
+        ### TODO: Detect storage volume during "create" role
         ct_storage: local-lvm
         ct_unprivileged: yes
         ct_onboot: yes

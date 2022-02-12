@@ -22,3 +22,17 @@
     unprivileged: "{{ ct_unprivileged }}"
     onboot: "{{ ct_onboot }}"
     features: "{{ ct_features }}"
+    
+- name: "Start containers"
+  delegate_to: localhost
+  proxmox:
+    api_host: "{{ prox_host }}"
+    api_user: "{{ prox_user }}"
+    api_password: "{{ prox_password }}"
+
+    vmid: "{{ id }}"
+    state: started
+
+- name: "Verify containers are online"
+  wait_for_connection:
+    timeout: 20
