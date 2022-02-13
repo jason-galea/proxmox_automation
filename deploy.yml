@@ -1,4 +1,6 @@
 ---
+# - name: "Create apt cache container"
+
 # - name: "Create container template"
 #   hosts: template
 #   roles:
@@ -11,16 +13,24 @@
     ansible_user: root # Workaround before users have sudo
   roles:
   - create
-  # - restart
   - prepare
-  - install_packages
+  - install_packages # This would be made redundant by the base container template
 
-  ### This drastically simplifies "deploy.yml"
-  ### Doing this remove 3 roles & 5-6 plays from this file, all relating to pihole
-  ### This way "deploy.yml" remains a high-level overview of tasks
-  ### The only downside, is that playbooks in "playbook/" cannot use roles.
+### Importing playbooks drastically simplifies this file.
+### Doing this remove 3 roles & 5-6 plays from this file, all relating to pihole
+### This way "deploy.yml" remains a high-level overview of tasks
+### The only downside is that playbooks in "playbook/" cannot use roles.
 - name: "Install Pihole"
   import_playbook: "services/pihole.yml"
+  # when: ??? # When pihole template doesn't exist.
+
+### Template id = live id + 100
+### $ pct
+# - name: "Save pihole as template":
+#   roles: ???
+#   tasks: ???
+#   when: ??? # When pihole template doesn't exist
+
 
 
 ### Swap prox_hosts group to using DNS names

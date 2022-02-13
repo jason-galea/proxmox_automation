@@ -27,9 +27,10 @@
       state: directory
     become: yes
 
+    ### TODO: Use "templates" module instead
   - name: "Populate {{ answers_file }}"
     shell: |
-      echo "IPV4_ADDRESS=172.26.0.161/24" > {{ answers_file }}
+      echo "IPV4_ADDRESS={{ ip }}/24" > {{ answers_file }}
       echo "QUERY_LOGGING=true" >> {{ answers_file }}
       echo "INSTALL_WEB=true" >> {{ answers_file }}
       echo "PIHOLE_DNS_1=1.1.1.1" >> {{ answers_file }}
@@ -38,11 +39,11 @@
       echo "TEMPERATUREUNIT=C" >> {{ answers_file }}
     become: yes
 
-  # - name: "Display {{ answers_file }}"
-  #   command: "cat {{ answers_file }}"
-  #   register: answers
-  # - debug:
-  #     var: answers.stdout
+  - name: "Display {{ answers_file }}"
+    command: "cat {{ answers_file }}"
+    register: answers
+  - debug:
+      var: answers.stdout
 
     ### This is reeeaaally screwy, and depends on the pihole release
   - name: "Remove interactivity from install script"
