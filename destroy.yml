@@ -1,3 +1,13 @@
+---
+
+
+##########################################################################################
+### Just to keep it simple
+- hosts: all
+  gather_facts: no
+  tasks:
+  - set_fact:
+      ansible_host: "{{ ip }}"
 
 
 
@@ -60,4 +70,27 @@
 
 
 
-  
+##########################################################################################
+- name: "Update localhost DNS server"
+  hosts: localhost
+  gather_facts: no
+  tasks:
+  - name: "Update resolv.conf"
+    shell: "sed -i 's/nameserver {{ gateway }}//' /etc/resolv.conf"
+    become: yes
+
+  - command: "cat /etc/resolv.conf"
+    register: cat_resolv
+  - debug:
+      var: cat_resolv.stdout
+
+  - name: "Verify DNS resolution from prox"
+    shell: "nslookup example.com" # Not specifying DNS server
+    register: nslookup
+  - debug:
+      var: nslookup.stdout
+
+
+
+
+

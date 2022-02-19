@@ -6,7 +6,11 @@ all:
     dns: "{{ hostvars['pihole'].ip }}" # This not used during creation
     inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
     password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
-    required_packages: [curl, htop, neofetch] # :)
+
+    required_packages: [git, curl, unzip, htop, neofetch]
+    ### With a generic base container (with all updates & prereqs)
+    ### this list could include all packages from all containers
+    # required_packages: [curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json,git]
     
     ### Host specific
     # ip: "{{ network }}.{{ id }}" # This breaks localhost apparently?
@@ -20,40 +24,48 @@ all:
     ### Ansible
     # ansible_host: "{{ ip }}" # This also breaks localhost
 
-  hosts:
-    prox:
-      id: 2
-      ip: "{{ network }}.{{ id }}"
-      port: 8006 # HTTPS
-
-      ansible_user: root
-      ansible_host: "{{ ip }}"
-
   children:
-    infra_cts:
+    hyperv_vms:
+      hosts:
+        opnsense:
+          id: 1
+          # ip: "{{ network }}.{{ id }}" ### MOVED TO "all_hosts"
+          # fqdn: "{{ inventory_hostname }}.{{ domain }}" ### MOVED TO "all_hosts"
+        prox:
+          id: 2
+          # ip: "{{ network }}.{{ id }}" ### MOVED TO "all_hosts"
+          # fqdn: "{{ inventory_hostname }}.{{ domain }}" ### MOVED TO "all_hosts"
+          port: 8006 # HTTPS
+      vars:
+        ansible_user: root
+
+    dns_servers:
       hosts:
         pihole:
           id: 160
+          ### Excluding default packages
+          # required_packages: [idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
+          ### Including default packages
           required_packages: [curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json,git]
         # proxy:
         #   id : "161"
-    service_cts:
+    services:
       hosts:
         # portainer:
         #   id: "170"
-        # apache:
-        #   id: 171
+        apache:
+          id: 171
         # emby:
         #   id: 172
         #   ct_cores: 4
         #   ct_memory: 2048
         #   ct_swap: 512
         #   port: 8096 # HTTP
-          # port: 8920 # HTTPS
+        #   # port: 8920 # HTTPS
         # wekan:
         #   id: "173"
         #   port: "3001"
-    vpn_cts:
+    vpn_services:
       hosts:
         # radarr:
         #   id: "181"
@@ -62,15 +74,33 @@ all:
       hosts:
         # template:
         #   id: "200"
-    all_cts:
+
+    all_hosts: # Purely for DNS, not actually executed against. Here we set FQDN & IP
       children:
-        infra_cts:
-        service_cts:
-        vpn_cts:
-        templates:
-      vars: ### Default vars for all CTs
+        hyperv_vms:
+        all_cts:
+      vars:
+        ### Networking
         ip: "{{ network }}.{{ id }}"
         fqdn: "{{ inventory_hostname }}.{{ domain }}"
+
+        ### Ansible
+        # ansible_host: "{{ ip }}"
+        ansible_host: "{{ fqdn }}"
+
+    all_services: # Excluding DNS servers
+      children:
+        services:
+        vpn_services:
+
+    all_cts: # Primary group, excluding Hyper-V VMs
+      children:
+        dns_servers:
+        all_services:
+        # templates:
+      vars: ### Default vars for all CTs
+        # ip: "{{ network }}.{{ id }}" ### MOVED TO "all_hosts"
+        # fqdn: "{{ inventory_hostname }}.{{ domain }}" ### MOVED TO "all_hosts"
         user: "{{ inventory_hostname }}"
         # This ^^^ seems redundant, but if we use "inventory_hostname" in the playbook instead,
         # we are unable to change usernames on a per host basis.
@@ -83,7 +113,7 @@ all:
         ct_node: prox
         ct_state: present
         ct_bridge: vmbr0
-        ct_ip: "{{ network }}.{{ id }}"
+        ct_ip: "{{ ip }}" # Redundant var, or follow var naming convention??? ARRRGHHH
         ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ip }}/24,gw={{ gateway }}"}'
         ### TODO: Detect CT templates during "create" role
         ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
@@ -101,8 +131,8 @@ all:
         ct_onboot: yes
         ct_features:
         - nesting=1
-        
-        ### Ansible
+
+        ### ANSIBLE
         ansible_user: "{{ inventory_hostname }}"
-        ansible_host: "{{ ip }}"
+        
         

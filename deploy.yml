@@ -1,27 +1,60 @@
 ---
+
+### Workaround before DNS is active
+- hosts: all
+  gather_facts: no
+  tasks:
+  - set_fact:
+      ansible_host: "{{ ip }}"
+
+
 # - name: "Create apt cache container"
 
 # - name: "Create container template"
 #   hosts: template
 #   roles:
 #   - template
+#   - create
+#   - prepare
+#   - install_packages # This would be made redundant by the base container template
 
-- name: "Deploy all containers"
+- name: "Prepare pihole container"
   gather_facts: no
-  hosts: all_cts
+  hosts: dns_servers
   vars:
     ansible_user: root # Workaround before users have sudo
   roles:
   - create
   - prepare
-  - install_packages # This would be made redundant by the base container template
+  - install_packages # This COULD be made redundant by the base container template
+
+- name: "Deploy pihole"
+  import_playbook: "services/pihole.yml"
+
+#################### DNS IS ASSUMED TO BE ACTIVE ####################
+
+- hosts: all
+  gather_facts: no
+  tasks:
+  - set_fact:
+      ansible_host: "{{ fqdn }}"
+
+- name: "Deploy services"
+  gather_facts: no
+  hosts: all_services
+  vars:
+    ansible_user: root # Workaround before users have sudo
+  roles:
+  - create
+  - prepare
+  # - install_packages # This COULD be made redundant by the base container template
 
 ### Importing playbooks drastically simplifies this file.
 ### Doing this remove 3 roles & 5-6 plays from this file, all relating to pihole
 ### This way "deploy.yml" remains a high-level overview of tasks
 ### The only downside is that playbooks in "playbook/" cannot use roles.
-- name: "Install Pihole"
-  import_playbook: "services/pihole.yml"
+# - name: "Install Pihole"
+#   import_playbook: "services/pihole.yml"
   # when: ??? # When pihole template doesn't exist.
 
 ### Template id = live id + 100

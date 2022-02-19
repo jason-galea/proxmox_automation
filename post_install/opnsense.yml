@@ -18,12 +18,18 @@
     ### (Remove previous SSH host)
     # ssh-keygen -f "/home/jg/.ssh/known_hosts" -R "172.26.0.2"
     # BUILTIN????
-  - name:
+    # - name:
+
+    ### Allow SSH login from GUI
+    ### System --> Settings --> Administration --> Secure Shell
+    # "Permit root user login"
+    # "Permit password login"
+    # - name: 
 
     ### Add SSH key for root
     # ssh-copy-id -o "StrictHostKeyChecking no" root@172.26.0.2
     # BUILTIN????
-  - name:
+    # - name:
     
 
 - name: "Localhost: Prepare prox for SSH"

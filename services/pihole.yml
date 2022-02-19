@@ -3,6 +3,8 @@
 # Option 2: Split into roles & have recursive directory structure :PPP
 
 
+
+
 ##########################################################################################
 - name: "Install Pihole"
   gather_facts: no
@@ -79,7 +81,7 @@
 
 
 ##########################################################################################
-- name: "Add A records to Pihole"
+- name: "Add DNS records to Pihole"
   hosts: pihole
   gather_facts: no
   vars:
@@ -99,16 +101,15 @@
     become: yes
 
   ### POPULATE
-    # TODO: Explore the "template" module
     # TODO: Combine these two tasks
   - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
-    shell: "echo '{{ hostvars[item].ct_ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
-    with_items: "{{ groups['all_cts'] }}"
+    shell: "echo '{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
+    with_items: "{{ groups['all_hosts'] }}" # TODO: Use a seperate play, with delegation instead
     become: yes
 
   # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
   #   shell: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
-  #   with_items: "{{ groups['all_cts'] }}"
+  #   with_items: "{{ groups['all_hosts'] }}"
   #   become: yes
 
   ### DISPLAY
@@ -139,7 +140,7 @@
     shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
     register: verify
     failed_when: "verify.stdout != hostvars[item].fqdn"
-    with_items: "{{ groups['all_cts'] }}"
+    with_items: "{{ groups['all_hosts'] }}"
 
 
 
@@ -154,39 +155,30 @@
   tasks:
   - command: "sed -i 's/.*nameserver.*/nameserver {{ dns_server_to_apply }}/' /etc/resolv.conf"
 
+  - name: "Verify DNS from prox" # Should be dig, whatever
+    shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
+    register: verify
+    failed_when: "verify.stdout != hostvars[item].fqdn"
+    with_items: "{{ groups['all_hosts'] }}"
 
-##########################################################################################
-# - name: "Restart CTs"
-#   hosts: all_cts
-#   gather_facts: no
-#   tasks:
-#   - name: "Restart containers"
-#     delegate_to: localhost
-#     proxmox:
-#       api_host: "{{ prox_host }}"
-#       api_user: "{{ prox_user }}"
-#       api_password: "{{ prox_password }}"
-
-#       vmid: "{{ id }}"
-#       state: restarted
-#       # force: yes
 
 
 ##########################################################################################
-- name: "Verify DNS resolution from containers"
-  hosts: all_cts
+- name: "Update localhost DNS server"
+  hosts: localhost
   gather_facts: no
   tasks:
-  - name: "Run nslookup"
-    shell: "nslookup {{ fqdn }} {{ dns }}"
-    register: nslookup
+  - name: "Update resolv.conf"
+    shell: "echo 'nameserver {{ dns }}' >> /etc/resolv.conf"
+    become: yes
 
-  - name: "Confirm DNS resolves to the correct names"
-    delegate_to: localhost
-    shell: "echo '{{ nslookup.stdout }}' | grep Name | awk '{print $2}'"
-    register: nslookup_grepped
-    failed_when: "nslookup_grepped.stdout != fqdn"
+  - command: "cat /etc/resolv.conf"
+    register: cat_resolv
+  - debug:
+      var: cat_resolv.stdout
 
-  - name: "Print full nslookup output"
-    debug:
-      var: nslookup.stdout
+  - name: "Verify DNS from localhost"
+    shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
+    register: verify
+    failed_when: "verify.stdout != hostvars[item].fqdn"
+    with_items: "{{ groups['all_hosts'] }}"
