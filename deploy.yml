@@ -1,81 +1,71 @@
 ---
-
-### Workaround before DNS is active
+########## Connect with IP addresses ##########
 - hosts: all
   gather_facts: no
   tasks:
   - set_fact:
       ansible_host: "{{ ip }}"
 
+- name: "Create container template"
+  hosts: template
+  gather_facts: no
+  tasks:
+  - name: "End play if template exists"
+    delegate_to: prox
+    shell: "pct config 200 | grep template: | awk '{printf $2}'"
+    register: if_template
+  - meta: end_play
+    when: if_template.stdout != "1"
 
-# - name: "Create apt cache container"
+  - name: "Create & prepare template"
+    include_role:
+      name: "{{ item }}"
+    with_items:
+    - create
+    - prepare
+    - install_packages
 
 # - name: "Create container template"
 #   hosts: template
+#   gather_facts: no
 #   roles:
-#   - template
 #   - create
 #   - prepare
-#   - install_packages # This would be made redundant by the base container template
+#   - install_packages
+#   # - template
 
-- name: "Prepare pihole container"
-  gather_facts: no
-  hosts: dns_servers
-  vars:
-    ansible_user: root # Workaround before users have sudo
-  roles:
-  - create
-  - prepare
-  - install_packages # This COULD be made redundant by the base container template
+# - name: "Create apt cache container"
 
-- name: "Deploy pihole"
-  import_playbook: "services/pihole.yml"
+# - name: "Prepare pihole container"
+#   hosts: dns_servers
+#   gather_facts: no
+#   roles:
+#   - create
+#   - prepare
+#   - install_packages # This COULD be made redundant by the base container template
 
-#################### DNS IS ASSUMED TO BE ACTIVE ####################
-
-- hosts: all
-  gather_facts: no
-  tasks:
-  - set_fact:
-      ansible_host: "{{ fqdn }}"
-
-- name: "Deploy services"
-  gather_facts: no
-  hosts: all_services
-  vars:
-    ansible_user: root # Workaround before users have sudo
-  roles:
-  - create
-  - prepare
-  # - install_packages # This COULD be made redundant by the base container template
-
-### Importing playbooks drastically simplifies this file.
-### Doing this remove 3 roles & 5-6 plays from this file, all relating to pihole
-### This way "deploy.yml" remains a high-level overview of tasks
-### The only downside is that playbooks in "playbook/" cannot use roles.
-# - name: "Install Pihole"
+# - name: "Deploy pihole"
 #   import_playbook: "services/pihole.yml"
-  # when: ??? # When pihole template doesn't exist.
 
-### Template id = live id + 100
-### $ pct
-# - name: "Save pihole as template":
-#   roles: ???
-#   tasks: ???
-#   when: ??? # When pihole template doesn't exist
-
-
-
-### Swap prox_hosts group to using DNS names
-# - name: "Use DNS names instead of IPs"
-#   hosts: prox_hosts
+# - hosts: all
+#   gather_facts: no
 #   tasks:
-#   - set_facts:
-#       ansible_host: "{{}}"
+#   - set_fact:
+#       ansible_host: "{{ fqdn }}"
 
-### Deploy other services using DNS names
-# - import_playbook: "deploy/services/emby.yml"
-# - import_playbook: "deploy/services/wekan.yml"
-# - import_playbook: "deploy/services/pihole.yml"
+# ########## Connect with DNS names ##########
 
-### Confiure reverse proxy
+# - name: "Prepare service containers"
+#   hosts: all_services
+#   gather_facts: no
+#   roles:
+#   - create
+#   - prepare
+#   # - install_packages # This COULD be made redundant by the base container template
+
+# ### Deploy other services using DNS names
+# # - import_playbook: "deploy/services/emby.yml"
+# # - import_playbook: "deploy/services/wekan.yml"
+# # - import_playbook: "deploy/services/pihole.yml"
+
+# ### Confiure reverse proxy

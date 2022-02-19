@@ -1,3 +1,7 @@
+- name: "Use root user, until SSH is configured"
+  set_fact:
+    ansible_user: root
+
 - name: "Create new user"
   user:
     name: "{{ user }}"
@@ -61,3 +65,7 @@
 
 ### TODO: Auto-update
 # - name: "Configure apt auto update"
+
+
+- set_fact:
+    ansible_user: "{{ inventory_hostname }}"

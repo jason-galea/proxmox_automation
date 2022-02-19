@@ -8,8 +8,8 @@ all:
     password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
 
     required_packages: [git, curl, unzip, htop, neofetch]
-    ### With a generic base container (with all updates & prereqs)
-    ### this list could include all packages from all containers
+    ### With a generic base container (with all updates & prereqs), this
+    ### list could include prereqs for all containers
     # required_packages: [curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json,git]
     
     ### Host specific
@@ -72,8 +72,8 @@ all:
         #   user: "admin"
     templates:
       hosts:
-        # template:
-        #   id: "200"
+        template:
+          id: 200
 
     all_hosts: # Purely for DNS, not actually executed against. Here we set FQDN & IP
       children:
@@ -97,7 +97,7 @@ all:
       children:
         dns_servers:
         all_services:
-        # templates:
+        templates:
       vars: ### Default vars for all CTs
         # ip: "{{ network }}.{{ id }}" ### MOVED TO "all_hosts"
         # fqdn: "{{ inventory_hostname }}.{{ domain }}" ### MOVED TO "all_hosts"
