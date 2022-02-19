@@ -19,12 +19,12 @@
 ### VM will be ready after first reboot
 
 ---
-  ### TODO: Convert this into a role
+  ### TODO: Convert this into a role???
 - name: "Prepare Proxmox for SSH"
   hosts: localhost
   gather_facts: no
   vars:
-    host_to_configure: prox
+    # host_to_configure: prox
 
     ### TODO: Move these vars into "set_facts" inside role
     prox_ip: "{{ hostvars[host_to_configure].ip }}"

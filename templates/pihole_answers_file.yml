@@ -1,0 +1,9 @@
+# This will become "/etc/pihole/setupVars.conf" on pihole
+
+# IPV4_ADDRESS={{ ip }}/24
+QUERY_LOGGING=true
+INSTALL_WEB=true
+PIHOLE_DNS_1=1.1.1.1
+PIHOLE_DNS_2=1.0.0.1
+DNSSEC=true
+TEMPERATUREUNIT=C

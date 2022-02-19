@@ -8,18 +8,28 @@
   gather_facts: no
   hosts: pihole
   vars:
-    repo_dir: "/home/{{ user }}/pihole"
+    repo_dir: "/home/{{ user }}/pi-hole"
     repo_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
     answers_dir: "/etc/pihole"
     answers_file: "{{ answers_dir }}/setupVars.conf"
+
+    answers_file_template: "../templates/pihole_answers_file.yml"
+
+    # script_release: v5.8.1
+    # script_head_length: 1938
+    # script_tail_length: 678
+    script_release: v5.9
+    script_head_length: 1943
+    script_tail_length: 678
+    
   tasks:
   - name: "Clone pihole git repo"
     ansible.builtin.git:
       repo: "https://github.com/pi-hole/pi-hole.git"
       dest: "{{ repo_dir }}"
-      depth: 1
-      version: "v5.8.1" # Need specific release for line numbers in basic-install.sh
-      force: yes # To override below modifications on re-runs
+      # depth: 1
+      version: "{{ script_release }}" # Need specific release for line numbers in basic-install.sh
+      force: yes # Overwrite modifications on re-runs
 
   - name: "Create /etc/pihole"
     file:
@@ -27,16 +37,10 @@
       state: directory
     become: yes
 
-    ### TODO: Use "templates" module instead
   - name: "Populate {{ answers_file }}"
-    shell: |
-      echo "IPV4_ADDRESS={{ ip }}/24" > {{ answers_file }}
-      echo "QUERY_LOGGING=true" >> {{ answers_file }}
-      echo "INSTALL_WEB=true" >> {{ answers_file }}
-      echo "PIHOLE_DNS_1=1.1.1.1" >> {{ answers_file }}
-      echo "PIHOLE_DNS_2=1.0.0.1" >> {{ answers_file }}
-      echo "DNSSEC=true" >> {{ answers_file }}
-      echo "TEMPERATUREUNIT=C" >> {{ answers_file }}
+    template:
+      src: "{{ answers_file_template }}"
+      dest: "{{ answers_file }}"
     become: yes
 
   - name: "Display {{ answers_file }}"
@@ -45,13 +49,14 @@
   - debug:
       var: answers.stdout
 
-    ### This is reeeaaally screwy, and depends on the pihole release
+    ### This is reeeaaally screwy
+    ### I can't even use a template file, since it changes with each pihole release 
   - name: "Remove interactivity from install script"
     shell: |
       mv {{ repo_script }} {{ repo_script }}.bak
-      echo "$(head -1953 {{ repo_script }}.bak)" > {{ repo_script }}
+      echo "$(head -{{ script_head_length }} {{ repo_script }}.bak)" > {{ repo_script }}
       echo "    useUpdateVars=true" >> {{ repo_script }}
-      echo "$(tail -678 {{ repo_script }}.bak)" >> {{ repo_script }}
+      echo "$(tail -{{ script_tail_length }} {{ repo_script }}.bak)" >> {{ repo_script }}
 
   - name: "Install Pihole"
     command: "bash {{ repo_script }}"
@@ -82,13 +87,6 @@
     cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
     resolv: /etc/resolv.conf
   tasks:
-  - name: "Backup previous records"
-    copy:
-      src: "{{ a_records_file }}"
-      dest: "{{ a_records_file }}.bak"
-      remote_src: yes
-    become: yes
-
   # - name: "Wipe A records file"
   #   command: "echo '' > {{ a_records_file }}"
   #   become: yes
@@ -101,8 +99,8 @@
     become: yes
 
   ### POPULATE
-  # TODO: Explore the "template" module
-  # TODO: Combine these two tasks
+    # TODO: Explore the "template" module
+    # TODO: Combine these two tasks
   - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
     shell: "echo '{{ hostvars[item].ct_ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
     with_items: "{{ groups['all_cts'] }}"
@@ -114,7 +112,7 @@
   #   become: yes
 
   ### DISPLAY
-  # TODO: Combine these two tasks
+    # TODO: Combine these two tasks
   - name: "Display A records" 
     command: "cat {{ a_records_file }}"
     register: a_result
