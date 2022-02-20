@@ -7,12 +7,12 @@ all:
     inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
     password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
 
-    template_dir: /var/lib/vz/template/cache/
+    template_dir: "/var/lib/vz/template/cache/"
 
     # These are installed on the base container template
     # So, it has prereqs for ALL services
-    # required_packages: [git,curl,unzip,htop,neofetch,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
-    required_packages: [htop,curl,unzip] # MINIMAL PACKAGES FOR QUICK TESTING
+    required_packages: [git,curl,unzip,htop,neofetch,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
+    # required_packages: [htop,curl,unzip] # MINIMAL PACKAGES FOR QUICK TESTING
 
     ### Host specific
     # ip: "{{ network }}.{{ id }}" # This breaks localhost apparently?
@@ -41,12 +41,6 @@ all:
       vars:
         ansible_user: root
 
-    templates:
-      hosts:
-        base:
-          id: 100
-          # ct_ostemplate: "{{ template_dir }}ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
-          ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
     dns_servers:
       hosts:
         pihole:
@@ -74,6 +68,12 @@ all:
         # radarr:
         #   id: "181"
         #   user: "admin"
+    templates:
+      hosts:
+        base:
+          id: 200
+          # ct_ostemplate: "{{ template_dir }}ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
+          ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
 
     all_hosts: # Purely for DNS, not actually executed against. Here we set FQDN & IP
       children:

@@ -7,7 +7,7 @@
       ansible_host: "{{ ip }}"
 
 ### Create base template, if it doesn't exist
-- name: "Check if base template exists"
+- name: "Gather facts about base template"
   hosts: base
   gather_facts: no
   tasks:
@@ -18,25 +18,22 @@
   - debug:
       var: check
 
-- name: "Create base check, if it doesn't exist"
-  hosts: base
+  - debug:
+      msg: "No base template found, creating now..."
+    when: check.stdout == ""
+  - debug:
+      msg: "Found base template! Continuing..."
+    when: check.stdout != ""
+
+- hosts: base
   gather_facts: no
   roles:
-
   - role: create
     when: check.stdout == ""
   - role: update_pkgs
     when: check.stdout == ""
   - role: backup
     when: check.stdout == ""
-  # - block:
-  #   - import_role:
-  #       name: create
-  #   - import_role:
-  #       name: update_pkgs
-  #   - import_role:
-  #       name: backup
-  #   when: check.stdout != ""
 
 ### Deploy pihole
 - name: "Deploy pihole"
@@ -45,6 +42,7 @@
   roles:
   - create
   - prepare
+  - update_pkgs
 
 - import_playbook: "services/pihole.yml"
 

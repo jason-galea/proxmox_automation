@@ -1,20 +1,23 @@
 ### This role assumes that a base template exists in local:vztmpl
 
 ### Discover
-- name: "Discover base template name"
-  delegate_to: prox
-  shell: "find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar'"
-  register: name
-  failed_when: (name.rc not in [0, 1])
+- block:
+  - name: "Discover base template name"
+    delegate_to: prox
+    # shell: "find {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar'"
+    shell: "ls {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar'"
+    register: name
+    failed_when: (name.rc not in [0, 1])
 
-- set_fact:
-    ct_ostemplate: "{{ name.stdout }}"
+  - set_fact:
+      # ct_ostemplate: "{{ template_dir }}{{ name.stdout }}"
+      ct_ostemplate: "local:vztmpl/{{ name.stdout }}"
   when: ct_ostemplate is not defined
 
 - debug:
     var: ct_ostemplate
-- debug:
-    var: "{{ hostvars[inventory_hostname] }}"
+# - debug:
+#     var: "{{ hostvars[inventory_hostname] }}"
 
 ### Create
 - name: "Create containers"
@@ -29,20 +32,20 @@
     vmid: "{{ id }}"
 
     node: "{{ ct_node }}"
-    # state: "{{ ct_state }}" 
-    # netif: "{{ ct_netif }}"
+    state: "{{ ct_state }}" 
+    netif: "{{ ct_netif }}"
     ostemplate: "{{ ct_ostemplate }}"
     hostname: "{{ ct_hostname }}"
     password: "{{ ct_password }}"
-    # pubkey: "{{ ct_pubkey }}"
-    # cores: "{{ ct_cores }}"
-    # memory: "{{ ct_memory }}"
-    # swap: "{{ ct_swap }}"
-    # disk: "{{ ct_disk }}"
-    # storage: "{{ ct_storage }}"
-    # unprivileged: "{{ ct_unprivileged }}"
-    # onboot: "{{ ct_onboot }}"
-    # features: "{{ ct_features }}"
+    pubkey: "{{ ct_pubkey }}"
+    cores: "{{ ct_cores }}"
+    memory: "{{ ct_memory }}"
+    swap: "{{ ct_swap }}"
+    disk: "{{ ct_disk }}"
+    storage: "{{ ct_storage }}"
+    unprivileged: "{{ ct_unprivileged }}"
+    onboot: "{{ ct_onboot }}"
+    features: "{{ ct_features }}"
 
 ### Start
 - name: "Start containers"
@@ -56,5 +59,7 @@
     state: started
 
 - name: "Verify containers are online"
+  vars:
+    ansible_user: root # Workaround
   wait_for_connection:
     timeout: 30

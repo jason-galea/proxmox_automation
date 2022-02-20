@@ -16,14 +16,25 @@
     ansible_user: root
   tasks:
 
-  - delegate_to: localhost
-    proxmox:
-      api_host: "{{ prox_host }}"
-      api_user: "{{ prox_user }}"
-      api_password: "{{ prox_password }}"
+  - name: "Show current templates"
+    delegate_to: prox
+    command: "find {{ template_dir }}"
+    register: before
+  - debug:
+      var: before.stdout
 
-      vmid: "{{ id }}" # Templates = id + 100
-      state: absent
+  - delegate_to: prox
+    shell: "rm -rf {{ template_dir }}vzdump*"
+  #   register: destroy
+  # - debug:
+  #     var: destroy
+
+  - name: "Show remaining templates"
+    delegate_to: prox
+    command: "find {{ template_dir }}"
+    register: after
+  - debug:
+      var: after.stdout
 
   - name: "Remove orphaned SSH keys"
     delegate_to: localhost
