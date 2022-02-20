@@ -1,0 +1,33 @@
+---
+
+##########################################################################################
+### Just to keep it simple
+- hosts: all
+  gather_facts: no
+  tasks:
+  - set_fact:
+      ansible_host: "{{ ip }}"
+
+##########################################################################################
+- name: "Destroy templates"
+  hosts: templates
+  gather_facts: no
+  vars:
+    ansible_user: root
+  tasks:
+
+  - delegate_to: localhost
+    proxmox:
+      api_host: "{{ prox_host }}"
+      api_user: "{{ prox_user }}"
+      api_password: "{{ prox_password }}"
+
+      vmid: "{{ id }}" # Templates = id + 100
+      state: absent
+
+  - name: "Remove orphaned SSH keys"
+    delegate_to: localhost
+    command: "ssh-keygen -f ~/.ssh/known_hosts -R {{ ansible_host }}"
+
+
+

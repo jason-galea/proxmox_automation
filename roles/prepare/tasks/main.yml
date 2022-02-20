@@ -43,29 +43,5 @@
     var: ping.stdout
 
 
-# - name: "Update mirrors"
-  # command: ???
-
-### Apt
-# - name: "apt install"
-#   apt:
-#     pkg:
-#     - htop
-#     - tree
-#     update_cache: yes
-#   register: apt_install
-# - debug: var=apt_install.stdout
-
-# - name: "apt dist-upgrade"
-#   apt:
-#     upgrade: dist
-#   register: apt_dist_upgrade
-# - debug: var=apt_dist_upgrade.stdout
-
-
-### TODO: Auto-update
-# - name: "Configure apt auto update"
-
-
 - set_fact:
     ansible_user: "{{ inventory_hostname }}"

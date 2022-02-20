@@ -1,59 +1,59 @@
 ---
-########## Connect with IP addresses ##########
+### Connect via IP
 - hosts: all
   gather_facts: no
   tasks:
   - set_fact:
       ansible_host: "{{ ip }}"
 
-- name: "Create container template"
-  hosts: template
+### Create base template, if it doesn't exist
+- name: "Check if base template exists"
+  hosts: base
   gather_facts: no
   tasks:
-  - name: "End play if template exists"
-    delegate_to: prox
-    shell: "pct config 200 | grep template: | awk '{printf $2}'"
-    register: if_template
-  - meta: end_play
-    when: if_template.stdout != "1"
+  - delegate_to: prox
+    shell: "find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar'" # "" == Doesn't exist
+    register: check
+    failed_when: (check.rc not in [0, 1])
+  - debug:
+      var: check
 
-  - name: "Create & prepare template"
-    include_role:
-      name: "{{ item }}"
-    with_items:
-    - create
-    - prepare
-    - install_packages
+- name: "Create base check, if it doesn't exist"
+  hosts: base
+  gather_facts: no
+  roles:
 
-# - name: "Create container template"
-#   hosts: template
-#   gather_facts: no
-#   roles:
-#   - create
-#   - prepare
-#   - install_packages
-#   # - template
+  - role: create
+    when: check.stdout == ""
+  - role: update_pkgs
+    when: check.stdout == ""
+  - role: backup
+    when: check.stdout == ""
+  # - block:
+  #   - import_role:
+  #       name: create
+  #   - import_role:
+  #       name: update_pkgs
+  #   - import_role:
+  #       name: backup
+  #   when: check.stdout != ""
 
-# - name: "Create apt cache container"
+### Deploy pihole
+- name: "Deploy pihole"
+  hosts: pihole
+  gather_facts: no
+  roles:
+  - create
+  - prepare
 
-# - name: "Prepare pihole container"
-#   hosts: dns_servers
-#   gather_facts: no
-#   roles:
-#   - create
-#   - prepare
-#   - install_packages # This COULD be made redundant by the base container template
+- import_playbook: "services/pihole.yml"
 
-# - name: "Deploy pihole"
-#   import_playbook: "services/pihole.yml"
-
+### Connect via DNS
 # - hosts: all
 #   gather_facts: no
 #   tasks:
 #   - set_fact:
 #       ansible_host: "{{ fqdn }}"
-
-# ########## Connect with DNS names ##########
 
 # - name: "Prepare service containers"
 #   hosts: all_services

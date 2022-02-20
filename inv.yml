@@ -7,11 +7,13 @@ all:
     inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
     password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
 
-    required_packages: [git, curl, unzip, htop, neofetch]
-    ### With a generic base container (with all updates & prereqs), this
-    ### list could include prereqs for all containers
-    # required_packages: [curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json,git]
-    
+    template_dir: /var/lib/vz/template/cache/
+
+    # These are installed on the base container template
+    # So, it has prereqs for ALL services
+    # required_packages: [git,curl,unzip,htop,neofetch,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
+    required_packages: [htop,curl,unzip] # MINIMAL PACKAGES FOR QUICK TESTING
+
     ### Host specific
     # ip: "{{ network }}.{{ id }}" # This breaks localhost apparently?
     fqdn: "{{ inventory_hostname }}.{{ domain }}"
@@ -39,14 +41,16 @@ all:
       vars:
         ansible_user: root
 
+    templates:
+      hosts:
+        base:
+          id: 100
+          # ct_ostemplate: "{{ template_dir }}ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
+          ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
     dns_servers:
       hosts:
         pihole:
           id: 160
-          ### Excluding default packages
-          # required_packages: [idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
-          ### Including default packages
-          required_packages: [curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json,git]
         # proxy:
         #   id : "161"
     services:
@@ -70,10 +74,6 @@ all:
         # radarr:
         #   id: "181"
         #   user: "admin"
-    templates:
-      hosts:
-        template:
-          id: 200
 
     all_hosts: # Purely for DNS, not actually executed against. Here we set FQDN & IP
       children:
@@ -98,9 +98,8 @@ all:
         dns_servers:
         all_services:
         templates:
-      vars: ### Default vars for all CTs
-        # ip: "{{ network }}.{{ id }}" ### MOVED TO "all_hosts"
-        # fqdn: "{{ inventory_hostname }}.{{ domain }}" ### MOVED TO "all_hosts"
+      vars: ### Default vars for all CTs        
+        # template_id: "{{ id + 100 }}" # "id" is set per container
         user: "{{ inventory_hostname }}"
         # This ^^^ seems redundant, but if we use "inventory_hostname" in the playbook instead,
         # we are unable to change usernames on a per host basis.
@@ -116,8 +115,7 @@ all:
         ct_ip: "{{ ip }}" # Redundant var, or follow var naming convention??? ARRRGHHH
         ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ip }}/24,gw={{ gateway }}"}'
         ### TODO: Detect CT templates during "create" role
-        ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
-        # ct_ostemplate: "local:vztmpl/ubuntu-21.04-standard_21.04-1_amd64.tar.zst" # For Proxmox 6.x
+        # ct_ostemplate: "{{ template_dir }}" # DISCOVERED AT RUN TIME
         ct_hostname: "{{ inventory_hostname }}"
         ct_password: "{{ password }}"
         ct_pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"

@@ -1,3 +1,7 @@
+- name: "Use root user, until SSH is configured"
+  set_fact:
+    ansible_user: root
+
 - name: Gather package facts
   package_facts:
     manager: auto

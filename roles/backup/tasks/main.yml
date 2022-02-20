@@ -1,0 +1,41 @@
+### Steps:
+# pct stop 200
+# pct set 200 --delete net0
+# vzdump 200 --mode stop --dumpdir /var/lib/vz/template/cache/ --compress zstd
+
+### Stop
+- name: "Stop container"
+  delegate_to: localhost
+  proxmox:
+    api_host: "{{ prox_host }}"
+    api_user: "{{ prox_user }}"
+    api_password: "{{ prox_password }}"
+
+    vmid: "{{ id }}"
+    state: stopped
+
+### Prepare
+- name: "Remove network config"
+  delegate_to: prox
+  command: "pct set {{ id }} --delete net0"
+
+### Backup
+- name: "Backup container to local:vztmpl"
+  delegate_to: prox
+  command: "vzdump {{ id }} --mode stop --dumpdir {{ template_dir }} --compress zstd"
+  register: convert
+- debug:
+    var: convert.stdout
+
+### Wait
+- pause:
+    seconds: 2
+
+### Verify
+# - delegate_to: prox
+#   shell: "pct config {{ id }} | grep template: | awk '{printf $2}'"
+#   register: verify_convert
+#   failed_when: verify_convert.stdout != 1
+
+
+

@@ -13,7 +13,7 @@
 
 ##########################################################################################
 - name: "Destroy environment"
-  hosts: all_cts
+  hosts: dns_servers, all_services
   gather_facts: no
   vars:
     ansible_user: root
