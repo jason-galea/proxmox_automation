@@ -8,6 +8,7 @@ all:
     password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
 
     template_dir: "/var/lib/vz/template/cache/"
+    resolv: "/etc/resolv.conf"
 
     # These are installed on the base container template
     # So, it has prereqs for ALL services
@@ -41,6 +42,12 @@ all:
       vars:
         ansible_user: root
 
+    templates:
+      hosts:
+        base:
+          id: 100
+          # ct_ostemplate: "{{ template_dir }}ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
+          ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
     dns_servers:
       hosts:
         pihole:
@@ -68,12 +75,6 @@ all:
         # radarr:
         #   id: "181"
         #   user: "admin"
-    templates:
-      hosts:
-        base:
-          id: 200
-          # ct_ostemplate: "{{ template_dir }}ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
-          ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
 
     all_hosts: # Purely for DNS, not actually executed against. Here we set FQDN & IP
       children:
@@ -112,7 +113,6 @@ all:
         ct_node: prox
         ct_state: present
         ct_bridge: vmbr0
-        ct_ip: "{{ ip }}" # Redundant var, or follow var naming convention??? ARRRGHHH
         ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ip }}/24,gw={{ gateway }}"}'
         ### TODO: Detect CT templates during "create" role
         # ct_ostemplate: "{{ template_dir }}" # DISCOVERED AT RUN TIME

@@ -1,0 +1,47 @@
+
+
+### Prepare
+- name: "Use root user, until SSH is configured"
+  set_fact:
+    ansible_user: root
+
+### Verify internet
+- name: "Verify DNS & internet access with ping"
+  command: "ping -c 3 example.com"
+  register: ping
+- debug:
+    var: ping.stdout
+
+### Update
+- name: "Gather package facts"
+  package_facts:
+    manager: auto
+
+- name: "Install updates"
+  apt:
+    upgrade: full
+    update_cache: yes
+  register: update
+- debug:
+    var: update.stdout
+
+### Install packages
+- set_fact:
+    missing_packages: false # Run every time
+
+- name: "Check if packages are already installed" # Looped to increase verbosity
+  set_fact:
+    missing_packages: true # Run on failure
+  when: "pkg_to_check not in ansible_facts.packages"
+  loop_control: # Avoid errors from reusing "{{ item }}"
+    loop_var: pkg_to_check
+  with_items: "{{ required_packages }}"
+  
+- name: "Install packages"
+  apt:
+    pkg: "{{ pkg_to_install }}"
+  with_items: "{{ required_packages }}"
+  loop_control: # Avoid errors from reusing "{{ item }}"
+    loop_var: pkg_to_install
+  become: yes
+  when: missing_packages == true

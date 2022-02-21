@@ -1,11 +1,6 @@
-### TODO: Decide whether to split this file?
-# Option 1: Split into task files & "import_tasks"
-# Option 2: Split into roles & have recursive directory structure :PPP
+### Install
+  # TODO: Check if pihole is installed first
 
-
-
-
-##########################################################################################
 - name: "Install Pihole"
   gather_facts: no
   hosts: pihole
@@ -14,65 +9,70 @@
     repo_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
     answers_dir: "/etc/pihole"
     answers_file: "{{ answers_dir }}/setupVars.conf"
-
     answers_file_template: "../templates/pihole_answers_file.yml"
-
     # script_release: v5.8.1
     # script_head_length: 1938
     # script_tail_length: 678
     script_release: v5.9
     script_head_length: 1943
     script_tail_length: 678
-    
   tasks:
-  - name: "Clone pihole git repo"
-    ansible.builtin.git:
-      repo: "https://github.com/pi-hole/pi-hole.git"
-      dest: "{{ repo_dir }}"
-      # depth: 1
-      version: "{{ script_release }}" # Need specific release for line numbers in basic-install.sh
-      force: yes # Overwrite modifications on re-runs
 
-  - name: "Create /etc/pihole"
-    file:
-      path: "{{ answers_dir }}"
-      state: directory
-    become: yes
+  - name: "Check if already installed"
+    command: "which pihole"
+    register: check
+    failed_when: check.rc not in [0, 1] # Accept errors, only care about stdout
 
-  - name: "Populate {{ answers_file }}"
-    template:
-      src: "{{ answers_file_template }}"
-      dest: "{{ answers_file }}"
-    become: yes
+    ### Making this block conditional saves so much time on reruns lol
+  - block:
+    - name: "Clone pihole git repo"
+      ansible.builtin.git:
+        repo: "https://github.com/pi-hole/pi-hole.git"
+        dest: "{{ repo_dir }}"
+        version: "{{ script_release }}"
+        force: yes # Overwrite modifications on re-runs, to avoid errors
 
-  - name: "Display {{ answers_file }}"
-    command: "cat {{ answers_file }}"
-    register: answers
-  - debug:
-      var: answers.stdout
+    - name: "Create /etc/pihole"
+      file:
+        path: "{{ answers_dir }}"
+        state: directory
+      become: yes
 
-    ### This is reeeaaally screwy
-    ### I can't even use a template file, since it changes with each pihole release 
-  - name: "Remove interactivity from install script"
-    shell: |
-      mv {{ repo_script }} {{ repo_script }}.bak
-      echo "$(head -{{ script_head_length }} {{ repo_script }}.bak)" > {{ repo_script }}
-      echo "    useUpdateVars=true" >> {{ repo_script }}
-      echo "$(tail -{{ script_tail_length }} {{ repo_script }}.bak)" >> {{ repo_script }}
+    - name: "Populate {{ answers_file }}"
+      template:
+        src: "{{ answers_file_template }}"
+        dest: "{{ answers_file }}"
+      become: yes
 
-  - name: "Install Pihole"
-    command: "bash {{ repo_script }}"
-    become: yes
-    register: install_pihole
-  - debug:
-      var: install_pihole.stdout
+    - name: "Display {{ answers_file }}"
+      command: "cat {{ answers_file }}"
+      register: answers
+    - debug:
+        var: answers.stdout
 
-  - name: "Set password"
-    command: "pihole -a -p {{ password }}"
-    become: yes
-    register: password
-  - debug:
-      var: password.stdout
+      ### This is reeeaaally screwy
+      ### I can't even use a template file, since it changes with each pihole release 
+    - name: "Remove interactivity from install script"
+      shell: |
+        mv {{ repo_script }} {{ repo_script }}.bak
+        echo "$(head -{{ script_head_length }} {{ repo_script }}.bak)" > {{ repo_script }}
+        echo "    useUpdateVars=true" >> {{ repo_script }}
+        echo "$(tail -{{ script_tail_length }} {{ repo_script }}.bak)" >> {{ repo_script }}
+
+    - name: "Install Pihole"
+      command: "bash {{ repo_script }}"
+      become: yes
+      register: install_pihole
+    - debug:
+        var: install_pihole.stdout
+
+    - name: "Set password"
+      command: "pihole -a -p {{ password }}"
+      become: yes
+      register: password
+    - debug:
+        var: password.stdout
+    when: check.stdout == ""
 
   - name: "Verify webserver at http://{{ ansible_host }}/admin"
     wait_for:
@@ -80,39 +80,31 @@
       timeout: 10
 
 
-##########################################################################################
+
+### Populate records
 - name: "Add DNS records to Pihole"
   hosts: pihole
   gather_facts: no
   vars:
     a_records_file: /etc/pihole/custom.list
     cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
-    resolv: /etc/resolv.conf
   tasks:
-  # - name: "Wipe A records file"
-  #   command: "echo '' > {{ a_records_file }}"
-  #   become: yes
-  # - name: "Wipe CNAME records file"
-  #   command: "echo '' > {{ cname_records_file }}"
-  #   become: yes
+
   - name: "Wipe all records"
     command: "echo '' > {{ item }}"
     with_items: ["{{ a_records_file }}", "{{ cname_records_file }}"]
     become: yes
 
-  ### POPULATE
     # TODO: Combine these two tasks
   - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
     shell: "echo '{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
     with_items: "{{ groups['all_hosts'] }}" # TODO: Use a seperate play, with delegation instead
     become: yes
-
   # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
   #   shell: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
   #   with_items: "{{ groups['all_hosts'] }}"
   #   become: yes
 
-  ### DISPLAY
     # TODO: Combine these two tasks
   - name: "Display A records" 
     command: "cat {{ a_records_file }}"
@@ -127,7 +119,6 @@
   # - debug:
   #       var: cname_result.stdout
 
-  ### RESTART & VERIFY
   - name: "Restart DNS"
     # delegate_to: pihole
     command: "pihole restartdns"
@@ -135,6 +126,7 @@
   - debug:
       var: restart.stdout
 
+### Verify from pihole
   - name: "Verify DNS from pihole" # Should be dig, whatever
     # delegate_to: localhost
     shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
@@ -144,40 +136,33 @@
 
 
 
-##########################################################################################
-- name: "Change environment DNS to pihole"
-  hosts: prox
-  gather_facts: no
-  vars:
-    dns_server_to_apply: "{{ dns }}" # Required for "update_dns" role
-  # roles:
-  # - update_dns
-  tasks:
-  - command: "sed -i 's/.*nameserver.*/nameserver {{ dns_server_to_apply }}/' /etc/resolv.conf"
-
-  - name: "Verify DNS from prox" # Should be dig, whatever
-    shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
-    register: verify
-    failed_when: "verify.stdout != hostvars[item].fqdn"
-    with_items: "{{ groups['all_hosts'] }}"
-
-
-
-##########################################################################################
-- name: "Update localhost DNS server"
-  hosts: localhost
+### Apply DNS to hosts
+- name: "Apply DNS and verify"
+  hosts: prox, localhost
   gather_facts: no
   tasks:
-  - name: "Update resolv.conf"
-    shell: "echo 'nameserver {{ dns }}' >> /etc/resolv.conf"
+  - name: "Backup /etc/resolv.conf"
+    copy:
+      src: "{{ resolv }}"
+      dest: "{{ resolv }}.bak"
+      remote_src: yes
+      force: yes
     become: yes
 
-  - command: "cat /etc/resolv.conf"
+  - name: "Set DNS server to pihole"
+      # echo 'search {{ domain }}' > {{ resolv }}
+    shell: |
+      sed -i 's/.*nameserver.*/nameserver {{ dns }}/' {{ resolv }}
+    become: yes
+    
+### Verify from hosts
+  - command: "cat {{ resolv }}"
     register: cat_resolv
-  - debug:
+  - name: "Display /etc/resolv.conf"
+    debug:
       var: cat_resolv.stdout
 
-  - name: "Verify DNS from localhost"
+  - name: "Verify DNS from {{ inventory_hostname }}"
     shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
     register: verify
     failed_when: "verify.stdout != hostvars[item].fqdn"

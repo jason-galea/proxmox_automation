@@ -1,41 +1,42 @@
 ---
-
-##########################################################################################
-### Just to keep it simple
-- hosts: all
+### DNS workaround
+- name: "Connect via IP, not DNS name"
+  hosts: all
   gather_facts: no
   tasks:
   - set_fact:
       ansible_host: "{{ ip }}"
 
-##########################################################################################
+### Destroy
+  # TODO: Make this conditional
 - name: "Destroy templates"
   hosts: templates
   gather_facts: no
   vars:
     ansible_user: root
   tasks:
-
-  - name: "Show current templates"
+  - name: "Does template file exist?"
     delegate_to: prox
-    command: "find {{ template_dir }}"
-    register: before
-  - debug:
-      var: before.stdout
-
-  - delegate_to: prox
-    shell: "rm -rf {{ template_dir }}vzdump*"
-  #   register: destroy
+    shell: "find {{ template_dir }} | grep 'vzdump.*tar'"
+    register: check
+    failed_when: (check.rc not in [0, 1])
   # - debug:
-  #     var: destroy
+  #     var: check
 
-  - name: "Show remaining templates"
-    delegate_to: prox
-    command: "find {{ template_dir }}"
-    register: after
-  - debug:
-      var: after.stdout
+  - name: "Yes! Deleting..."
+    block:
+    - delegate_to: prox
+      shell: "rm -rf {{ template_dir }}vzdump*"
 
+    - name: "Show remaining templates"
+      delegate_to: prox
+      command: "find {{ template_dir }}"
+      register: after
+    - debug:
+        var: after.stdout
+    when: check.stdout != ""
+
+### Fix SSH
   - name: "Remove orphaned SSH keys"
     delegate_to: localhost
     command: "ssh-keygen -f ~/.ssh/known_hosts -R {{ ansible_host }}"

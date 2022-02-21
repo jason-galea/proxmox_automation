@@ -4,7 +4,6 @@
 - block:
   - name: "Discover base template name"
     delegate_to: prox
-    # shell: "find {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar'"
     shell: "ls {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar'"
     register: name
     failed_when: (name.rc not in [0, 1])
@@ -58,8 +57,25 @@
     vmid: "{{ id }}"
     state: started
 
+### Wait
+- pause:
+    seconds: 5
+
+### Verify
+  # TODO: Fix me!
+  # This task keeps failing during reruns.
+  # It will time out, and manual SSH will prompt for the new host
+# - name: "Pre-accept host SSH key"
+#   delegate_to: localhost
+#   shell: "ssh-keyscan -H {{ ip }} >> /home/{{ lookup('env', 'USER') }}/.ssh/known_hosts"
+#   become: yes
+#   register: accept_ssh
+# - debug:
+#     var: accept_ssh.stdout
+
 - name: "Verify containers are online"
   vars:
     ansible_user: root # Workaround
   wait_for_connection:
     timeout: 30
+  retries: 3

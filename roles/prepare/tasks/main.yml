@@ -1,7 +1,9 @@
+### SSH workaround
 - name: "Use root user, until SSH is configured"
   set_fact:
     ansible_user: root
 
+### User
 - name: "Create new user"
   user:
     name: "{{ user }}"
@@ -11,6 +13,7 @@
     append: yes
     groups: sudo
 
+### Sudo
 - name: "Grant passwordless sudo"
   lineinfile:
     path: /etc/sudoers
@@ -19,6 +22,7 @@
     line: '%sudo ALL=(ALL) NOPASSWD: ALL'
     validate: 'visudo -cf %s'
 
+### SSH
 - name: "Create ~/.ssh"
   file:
     path: "/home/{{ user }}/.ssh"
@@ -36,12 +40,13 @@
     group: "{{ user }}"
     mode: "0600"
 
+### Verify
 - name: "Verify DNS & internet access with ping"
   command: "ping -c 3 example.com"
   register: ping
 - debug:
     var: ping.stdout
 
-
+### Revert SSH workaround
 - set_fact:
     ansible_user: "{{ inventory_hostname }}"
