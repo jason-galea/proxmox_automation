@@ -20,8 +20,6 @@
     shell: "find {{ template_dir }} | grep 'vzdump.*tar'"
     register: check
     failed_when: (check.rc not in [0, 1])
-  # - debug:
-  #     var: check
 
   - name: "Yes! Deleting..."
     block:

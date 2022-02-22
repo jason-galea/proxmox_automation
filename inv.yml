@@ -10,14 +10,13 @@ all:
     template_dir: "/var/lib/vz/template/cache/"
     resolv: "/etc/resolv.conf"
 
-    # These are installed on the base container template
-    # So, it has prereqs for ALL services
-    required_packages: [git,curl,unzip,htop,neofetch,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
-    # required_packages: [htop,curl,unzip] # MINIMAL PACKAGES FOR QUICK TESTING
+    ############################################################################
+    ### TODO: SPLIT BASE PACKAGES --> REQUIRED PACKAGES & RESTRUCTURE deploy.yml
+    base_packages: [ufw,git,curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
 
     ### Host specific
     # ip: "{{ network }}.{{ id }}" # This breaks localhost apparently?
-    fqdn: "{{ inventory_hostname }}.{{ domain }}"
+    # fqdn: "{{ inventory_hostname }}.{{ domain }}"
 
     ### Prox
     prox_host: "{{ hostvars['prox'].ip }}"
@@ -32,12 +31,9 @@ all:
       hosts:
         opnsense:
           id: 1
-          # ip: "{{ network }}.{{ id }}" ### MOVED TO "all_hosts"
-          # fqdn: "{{ inventory_hostname }}.{{ domain }}" ### MOVED TO "all_hosts"
+          port: 80
         prox:
           id: 2
-          # ip: "{{ network }}.{{ id }}" ### MOVED TO "all_hosts"
-          # fqdn: "{{ inventory_hostname }}.{{ domain }}" ### MOVED TO "all_hosts"
           port: 8006 # HTTPS
       vars:
         ansible_user: root
@@ -46,35 +42,45 @@ all:
       hosts:
         base:
           id: 100
-          # ct_ostemplate: "{{ template_dir }}ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
           ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
-    dns_servers:
+    infrastructure:
       hosts:
         pihole:
           id: 160
+          port: 80
+          additional_ports: [53]
         # proxy:
-        #   id : "161"
+        #   id : 161
+        # ca:
+        #   id : 162
     services:
       hosts:
         # portainer:
-        #   id: "170"
-        apache:
-          id: 171
-        # emby:
-        #   id: 172
+        #   id: 170
         #   ct_cores: 4
         #   ct_memory: 2048
         #   ct_swap: 512
+          # port: 80
+        apache:
+          id: 171
+          port: 80
+        # emby:
+        #   id: 172
+        #   ct_cores: 4
+        #   ct_memory: 1024
+        #   ct_swap: 512
         #   port: 8096 # HTTP
         #   # port: 8920 # HTTPS
+        #   additional_ports: ["{{ port }}", 8920] # Expects "port" to be set per host
         # wekan:
-        #   id: "173"
-        #   port: "3001"
+        #   id: 173
+        #   port: 3001
     vpn_services:
       hosts:
         # radarr:
-        #   id: "181"
-        #   user: "admin"
+        #   id: 181
+        #   user: admin
+        #   port: 7878
 
     all_hosts: # Purely for DNS, not actually executed against. Here we set FQDN & IP
       children:
@@ -84,6 +90,7 @@ all:
         ### Networking
         ip: "{{ network }}.{{ id }}"
         fqdn: "{{ inventory_hostname }}.{{ domain }}"
+        # additional_ports: [] # Expects to be set per host
 
         ### Ansible
         # ansible_host: "{{ ip }}"
@@ -96,25 +103,23 @@ all:
 
     all_cts: # Primary group, excluding Hyper-V VMs
       children:
-        dns_servers:
+        infrastructure:
         all_services:
         templates:
-      vars: ### Default vars for all CTs        
-        # template_id: "{{ id + 100 }}" # "id" is set per container
+      vars: ### Default vars for all CTs
         user: "{{ inventory_hostname }}"
         # This ^^^ seems redundant, but if we use "inventory_hostname" in the playbook instead,
         # we are unable to change usernames on a per host basis.
         # For example, radarr/sonarr/lidarr do NOT want the user to be created in advance,
         # as they do it themselves during installation.
         # In that case the username cannot match the hostname.
-        port: 80
+        # port: 80 # Primary port, set per host
 
         ### CT Creation
         ct_node: prox
         ct_state: present
         ct_bridge: vmbr0
         ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ip }}/24,gw={{ gateway }}"}'
-        ### TODO: Detect CT templates during "create" role
         # ct_ostemplate: "{{ template_dir }}" # DISCOVERED AT RUN TIME
         ct_hostname: "{{ inventory_hostname }}"
         ct_password: "{{ password }}"
@@ -129,6 +134,10 @@ all:
         ct_onboot: yes
         ct_features:
         - nesting=1
+
+        # Default, to avoid errors in "packages" role
+        # NOTE: This will be installed every "deploy", so keep it MINIMAL! 
+        required_packages: [] 
 
         ### ANSIBLE
         ansible_user: "{{ inventory_hostname }}"

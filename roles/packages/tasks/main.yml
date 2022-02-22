@@ -1,5 +1,4 @@
 
-
 ### Prepare
 - name: "Use root user, until SSH is configured"
   set_fact:
@@ -13,10 +12,6 @@
     var: ping.stdout
 
 ### Update
-- name: "Gather package facts"
-  package_facts:
-    manager: auto
-
 - name: "Install updates"
   apt:
     upgrade: full
@@ -26,6 +21,9 @@
     var: update.stdout
 
 ### Install packages
+- name: "Gather package facts"
+  package_facts:
+    manager: auto
 - set_fact:
     missing_packages: false # Run every time
 
@@ -33,15 +31,15 @@
   set_fact:
     missing_packages: true # Run on failure
   when: "pkg_to_check not in ansible_facts.packages"
-  loop_control: # Avoid errors from reusing "{{ item }}"
+  loop_control: # Avoid warnings from reusing "{{ item }}"
     loop_var: pkg_to_check
-  with_items: "{{ required_packages }}"
+  with_items: "{{ base_packages + required_packages }}"
   
 - name: "Install packages"
   apt:
     pkg: "{{ pkg_to_install }}"
-  with_items: "{{ required_packages }}"
-  loop_control: # Avoid errors from reusing "{{ item }}"
+  with_items: "{{ base_packages + required_packages }}"
+  loop_control: # Avoid warnings from reusing "{{ item }}"
     loop_var: pkg_to_install
   become: yes
   when: missing_packages == true

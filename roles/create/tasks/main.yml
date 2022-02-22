@@ -1,78 +1,71 @@
-### This role assumes that a base template exists in local:vztmpl
+### Check
+- name: "Check if container already exists"
+  delegate_to: prox
+  shell: "pct list | grep {{ id }} | grep running | cat"
+  register: check
 
-### Discover
 - block:
-  - name: "Discover base template name"
-    delegate_to: prox
-    shell: "ls {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar'"
-    register: name
-    failed_when: (name.rc not in [0, 1])
 
-  - set_fact:
-      # ct_ostemplate: "{{ template_dir }}{{ name.stdout }}"
-      ct_ostemplate: "local:vztmpl/{{ name.stdout }}"
-  when: ct_ostemplate is not defined
+    ### Discover template
+  - block:
+    - name: "Discover base template name"
+      delegate_to: prox
+      shell: "ls {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar' | cat"
+      register: name
 
-- debug:
-    var: ct_ostemplate
-# - debug:
-#     var: "{{ hostvars[inventory_hostname] }}"
+    - set_fact:
+        ct_ostemplate: "local:vztmpl/{{ name.stdout }}"
 
-### Create
-- name: "Create containers"
-  delegate_to: localhost
-  proxmox:
-    proxmox_default_behavior: no_defaults
+    when: ct_ostemplate is not defined # End block
 
-    api_host: "{{ prox_host }}"
-    api_user: "{{ prox_user }}"
-    api_password: "{{ prox_password }}"
+  - debug:
+      var: ct_ostemplate
 
-    vmid: "{{ id }}"
+  ### Create
+  - name: "Create containers"
+    delegate_to: localhost
+    proxmox:
+      proxmox_default_behavior: no_defaults
 
-    node: "{{ ct_node }}"
-    state: "{{ ct_state }}" 
-    netif: "{{ ct_netif }}"
-    ostemplate: "{{ ct_ostemplate }}"
-    hostname: "{{ ct_hostname }}"
-    password: "{{ ct_password }}"
-    pubkey: "{{ ct_pubkey }}"
-    cores: "{{ ct_cores }}"
-    memory: "{{ ct_memory }}"
-    swap: "{{ ct_swap }}"
-    disk: "{{ ct_disk }}"
-    storage: "{{ ct_storage }}"
-    unprivileged: "{{ ct_unprivileged }}"
-    onboot: "{{ ct_onboot }}"
-    features: "{{ ct_features }}"
+      api_host: "{{ prox_host }}"
+      api_user: "{{ prox_user }}"
+      api_password: "{{ prox_password }}"
 
-### Start
-- name: "Start containers"
-  delegate_to: localhost
-  proxmox:
-    api_host: "{{ prox_host }}"
-    api_user: "{{ prox_user }}"
-    api_password: "{{ prox_password }}"
+      vmid: "{{ id }}"
 
-    vmid: "{{ id }}"
-    state: started
+      node: "{{ ct_node }}"
+      state: "{{ ct_state }}" 
+      netif: "{{ ct_netif }}"
+      ostemplate: "{{ ct_ostemplate }}"
+      hostname: "{{ ct_hostname }}"
+      password: "{{ ct_password }}"
+      pubkey: "{{ ct_pubkey }}"
+      cores: "{{ ct_cores }}"
+      memory: "{{ ct_memory }}"
+      swap: "{{ ct_swap }}"
+      disk: "{{ ct_disk }}"
+      storage: "{{ ct_storage }}"
+      unprivileged: "{{ ct_unprivileged }}"
+      onboot: "{{ ct_onboot }}"
+      features: "{{ ct_features }}"
 
-### Wait
-- pause:
-    seconds: 5
+  ### Start
+  - name: "Start containers"
+    delegate_to: localhost
+    proxmox:
+      api_host: "{{ prox_host }}"
+      api_user: "{{ prox_user }}"
+      api_password: "{{ prox_password }}"
+
+      vmid: "{{ id }}"
+      state: started
+
+  - pause:
+      seconds: 5
+
+  when: check.stdout == "" # End block
 
 ### Verify
-  # TODO: Fix me!
-  # This task keeps failing during reruns.
-  # It will time out, and manual SSH will prompt for the new host
-# - name: "Pre-accept host SSH key"
-#   delegate_to: localhost
-#   shell: "ssh-keyscan -H {{ ip }} >> /home/{{ lookup('env', 'USER') }}/.ssh/known_hosts"
-#   become: yes
-#   register: accept_ssh
-# - debug:
-#     var: accept_ssh.stdout
-
 - name: "Verify containers are online"
   vars:
     ansible_user: root # Workaround

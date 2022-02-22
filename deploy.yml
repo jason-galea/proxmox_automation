@@ -1,5 +1,9 @@
+### TODO: Make a "debugging" flag for verbose output
+
+### TODO: SPLIT BASE PACKAGES --> REQUIRED PACKAGES & RESTRUCTURE deploy.yml
+
 ---
-### DNS workaround
+### DNS Workaround
 - name: "Connect via IP, not DNS name"
   hosts: all
   gather_facts: no
@@ -11,17 +15,16 @@
 - hosts: base
   gather_facts: no
   tasks:
-  - name: "Does base template exist?"
+  - name: "Check if base template exists"
     delegate_to: prox
-    shell: "find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar'"
+    shell: "find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar' | cat"
     register: check
-    failed_when: (check.rc not in [0, 1])
 
-  - name: "Yes! Continuing..."
+  - name: "PASS: Skipping..."
     meta: end_play
     when: check.stdout != ""
 
-  - name: "No! Creating..."
+  - name: "FAIL: Creating base template"
     include_role:
       name: "{{ item }}"
     with_items:
@@ -30,34 +33,37 @@
     - backup
     when: check.stdout == ""
 
-### Deploy pihole
-  # TODO: Check if pihole container already exists
-- name: "Deploy pihole"
-  hosts: pihole
+### Deploy infrastructure
+- name: "Deploy infrastructure containers"
+  hosts: infrastructure
   gather_facts: no
   roles:
   - create
   - prepare
+  - firewall # Some base packages have listeners, so only allow specified ports
 
-- import_playbook: "services/pihole.yml"
+### Configure infrastructure
+- import_playbook: "services/pihole.yml" ### TODO: Check & skip if already installed
+# - import_playbook: "services/proxy.yml"
+# - import_playbook: "services/ca.yml"
 
-### Connect via DNS
-# - hosts: all
-#   gather_facts: no
-#   tasks:
-#   - set_fact:
-#       ansible_host: "{{ fqdn }}"
+### Revert DNS Workaround
+- hosts: all
+  gather_facts: no
+  tasks:
+  - set_fact:
+      ansible_host: "{{ fqdn }}"
 
-# ### Deploy reverse proxy
+### Deploy services
+- name: "Prepare service containers"
+  hosts: all_services
+  gather_facts: no
+  roles:
+  - create
+  - prepare
+  - firewall
 
-# - name: "Prepare service containers"
-#   hosts: all_services
-#   gather_facts: no
-#   roles:
-#   - create
-#   - prepare
-
-# ### Deploy other services using DNS names
-# # - import_playbook: "deploy/services/emby.yml"
-# # - import_playbook: "deploy/services/wekan.yml"
-# # - import_playbook: "deploy/services/pihole.yml"
+### Configure services
+- import_playbook: "services/apache.yml"
+# - import_playbook: "services/emby.yml"
+# - import_playbook: "services/wekan.yml"
