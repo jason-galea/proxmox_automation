@@ -34,25 +34,25 @@
     when: check.stdout == ""
 
 ### Deploy infrastructure
-- name: "Deploy infrastructure containers"
-  hosts: infrastructure
-  gather_facts: no
-  roles:
-  - create
-  - prepare
-  - firewall # Some base packages have listeners, so only allow specified ports
+# - name: "Deploy infrastructure containers"
+#   hosts: infrastructure
+#   gather_facts: no
+#   roles:
+#   - create
+#   - prepare
+#   - firewall # Some base packages have listeners, so only allow specified ports
 
 ### Configure infrastructure
-- import_playbook: "services/pihole.yml" ### TODO: Check & skip if already installed
+# - import_playbook: "services/pihole.yml" ### TODO: Check & skip if already installed
 # - import_playbook: "services/proxy.yml"
 # - import_playbook: "services/ca.yml"
 
 ### Revert DNS Workaround
-- hosts: all
-  gather_facts: no
-  tasks:
-  - set_fact:
-      ansible_host: "{{ fqdn }}"
+# - hosts: all
+#   gather_facts: no
+#   tasks:
+#   - set_fact:
+#       ansible_host: "{{ fqdn }}"
 
 ### Deploy services
 - name: "Prepare service containers"
@@ -64,6 +64,6 @@
   - firewall
 
 ### Configure services
-- import_playbook: "services/apache.yml"
-- import_playbook: "services/emby.yml"
+# - import_playbook: "services/apache.yml"
+# - import_playbook: "services/emby.yml"
 # - import_playbook: "services/wekan.yml"

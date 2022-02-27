@@ -1,5 +1,3 @@
-# ansible-playbook -i inv.ini services/wekan.yml
-
 # Guides:
 # https://www.techrepublic.com/article/how-to-install-the-wekan-kanban-server/
 # https://blog.eldernode.com/install-wekan-kanban-server-on-ubuntu-20-04/
@@ -10,8 +8,7 @@
 ### Wekan commands:
 # DONE # sudo apt install -y snapd nginx squashfuse
 # DONE # sudo systemctl enable --now nginx
-# (sudo systemctl status snapd) # Tends to be inactive, not sure why
-# DONE # sudo systemctl restart snapd
+# DONE # sudo systemctl enable --now snapd
 # sudo snap install wekan
 # sudo snap set wekan siteurl='http://{{ ansible_host }}'
 # sudo snap set wekan port='{{ port }}'
@@ -19,26 +16,7 @@
 # DONE # sudo systemctl restart snap.wekan.wekan
 # (sudo systemctl status snap.wekan.wekan) # Should be "active (running)"
 
-### (Wekan should verify webserver with 'wait_for')
-
 ---
-
-# - name: "Proxmox: Enable FUSE and Nesting for Wekan CT"
-#   hosts: prox
-#   gather_facts: no
-#   vars:
-#     wekan_id: "{{ hostvars['wekan'].id }}"
-#   become: yes
-#   tasks:
-#   - blockinfile:
-#       path: "/etc/pve/lxc/{{ wekan_id }}.conf"
-#       block: |
-#         features: fuse=1,mount=fuse,nesting=1
-#         lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0
-
-#   - name: "Reboot CT"
-#     command: "pct reboot {{ wekan_id }}"
-
 - name: "Wekan: Install"
   hosts: wekan
   gather_facts: no

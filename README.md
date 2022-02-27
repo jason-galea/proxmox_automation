@@ -2,9 +2,9 @@
 Automating Proxmox with Ansible
 
 # Requirements
-1. A proxmox host, with SSH access
-2. Python, version 3.8 or higher
-3. Ansible, proxmoxer, and requests:
+1. A proxmox host (with SSH access)
+2. Python3 (version 3.8+)
+3. Ansible + proxmoxer + requests:
     - `python3 -m pip install ansible proxmoxer requests`
 
 # Instructions
@@ -19,5 +19,5 @@ Run:
 Destroy containers:
 - `ansible-playbook -i inv.yml destroy.yml`
 
-Destroy vzdump backups:
+Destroy base template:
 - `ansible-playbook -i inv.yml destroy_templates.yml`

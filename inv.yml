@@ -41,90 +41,99 @@ all:
     templates:
       hosts:
         base:
-          id: 100
-          ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
+          id: 200
+          # ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
+          ct_ostemplate: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz" # Snaps require 20.04
+
     infrastructure:
       hosts:
         pihole:
-          id: 120
+          id: 100
           port: 80
           additional_ports: [53]
         # proxy:
-        #   id : 121
+        #   id : 101
         #   port: 80
         # openssl: # TODO: Choose a CA
-        #   id : 122
+        #   id : 102
         #   port: 80 # TODO: Confirm port
     services:
       hosts:
         # portainer:
-        #   id: 140
+        #   id: 120
         #   ct_cores: 4
         #   ct_memory: 2048
         #   ct_swap: 512
         #   port: 9443
         #   additional_ports: [8000] # TCP tunnel
-        apache:
-          id: 141
-          port: 80
+        # apache:
+        #   id: 121
+        #   port: 80
         # emby:
-        #   id: 142
+        #   id: 122
         #   ct_cores: 4
         #   ct_memory: 1024
         #   ct_swap: 512
         #   port: 8096 # HTTP
         #   additional_ports: [8920] # HTTPS
-        # wekan:
-        #   id: 143
-        #   port: 3001
+        wekan:
+          id: 123
+          port: 3001
+          # ct_unprivileged: no
+          ct_features:
+          - fuse=1
+          - mount=nfs
+          - nesting=1
+          ct_custom_configs:
+          - "lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0"
         # bookstack:
-        #   id: 144
+        #   id: 124
         #   port: 80
         # scraper:
-        #   id: 145
+        #   id: 125
         #   port: 80
         #   additional_ports: [3306, 33060]
     vpn_services:
       hosts:
         # qbittorrent:
-        #   id: 160
+        #   id: 140
         #   # user: admin
         #   port: 8080
         # radarr:
-        #   id: 161
+        #   id: 141
         #   user: admin
         #   port: 7878
         # sonarr:
-        #   id: 162
+        #   id: 142
         #   user: admin
         #   port: 8989
         # lidarr:
-        #   id: 163
+        #   id: 143
         #   user: admin
         #   port: 8686
         # jackett:
-        #   id: 164
+        #   id: 144
         #   # user: admin
         #   port: 9117
 
     game_servers:
       hosts:
         # csgo:
-        #   id: 180
+        #   id: 160
         #   user: csgoserver
         #   port: 27015
         #   # additional_ports: [27020]
         #   additional_ports: [27005, 27020]
         # minecraft:
-        #   id: 181
+        #   id: 161
         #   port: 25565 
         #   additional_ports: [19132, 19133]
         # tmf:
-        #   id: 182
+        #   id: 162
         #   port: 2350
         #   additional_ports: [3450]
 
-    all_hosts: # Purely for DNS, not execution. Here we set FQDN & IP
+    all_hosts: # Purely for DNS, not execution. Convenient for setting FQDN & IP
       children:
         hyperv_vms:
         all_cts:
@@ -177,6 +186,7 @@ all:
         ct_onboot: yes
         ct_features:
         - nesting=1
+        # ct_custom_configs: [] # Set per host
 
         # Default, to avoid errors in "packages" role
         # NOTE: This will be installed every "deploy", so keep it MINIMAL! 

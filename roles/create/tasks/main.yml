@@ -49,6 +49,16 @@
       onboot: "{{ ct_onboot }}"
       features: "{{ ct_features }}"
 
+  ### Additional features
+    # TODO: Replace with builtin
+  - name: "Add custom LXC configs"
+    delegate_to: prox
+    shell: "echo '{{ config_line }}' >> /etc/pve/lxc/{{ id }}.conf"
+    with_items: "{{ ct_custom_configs }}"
+    loop_control:
+      loop_var: config_line # Avoid warnings
+    when: ct_custom_configs is defined
+
   ### Start
   - name: "Start containers"
     delegate_to: localhost
