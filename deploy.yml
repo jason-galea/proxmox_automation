@@ -40,10 +40,11 @@
 #   roles:
 #   - create
 #   - prepare
-#   - firewall # Some base packages have listeners, so only allow specified ports
+#   - packages
+#   - firewall
 
 ### Configure infrastructure
-# - import_playbook: "services/pihole.yml" ### TODO: Check & skip if already installed
+# - import_playbook: "services/pihole.yml" ### TODO: Check & skip SMARTER if already installed
 # - import_playbook: "services/proxy.yml"
 # - import_playbook: "services/ca.yml"
 
@@ -61,9 +62,10 @@
   roles:
   - create
   - prepare
+  - packages
   - firewall
 
 ### Configure services
 # - import_playbook: "services/apache.yml"
 # - import_playbook: "services/emby.yml"
-# - import_playbook: "services/wekan.yml"
+- import_playbook: "services/wekan.yml"

@@ -12,7 +12,7 @@ all:
 
     ############################################################################
     ### TODO: SPLIT BASE PACKAGES --> REQUIRED PACKAGES & RESTRUCTURE deploy.yml
-    base_packages: [ufw,git,curl,unzip,idn2,sqlite3,dns-root-data,netcat,lighttpd,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
+    base_packages: [ufw,git,curl,unzip,idn2,sqlite3,dns-root-data,netcat,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
 
     ### Host specific
     # ip: "{{ network }}.{{ id }}" # This breaks localhost apparently?
@@ -42,8 +42,8 @@ all:
       hosts:
         base:
           id: 200
-          # ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
-          ct_ostemplate: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz" # Snaps require 20.04
+          ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
+          # ct_ostemplate: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
 
     infrastructure:
       hosts:
@@ -51,6 +51,7 @@ all:
           id: 100
           port: 80
           additional_ports: [53]
+          required_packages: [lighttpd]
         # proxy:
         #   id : 101
         #   port: 80
@@ -79,6 +80,7 @@ all:
         wekan:
           id: 123
           port: 3001
+          required_packages: [squashfuse, nginx, snapd]
           # ct_unprivileged: no
           ct_features:
           - fuse=1
