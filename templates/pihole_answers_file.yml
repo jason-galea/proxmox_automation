@@ -1,5 +1,3 @@
-# This will become "/etc/pihole/setupVars.conf" on pihole
-
 # IPV4_ADDRESS={{ ip }}/24
 QUERY_LOGGING=true
 INSTALL_WEB=true

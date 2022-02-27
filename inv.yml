@@ -46,43 +46,85 @@ all:
     infrastructure:
       hosts:
         pihole:
-          id: 160
+          id: 120
           port: 80
           additional_ports: [53]
         # proxy:
-        #   id : 161
-        # ca:
-        #   id : 162
+        #   id : 121
+        #   port: 80
+        # openssl: # TODO: Choose a CA
+        #   id : 122
+        #   port: 80 # TODO: Confirm port
     services:
       hosts:
         # portainer:
-        #   id: 170
+        #   id: 140
         #   ct_cores: 4
         #   ct_memory: 2048
         #   ct_swap: 512
-          # port: 80
+        #   port: 9443
+        #   additional_ports: [8000] # TCP tunnel
         apache:
-          id: 171
+          id: 141
           port: 80
         # emby:
-        #   id: 172
+        #   id: 142
         #   ct_cores: 4
         #   ct_memory: 1024
         #   ct_swap: 512
         #   port: 8096 # HTTP
-        #   # port: 8920 # HTTPS
-        #   additional_ports: ["{{ port }}", 8920] # Expects "port" to be set per host
+        #   additional_ports: [8920] # HTTPS
         # wekan:
-        #   id: 173
+        #   id: 143
         #   port: 3001
+        # bookstack:
+        #   id: 144
+        #   port: 80
+        # scraper:
+        #   id: 145
+        #   port: 80
+        #   additional_ports: [3306, 33060]
     vpn_services:
       hosts:
+        # qbittorrent:
+        #   id: 160
+        #   # user: admin
+        #   port: 8080
         # radarr:
-        #   id: 181
+        #   id: 161
         #   user: admin
         #   port: 7878
+        # sonarr:
+        #   id: 162
+        #   user: admin
+        #   port: 8989
+        # lidarr:
+        #   id: 163
+        #   user: admin
+        #   port: 8686
+        # jackett:
+        #   id: 164
+        #   # user: admin
+        #   port: 9117
 
-    all_hosts: # Purely for DNS, not actually executed against. Here we set FQDN & IP
+    game_servers:
+      hosts:
+        # csgo:
+        #   id: 180
+        #   user: csgoserver
+        #   port: 27015
+        #   # additional_ports: [27020]
+        #   additional_ports: [27005, 27020]
+        # minecraft:
+        #   id: 181
+        #   port: 25565 
+        #   additional_ports: [19132, 19133]
+        # tmf:
+        #   id: 182
+        #   port: 2350
+        #   additional_ports: [3450]
+
+    all_hosts: # Purely for DNS, not execution. Here we set FQDN & IP
       children:
         hyperv_vms:
         all_cts:
@@ -100,6 +142,7 @@ all:
       children:
         services:
         vpn_services:
+        game_servers:
 
     all_cts: # Primary group, excluding Hyper-V VMs
       children:
@@ -113,7 +156,7 @@ all:
         # For example, radarr/sonarr/lidarr do NOT want the user to be created in advance,
         # as they do it themselves during installation.
         # In that case the username cannot match the hostname.
-        # port: 80 # Primary port, set per host
+        # port: 80 # Primary port, expects to be overwritten per host
 
         ### CT Creation
         ct_node: prox
@@ -140,6 +183,6 @@ all:
         required_packages: [] 
 
         ### ANSIBLE
-        ansible_user: "{{ inventory_hostname }}"
+        ansible_user: "{{ user }}"
         
         
