@@ -1,7 +1,5 @@
 ### TODO: Add -v (--verbose) flag?
 
-### TODO: SPLIT BASE PACKAGES --> REQUIRED PACKAGES & RESTRUCTURE deploy.yml
-
 ---
 ### DNS Workaround
 - name: "Connect via IP, not DNS name"
@@ -68,4 +66,5 @@
 ### Configure services
 # - import_playbook: "services/apache.yml"
 # - import_playbook: "services/emby.yml"
-- import_playbook: "services/wekan.yml"
+# - import_playbook: "services/wekan.yml"
+# - import_playbook: "services/scraper.yml"

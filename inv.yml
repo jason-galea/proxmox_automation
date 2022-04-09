@@ -77,24 +77,25 @@ all:
         #   ct_swap: 512
         #   port: 8096 # HTTP
         #   additional_ports: [8920] # HTTPS
-        wekan:
-          id: 123
-          port: 3001
-          required_packages: [squashfuse, nginx, snapd]
-          # ct_unprivileged: no
-          ct_features:
-          - fuse=1
-          - mount=nfs
-          - nesting=1
-          ct_custom_configs:
-          - "lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0"
+        # wekan:
+        #   id: 123
+        #   port: 3001
+        #   required_packages: [squashfuse, nginx, snapd]
+        #   # ct_unprivileged: no
+        #   ct_features:
+        #   - fuse=1
+        #   - mount=nfs
+        #   - nesting=1
+        #   ct_custom_configs:
+        #   - "lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0"
         # bookstack:
         #   id: 124
         #   port: 80
-        # scraper:
-        #   id: 125
-        #   port: 80
-        #   additional_ports: [3306, 33060]
+        scraper:
+          id: 125
+          port: 80
+          required_packages: [python3-pip, firefox, firefox-geckodriver]
+          # additional_ports: [3306, 33060]
     vpn_services:
       hosts:
         # qbittorrent:

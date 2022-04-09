@@ -1,0 +1,14 @@
+---
+- name: "Deploy Price Scraper"
+  hosts: scraper
+  gather_facts: no
+  # tasks:
+
+### python
+# apt install python3-pip firefox firefox-geckodriver
+# python3 -m pip install --upgrade pip
+# python3 -m pip install selenium mysql-connector-python beautifulsoup4
+
+
+
+
