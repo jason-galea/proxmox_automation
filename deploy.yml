@@ -1,16 +1,23 @@
 ### TODO: Add -v (--verbose) flag?
 
 ---
-### DNS Workaround
-- name: "Connect via IP, not DNS name"
+### Workaround???
+  ### TODO: FIX
+- name: "Literally do nothing, but everything breaks if you don't???????????????"
   hosts: all
   gather_facts: no
   tasks:
+  # - debug:
+  #     var: ansible_host
   - set_fact:
       ansible_host: "{{ ip }}"
+    when: ip is defined # Skip localhost
+  # - debug:
+  #     var: ansible_host
 
-### Create/discover base template
-- hosts: base
+### Base
+- name: "Discover/Create base template"
+  hosts: base
   gather_facts: no
   tasks:
   - name: "Check if base template exists"
@@ -18,40 +25,29 @@
     shell: "find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar' | cat"
     register: check
 
-  - name: "PASS: Skipping..."
-    meta: end_play
-    when: check.stdout != ""
-
-  - name: "FAIL: Creating base template"
+  - name: "Creating base template"
     include_role:
-      name: "{{ item }}"
+      name: "{{ item }}" # Gross, very gross
     with_items:
     - create
     - packages
     - backup
-    when: check.stdout == ""
+    when: check.stdout == ""  # Else, continue
 
-### Deploy infrastructure
-# - name: "Deploy infrastructure containers"
-#   hosts: infrastructure
-#   gather_facts: no
-#   roles:
-#   - create
-#   - prepare
-#   - packages
-#   - firewall
+## Deploy infrastructure
+- name: "Deploy infrastructure containers"
+  hosts: infrastructure
+  gather_facts: no
+  roles:
+  - create
+  - prepare
+  - packages
+  - firewall
 
 ### Configure infrastructure
-# - import_playbook: "services/pihole.yml" ### TODO: Check & skip SMARTER if already installed
+- import_playbook: "services/pihole.yml" ### TODO: Check & skip SMARTER if already installed
 # - import_playbook: "services/proxy.yml"
 # - import_playbook: "services/ca.yml"
-
-### Revert DNS Workaround
-# - hosts: all
-#   gather_facts: no
-#   tasks:
-#   - set_fact:
-#       ansible_host: "{{ fqdn }}"
 
 ### Deploy services
 - name: "Prepare service containers"
@@ -62,9 +58,14 @@
   - prepare
   - packages
   - firewall
+  - add_dns_records
+  # - "deploy_{{ inventory_hostname }}" # Maybe???
 
 ### Configure services
 # - import_playbook: "services/apache.yml"
 # - import_playbook: "services/emby.yml"
 # - import_playbook: "services/wekan.yml"
+<<<<<<< HEAD
 # - import_playbook: "services/scraper.yml"
+=======
+>>>>>>> df7131eff06a8c6cc285ba9b15296067a929a876

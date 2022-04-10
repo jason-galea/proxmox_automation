@@ -12,7 +12,7 @@
       var: ping.stdout
 
   - name: "Prepare list of packages to install"
-    set_fact: # Default
+    set_fact:
       packages_to_install: "{{ required_packages }}"
 
   ### Update (Base template only)
@@ -22,14 +22,15 @@
         upgrade: full
         update_cache: yes
       register: update
-    - debug:
-        var: update.stdout
+    # - debug:
+    #     var: update.stdout
 
     - name: "Append base packages to install list"
       set_fact:
         packages_to_install: "{{ base_packages + required_packages }}"
 
-    when: inventory_hostname == "base"
+    # when: inventory_hostname == "base"
+    when: base_packages is defined # Same thing
 
   ### Install packages
   - name: "Gather package facts"

@@ -1,4 +1,4 @@
-all:
+all: # Excludes localhost
   vars: ### Globals
     network: 172.26.0
     gateway: "{{ network }}.1"
@@ -6,25 +6,22 @@ all:
     dns: "{{ hostvars['pihole'].ip }}" # This not used during creation
     inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
     password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
-
     template_dir: "/var/lib/vz/template/cache/"
     resolv: "/etc/resolv.conf"
-
-    ############################################################################
-    ### TODO: SPLIT BASE PACKAGES --> REQUIRED PACKAGES & RESTRUCTURE deploy.yml
-    base_packages: [ufw,git,curl,unzip,idn2,sqlite3,dns-root-data,netcat,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
-
-    ### Host specific
-    # ip: "{{ network }}.{{ id }}" # This breaks localhost apparently?
-    # fqdn: "{{ inventory_hostname }}.{{ domain }}"
 
     ### Prox
     prox_host: "{{ hostvars['prox'].ip }}"
     prox_user: root@pam
     prox_password: "{{ password }}"
 
+    ### Networking
+    ip: "{{ network }}.{{ id }}"
+    fqdn: "{{ inventory_hostname }}.{{ domain }}"
+    # additional_ports: [] # Expects to be set per host
+
     ### Ansible
-    # ansible_host: "{{ ip }}" # This also breaks localhost
+    ansible_host: "{{ ip }}"
+    # ansible_host: "{{ fqdn }}"
 
   children:
     hyperv_vms:
@@ -35,6 +32,14 @@ all:
         prox:
           id: 2
           port: 8006 # HTTPS
+          additional_ports:
+          # - 5900...5999 # VNC Web console
+          - 3128 # Spice proxy
+          - 111 # rpcbind
+          # - 25 # sendmail
+          - 5404 # corosync
+          - 5405 # corosync UDP
+          # - 60000...60050 # live migration
       vars:
         ansible_user: root
 
@@ -44,6 +49,7 @@ all:
           id: 200
           ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
           # ct_ostemplate: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+          base_packages: [ufw,git,curl,unzip,idn2,sqlite3,dns-root-data,netcat,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
 
     infrastructure:
       hosts:
@@ -67,9 +73,10 @@ all:
         #   ct_swap: 512
         #   port: 9443
         #   additional_ports: [8000] # TCP tunnel
-        # apache:
-        #   id: 121
-        #   port: 80
+        apache:
+          id: 121
+          port: 80
+          cname: "www.{{ domain }}"
         # emby:
         #   id: 122
         #   ct_cores: 4
@@ -136,27 +143,28 @@ all:
         #   port: 2350
         #   additional_ports: [3450]
 
-    all_hosts: # Purely for DNS, not execution. Convenient for setting FQDN & IP
-      children:
-        hyperv_vms:
-        all_cts:
-      vars:
-        ### Networking
-        ip: "{{ network }}.{{ id }}"
-        fqdn: "{{ inventory_hostname }}.{{ domain }}"
-        # additional_ports: [] # Expects to be set per host
+    ### THIS GROUP IS IDENTICAL TO "all"
+    # all_hosts: # Excluding localhost
+    #   children:
+    #     hyperv_vms:
+    #     all_cts:
+    #   vars:
+    #     ### Networking
+    #     ip: "{{ network }}.{{ id }}"
+    #     fqdn: "{{ inventory_hostname }}.{{ domain }}"
+    #     # additional_ports: [] # Expects to be set per host
 
-        ### Ansible
-        # ansible_host: "{{ ip }}"
-        ansible_host: "{{ fqdn }}"
+    #     ### Ansible
+    #     ansible_host: "{{ ip }}"
+    #     # ansible_host: "{{ fqdn }}"
 
-    all_services: # Excluding DNS servers
+    all_services: # Excluding infrastructure
       children:
         services:
         vpn_services:
         game_servers:
 
-    all_cts: # Primary group, excluding Hyper-V VMs
+    all_cts: # Excluding hyperv_vms
       children:
         infrastructure:
         all_services:

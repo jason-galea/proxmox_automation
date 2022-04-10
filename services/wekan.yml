@@ -38,14 +38,14 @@
   - name: "Snap set Wekan URL"
     command: "snap set wekan siteurl='http://{{ ansible_host }}'"
     register: snap_url
-  - debug:
-      var: snap_url.stdout
+  # - debug:
+  #     var: snap_url.stdout
 
   - name: "Snap set Wekan port"
     command: "snap set wekan port='{{ port }}'"
     register: snap_port
-  - debug:
-      var: snap_port.stdout
+  # - debug:
+  #     var: snap_port.stdout
 
   - name: "Restart MongoDB and Wekan"
     systemd:

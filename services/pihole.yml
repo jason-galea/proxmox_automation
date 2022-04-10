@@ -11,21 +11,21 @@
   tasks:
 
   ### Check
-  - block:
-    - name: "Check if pihole is already installed"
-      shell: "which pihole"
-      no_log: true
-    - name: "Check if pihole webserver is active"
-      wait_for:
-        port: "{{ port }}"
-        timeout: 10
-      no_log: true
+  # - block:
+  #   - name: "Check if pihole is already installed"
+  #     shell: "which pihole"
+  #     no_log: true
+  #   - name: "Check if pihole webserver is active"
+  #     wait_for:
+  #       port: "{{ port }}"
+  #       timeout: 10
+  #     no_log: true
 
-    - name: "PASS: Skipping..."
-      meta: end_play
-    rescue:
-    - name: "FAIL: Continuing to install pihole"
-      meta: noop
+  #   - name: "PASS: Skipping..."
+  #     meta: end_play
+  #   rescue:
+  #   - name: "FAIL: Continuing to install pihole"
+  #     meta: noop
 
   ### Install
   - name: "Clone pihole git repo"
@@ -47,23 +47,23 @@
 
   - name: "Display {{ answers_file }}"
     command: "cat {{ answers_file }}"
-    register: answers
-  - debug:
-      var: answers.stdout
+  #   register: answers
+  # - debug:
+  #     var: answers.stdout
 
   - name: "Install Pihole"
     command: "bash {{ repo_script }} --unattended"
     become: yes
-    register: install_pihole
-  - debug:
-      var: install_pihole.stdout
+  #   register: install_pihole
+  # - debug:
+  #     var: install_pihole.stdout
 
   - name: "Set password"
     command: "pihole -a -p {{ password }}"
     become: yes
-    register: password
-  - debug:
-      var: password.stdout
+  #   register: password
+  # - debug:
+  #     var: password.stdout
 
   - name: "Verify webserver at http://{{ ansible_host }}/admin"
     wait_for:
@@ -72,71 +72,71 @@
 
 
 
-### Populate records
-- name: "Add DNS records to Pihole"
-  hosts: pihole
-  gather_facts: no
-  vars:
-    a_records_file: /etc/pihole/custom.list
-    cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
-  tasks:
+# ### Populate records
+# - name: "Add DNS records to Pihole"
+#   hosts: pihole
+#   gather_facts: no
+#   vars:
+#     a_records_file: /etc/pihole/custom.list
+#     cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
+#   tasks:
 
-  ### Check
-  - block:
-    - name: "Check if DNS is already working from pihole"
-      shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
-      register: verify
-      failed_when: "verify.stdout != hostvars[item].fqdn"
-      with_items: "{{ groups['all_hosts'] }}"
-      no_log: true
+#   ### Check
+#   - block:
+#     - name: "Check if DNS is already working from pihole"
+#       shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
+#       register: verify
+#       failed_when: "verify.stdout != hostvars[item].fqdn"
+#       with_items: "{{ groups['all_hosts'] }}"
+#       no_log: true
 
-    - name: "PASS: Skipping..."
-      meta: end_play
-    rescue:
-    - name: "FAIL: Continuing to populate DNS records"
-      meta: noop
+#     - name: "PASS: Skipping..."
+#       meta: end_play
+#     rescue:
+#     - name: "FAIL: Continuing to populate DNS records"
+#       meta: noop
 
-  - name: "Wipe all records"
-    command: "echo '' > {{ item }}"
-    with_items: ["{{ a_records_file }}", "{{ cname_records_file }}"]
-    become: yes
+#   - name: "Wipe all records"
+#     command: "echo '' > {{ item }}"
+#     with_items: ["{{ a_records_file }}", "{{ cname_records_file }}"]
+#     become: yes
 
-    ### TODO: Combine these two tasks. Implement "www.test.lan" CNAME & test.
-  - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
-    shell: "echo '{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
-    with_items: "{{ groups['all_hosts'] }}" # TODO: Use a seperate play, with delegation instead
-    become: yes
-  # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
-  #   shell: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
-  #   with_items: "{{ groups['all_hosts'] }}"
-  #   become: yes
+#     ### TODO: Combine these two tasks. Implement "www.test.lan" CNAME & test.
+#   - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
+#     shell: "echo '{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
+#     with_items: "{{ groups['all_hosts'] }}" # TODO: Use a seperate play, with delegation instead
+#     become: yes
+#   # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
+#   #   shell: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
+#   #   with_items: "{{ groups['all_hosts'] }}"
+#   #   become: yes
 
-    ### TODO: Combine these two tasks
-    # Can't loop multiple tasks (cat + debug) using "with_items"
-    # Recommended solution is to "include_tasks" from another file (._.)
-  - name: "Display A records" 
-    shell: "cat {{ a_records_file }} | cat"
-    register: a_result
-  - debug:
-      var: a_result.stdout
-  # - name: "Display CNAME records" 
-  #   shell: "cat {{ cname_records_file }} | cat"
-  #   register: cname_result
-  # - debug:
-  #       var: cname_result.stdout
+#     ### TODO: Combine these two tasks
+#     # Can't loop multiple tasks (cat + debug) using "with_items"
+#     # Recommended solution is to "include_tasks" from another file (._.)
+#   - name: "Display A records" 
+#     shell: "cat {{ a_records_file }} | cat"
+#     register: a_result
+#   - debug:
+#       var: a_result.stdout
+#   # - name: "Display CNAME records" 
+#   #   shell: "cat {{ cname_records_file }} | cat"
+#   #   register: cname_result
+#   # - debug:
+#   #       var: cname_result.stdout
 
-  - name: "Restart DNS"
-    command: "pihole restartdns"
-    register: restart
-  - debug:
-      var: restart.stdout
+#   - name: "Restart DNS"
+#     command: "pihole restartdns"
+#     register: restart
+#   - debug:
+#       var: restart.stdout
 
-  ### Verify from pihole
-  - name: "Verify DNS from pihole"
-    shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
-    register: verify
-    failed_when: "verify.stdout != hostvars[item].fqdn"
-    with_items: "{{ groups['all_hosts'] }}"
+#   ### Verify from pihole
+#   - name: "Verify DNS from pihole"
+#     shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
+#     register: verify
+#     failed_when: "verify.stdout != hostvars[item].fqdn"
+#     with_items: "{{ groups['all_hosts'] }}"
 
 
 
@@ -147,19 +147,19 @@
   tasks:
 
   ### Check
-  - block:
-    - name: "Check if DNS is already working from hosts"
-      shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
-      register: verify
-      failed_when: "verify.stdout != hostvars[item].fqdn"
-      with_items: "{{ groups['all_hosts'] }}"
-      no_log: true
+  # - block:
+  #   - name: "Check if DNS is already working from hosts"
+  #     shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
+  #     register: verify
+  #     failed_when: "verify.stdout != hostvars[item].fqdn"
+  #     with_items: "{{ groups['all_hosts'] }}"
+  #     no_log: true
 
-    - name: "PASS: Skipping..."
-      meta: end_play
-    rescue:
-    - name: "FAIL: Continuing to update host DNS settings"
-      meta: noop
+  #   - name: "PASS: Skipping..."
+  #     meta: end_play
+  #   rescue:
+  #   - name: "FAIL: Continuing to update host DNS settings"
+  #     meta: noop
 
   - name: "Backup /etc/resolv.conf"
     copy:
@@ -174,14 +174,14 @@
     become: yes
     
   ### Verify from hosts
-  - command: "cat {{ resolv }}"
-    register: cat_resolv
-  - name: "Display /etc/resolv.conf"
-    debug:
-      var: cat_resolv.stdout
+  # - command: "cat {{ resolv }}"
+  #   register: cat_resolv
+  # - name: "Display /etc/resolv.conf"
+  #   debug:
+  #     var: cat_resolv.stdout
 
-  - name: "Verify DNS from hosts"
-    shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
-    register: verify
-    failed_when: "verify.stdout != hostvars[item].fqdn"
-    with_items: "{{ groups['all_hosts'] }}"
+  # - name: "Verify DNS from hosts"
+  #   shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
+  #   register: verify
+  #   failed_when: "verify.stdout != hostvars[item].fqdn"
+  #   with_items: "{{ groups['all_hosts'] }}"
