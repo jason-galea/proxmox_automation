@@ -1,4 +1,4 @@
-all: # Excludes localhost
+all:
   vars: ### Globals
     network: 172.26.0
     gateway: "{{ network }}.1"
@@ -15,15 +15,18 @@ all: # Excludes localhost
     prox_password: "{{ password }}"
 
     ### Networking
-    ip: "{{ network }}.{{ id }}"
-    fqdn: "{{ inventory_hostname }}.{{ domain }}"
+    # ip: "{{ network }}.{{ id }}"
+    # fqdn: "{{ inventory_hostname }}.{{ domain }}"
     # additional_ports: [] # Expects to be set per host
 
     ### Ansible
-    ansible_host: "{{ ip }}"
+    # ansible_host: "{{ ip }}" ### TODO: Confirm if this is causing problems, and fix
     # ansible_host: "{{ fqdn }}"
 
+
+###################################################
   children:
+
     hyperv_vms:
       hosts:
         opnsense:
@@ -41,29 +44,36 @@ all: # Excludes localhost
           - 5405 # corosync UDP
           # - 60000...60050 # live migration
       vars:
+        # ansible_host: "{{ ip }}"
         ansible_user: root
 
+
+###################################################
     templates:
       hosts:
         base:
           id: 200
           ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
           # ct_ostemplate: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
-          base_packages: [ufw,git,curl,unzip,idn2,sqlite3,dns-root-data,netcat,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
+          base_packages: [git,curl,unzip,idn2,htoptree]
 
+
+###################################################
     infrastructure:
       hosts:
-        pihole:
-          id: 100
-          port: 80
-          additional_ports: [53]
-          required_packages: [lighttpd]
+        # pihole:
+        #   id: 100
+        #   port: 80
+        #   additional_ports: [53]
+        #   required_packages: [lighttpd,sqlite3,dns-root-data,netcat,php-common,php-cgi,php-sqlite3,php-xml,php-intl,php-json]
         # proxy:
         #   id : 101
         #   port: 80
         # openssl: # TODO: Choose a CA
         #   id : 102
         #   port: 80 # TODO: Confirm port
+
+
     services:
       hosts:
         # portainer:
@@ -73,10 +83,10 @@ all: # Excludes localhost
         #   ct_swap: 512
         #   port: 9443
         #   additional_ports: [8000] # TCP tunnel
-        apache:
-          id: 121
-          port: 80
-          cname: "www.{{ domain }}"
+        # apache:
+        #   id: 121
+        #   port: 80
+        #   cname: "www.{{ domain }}"
         # emby:
         #   id: 122
         #   ct_cores: 4
@@ -101,8 +111,13 @@ all: # Excludes localhost
         scraper:
           id: 125
           port: 80
-          required_packages: [python3-pip, firefox, firefox-geckodriver]
+          ct_cores: 2
+          ct_memory: 1024
+          ct_swap: 512
+          required_packages: [apache2,php,libapache2-mod-php,python3-pip, firefox, firefox-geckodriver]
           # additional_ports: [3306, 33060]
+
+
     vpn_services:
       hosts:
         # qbittorrent:
@@ -126,6 +141,7 @@ all: # Excludes localhost
         #   # user: admin
         #   port: 9117
 
+
     game_servers:
       hosts:
         # csgo:
@@ -143,32 +159,20 @@ all: # Excludes localhost
         #   port: 2350
         #   additional_ports: [3450]
 
-    ### THIS GROUP IS IDENTICAL TO "all"
-    # all_hosts: # Excluding localhost
-    #   children:
-    #     hyperv_vms:
-    #     all_cts:
-    #   vars:
-    #     ### Networking
-    #     ip: "{{ network }}.{{ id }}"
-    #     fqdn: "{{ inventory_hostname }}.{{ domain }}"
-    #     # additional_ports: [] # Expects to be set per host
 
-    #     ### Ansible
-    #     ansible_host: "{{ ip }}"
-    #     # ansible_host: "{{ fqdn }}"
-
+###################################################
     all_services: # Excluding infrastructure
       children:
         services:
         vpn_services:
         game_servers:
 
+
     all_cts: # Excluding hyperv_vms
       children:
         infrastructure:
         all_services:
-        templates:
+        templates: # This is destroyed during the "backup" role
       vars: ### Default vars for all CTs
         user: "{{ inventory_hostname }}"
         # This ^^^ seems redundant, but if we use "inventory_hostname" in the playbook instead,
@@ -204,6 +208,20 @@ all: # Excludes localhost
         required_packages: [] 
 
         ### ANSIBLE
+        ansible_host: "{{ ip }}"
         ansible_user: "{{ user }}"
+
+
+###################################################
+    all_but_localhost:
+      children:
+        hyperv_vms:
+        all_cts:
+      vars:
+        ip: "{{ network }}.{{ id }}"
+        fqdn: "{{ inventory_hostname }}.{{ domain }}"
+
+        ### Ansible
+        ansible_host: "{{ ip }}"
         
         

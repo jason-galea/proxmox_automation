@@ -1,7 +1,7 @@
 ---
 ### Destroy 
 - name: "Destroy environment"
-  hosts: all_cts
+  hosts: infrastructure, all_services
   gather_facts: no
   vars:
     ansible_user: root

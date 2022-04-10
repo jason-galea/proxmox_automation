@@ -26,3 +26,14 @@
 - pause:
     seconds: 2
 
+
+### TODO: remove CT200 after backup
+- name: "Delete base container, no longer needed"
+  delegate_to: localhost
+  proxmox:
+    api_host: "{{ prox_host }}"
+    api_user: "{{ prox_user }}"
+    api_password: "{{ prox_password }}"
+
+    vmid: "{{ id }}"
+    state: absent

@@ -49,6 +49,12 @@
       onboot: "{{ ct_onboot }}"
       features: "{{ ct_features }}"
 
+      ### TODO:
+      #   - "lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0"
+      # mounts:
+      #   mp0: /host_mount,mp=/container_mount
+      
+
   ### Additional features
     # TODO: Replace with builtin
   - name: "Add custom LXC configs"

@@ -3,34 +3,30 @@
 ### Destroy
   # TODO: Make this conditional
 - name: "Destroy templates"
-  hosts: templates
+  hosts: prox
   gather_facts: no
   vars:
     ansible_user: root
   tasks:
   - name: "Does template file exist?"
-    delegate_to: prox
+    # delegate_to: prox
     shell: "find {{ template_dir }} | grep 'vzdump.*tar'"
     register: check
     failed_when: (check.rc not in [0, 1])
 
-  - name: "Yes! Deleting..."
-    block:
-    - delegate_to: prox
+  - block:
+    - name: "Yes! Deleting..."
+      # delegate_to: prox
       shell: "rm -rf {{ template_dir }}vzdump*"
 
     - name: "Show remaining templates"
-      delegate_to: prox
+      # delegate_to: prox
       command: "find {{ template_dir }}"
       register: after
     - debug:
         var: after.stdout
     when: check.stdout != ""
 
-### Fix SSH
-  - name: "Remove orphaned SSH keys"
-    delegate_to: localhost
-    command: "ssh-keygen -f ~/.ssh/known_hosts -R {{ ansible_host }}"
 
 
 

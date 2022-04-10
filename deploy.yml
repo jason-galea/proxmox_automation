@@ -4,14 +4,15 @@
 ### Workaround???
   ### TODO: FIX
 - name: "Literally do nothing, but everything breaks if you don't???????????????"
-  hosts: all
+  hosts: all_but_localhost
   gather_facts: no
   tasks:
   # - debug:
   #     var: ansible_host
   - set_fact:
       ansible_host: "{{ ip }}"
-    when: ip is defined # Skip localhost
+    # when: ip is defined # Skip localhost
+    # when: ansible_host is not "localhost" # Skip localhost
   # - debug:
   #     var: ansible_host
 
@@ -31,23 +32,23 @@
     with_items:
     - create
     - packages
-    - backup
+    - backup # This deletes the container!
     when: check.stdout == ""  # Else, continue
 
-## Deploy infrastructure
-- name: "Deploy infrastructure containers"
-  hosts: infrastructure
-  gather_facts: no
-  roles:
-  - create
-  - prepare
-  - packages
-  - firewall
+# ## Deploy infrastructure
+# - name: "Deploy infrastructure containers"
+#   hosts: infrastructure
+#   gather_facts: no
+#   roles:
+#   - create
+#   - prepare
+#   - packages
+#   - firewall
 
-### Configure infrastructure
-- import_playbook: "services/pihole.yml" ### TODO: Check & skip SMARTER if already installed
-# - import_playbook: "services/proxy.yml"
-# - import_playbook: "services/ca.yml"
+# ### Configure infrastructure
+# - import_playbook: "services/pihole.yml" ### TODO: Check & skip SMARTER if already installed
+# # - import_playbook: "services/proxy.yml"
+# # - import_playbook: "services/ca.yml"
 
 ### Deploy services
 - name: "Prepare service containers"
@@ -58,14 +59,11 @@
   - prepare
   - packages
   - firewall
-  - add_dns_records
-  # - "deploy_{{ inventory_hostname }}" # Maybe???
+  # - add_dns_records
+  # - "deploy_{{ inventory_hostname }}" # Instead of import_playbook?
 
 ### Configure services
 # - import_playbook: "services/apache.yml"
 # - import_playbook: "services/emby.yml"
 # - import_playbook: "services/wekan.yml"
-<<<<<<< HEAD
-# - import_playbook: "services/scraper.yml"
-=======
->>>>>>> df7131eff06a8c6cc285ba9b15296067a929a876
+- import_playbook: "services/scraper.yml"

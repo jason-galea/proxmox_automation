@@ -2,12 +2,49 @@
 - name: "Deploy Price Scraper"
   hosts: scraper
   gather_facts: no
-  # tasks:
+  tasks:
 
-### python
-# apt install python3-pip firefox firefox-geckodriver
-# python3 -m pip install --upgrade pip
-# python3 -m pip install selenium mysql-connector-python beautifulsoup4
+  - name: "Upgrade pip"
+    pip: 
+      name: pip
+      extra_args: --upgrade
+  
+  - name: "Install python modules"
+    pip:
+      name: "{{ item }}"
+    with_items:
+    - selenium
+    - mysql-connector-python
+    - beautifulsoup4
+
+  - name: "Move old /var/www"
+    file:
+      path: /var/www
+      state: absent
+
+  - name: "Clone price_scraper repo to /var/www"
+    git:
+      repo: "https://github.com/jason-galea/price_scraper"
+      version: "removing_sql" # branch
+      dest: "/var/www"
+
+
+  # - name: "Run test job"
+
+
+### Apache default permissions:
+# /var/www/html/ --> 755 root:root 
+# /var/www/html/index.html --> 644 root:root
+
+
+### Apache
+# apt install -y apache2 php libapache2-mod-php
+# chmod -R 755 /var/www/html
+
+
+
+
+
 
 
 
