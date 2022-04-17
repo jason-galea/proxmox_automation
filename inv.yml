@@ -112,7 +112,7 @@ all:
           id: 125
           port: 80
           ct_cores: 2
-          ct_memory: 1024
+          ct_memory: 2048
           ct_swap: 512
           required_packages: [apache2,php,libapache2-mod-php,python3-pip, firefox, firefox-geckodriver]
           # additional_ports: [3306, 33060]
