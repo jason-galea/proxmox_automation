@@ -2,6 +2,7 @@
 - name: "Deploy Price Scraper"
   hosts: scraper
   gather_facts: no
+  # become: yes # User is "root" already
   tasks:
 
   - name: "Upgrade pip"
@@ -17,7 +18,7 @@
     - mysql-connector-python
     - beautifulsoup4
 
-  - name: "Move old /var/www"
+  - name: "Delete old /var/www"
     file:
       path: /var/www
       state: absent
@@ -28,18 +29,32 @@
       version: "removing_sql" # branch
       dest: "/var/www"
 
+    ### Apache default permissions:
+    # /var/www/html/ --> 755 root:root 
+    # /var/www/html/index.html --> 644 root:root
+  - name: "Change permissions"
+    file:
+      path: /var/www
+      state: directory
+      mode: "0755"
+      recurse: yes
 
-  # - name: "Run test job"
+  - name: "Restart Apache service"
+    service:
+      name: apache2
+      state: restarted
+  - shell: "systemctl status apache2"
+    register: apache2_status
+  - debug:
+      var: apache2_status.stdout
+
+  - name: "Verify with test job"
+    shell: "/var/www/script/scrape.py"
+    register: scrape
+  - debug:
+      var: scrape.stdout
 
 
-### Apache default permissions:
-# /var/www/html/ --> 755 root:root 
-# /var/www/html/index.html --> 644 root:root
-
-
-### Apache
-# apt install -y apache2 php libapache2-mod-php
-# chmod -R 755 /var/www/html
 
 
 

@@ -32,7 +32,7 @@
     # prox_ip: 172.26.0.2
     # prox_user: root
   tasks:
-    ### TODO: Check if accessible, if so then skip entire playbook
+    ### TODO: Check if accessible, if so --> skip entire playbook
     ### The skip could be done with multiple "when" statements on every task,
     ### or with some command that completely cancels this play
     ### Research --> decide --> implement
