@@ -26,18 +26,21 @@
   - name: "Clone price_scraper repo to /var/www"
     git:
       repo: "https://github.com/jason-galea/price_scraper"
-      version: "removing_sql" # branch
+      # version: "removing_sql" # branch
       dest: "/var/www"
 
     ### Apache default permissions:
     # /var/www/html/ --> 755 root:root 
     # /var/www/html/index.html --> 644 root:root
-  - name: "Change permissions"
+  - name: "Update directory permissions"
     file:
-      path: /var/www
+      path: "{{ item }}"
       state: directory
       mode: "0755"
+      owner: www-data
+      group: www-data
       recurse: yes
+    with_items: ["/var/www", "/tmp/apache"]
 
   - name: "Restart Apache service"
     service:
