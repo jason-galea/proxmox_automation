@@ -15,7 +15,7 @@
       name: "{{ item }}"
     with_items:
     - selenium
-    - mysql-connector-python
+    # - mysql-connector-python
     - beautifulsoup4
 
   - name: "Delete old /var/www"
@@ -54,8 +54,8 @@
   - name: "Verify with test job"
     shell: "/var/www/script/scrape.py"
     register: scrape
-  - debug:
-      var: scrape.stdout
+  # - debug:
+  #     var: scrape.stdout
 
 
 

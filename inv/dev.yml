@@ -5,7 +5,7 @@ all:
     domain: test.lan
     dns: "{{ hostvars['pihole'].ip }}" # This not used during creation
     inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
-    password: "{{ lookup('file', inventory_dir + '/password.txt') }}"
+    password: "{{ lookup('file', inventory_dir + '/../password.txt') }}"
     template_dir: "/var/lib/vz/template/cache/"
     resolv: "/etc/resolv.conf"
 
