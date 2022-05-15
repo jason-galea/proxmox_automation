@@ -11,8 +11,6 @@
   #     var: ansible_host
   - set_fact:
       ansible_host: "{{ ip }}"
-    # when: ip is defined # Skip localhost
-    # when: ansible_host is not "localhost" # Skip localhost
   # - debug:
   #     var: ansible_host
 

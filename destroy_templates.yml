@@ -8,22 +8,21 @@
   vars:
     ansible_user: root
   tasks:
-  - name: "Does template file exist?"
     # delegate_to: prox
-    shell: "find {{ template_dir }} | grep 'vzdump.*tar'"
+  - shell: "find {{ template_dir }} | grep 'vzdump.*tar'"
     register: check
     failed_when: (check.rc not in [0, 1])
 
   - block:
-    - name: "Yes! Deleting..."
+    - name: "Does template file exist?"
       # delegate_to: prox
       shell: "rm -rf {{ template_dir }}vzdump*"
 
-    - name: "Show remaining templates"
       # delegate_to: prox
-      command: "find {{ template_dir }}"
+    - command: "find {{ template_dir }}"
       register: after
-    - debug:
+    - name: "Show remaining templates"
+      debug:
         var: after.stdout
     when: check.stdout != ""
 
