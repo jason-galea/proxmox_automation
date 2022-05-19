@@ -52,7 +52,7 @@
       var: apache2_status.stdout
 
   - name: "Verify with test job"
-    shell: "/var/www/script/scrape.py"
+    shell: "/var/www/script/scrape.py pccg hdd"
     register: scrape
   # - debug:
   #     var: scrape.stdout
