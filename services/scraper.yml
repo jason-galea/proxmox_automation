@@ -59,9 +59,9 @@
   # # - debug:
   # #     var: scrape.stdout
 
-  # - name: "Start flask webserver"
-  #   # shell: "python3 /var/www/run.py"
-  #   shell: 'cd /var/www/; python3 </dev/null >/dev/null 2>&1 &'
+  - name: "Start flask webserver"
+    # shell: "python3 /var/www/run.py"
+    shell: 'nohup /var/www/run.py > /dev/null 2> /dev/null &'
 
 
 
