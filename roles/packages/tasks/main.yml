@@ -55,6 +55,7 @@
       loop_var: pkg_to_install
     become: yes
     when: missing_packages == true
+    retries: 3
 
 ### Fail condition
   when: (inventory_hostname == "base") or (required_packages is defined)
