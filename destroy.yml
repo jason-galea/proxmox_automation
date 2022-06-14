@@ -1,18 +1,21 @@
 ---
 ### Destroy 
+- name: "Fix containers if stalled"
+  hosts: prox
+  gather_facts: no
+  tasks:
+  - shell: "ps x | grep -v grep | grep {{ item }} | awk '{print $1}' | xargs -n 1 kill -9"
+    register: fix_stalled
+    failed_when: "fix_stalled.rc not in [0, 123]" # Ignore errors
+    with_items: [lxc-start, vzstart]
+
 - name: "Destroy environment"
   hosts: infrastructure, all_services
   gather_facts: no
   vars:
     ansible_user: root
   tasks:
-  - name: "Fix containers if stalled"
-    delegate_to: prox
-    shell: "ps x | grep -v grep | grep {{ item }} | awk '{print $1}' | xargs -n 1 kill -9"
-    register: fix_stalled
-    failed_when: "fix_stalled.rc not in [0, 123]" # Ignore errors
-    with_items: [lxc-start, vzstart]
-
+  
   - name: "Stop containers"
     delegate_to: localhost
     proxmox:

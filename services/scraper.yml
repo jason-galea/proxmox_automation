@@ -17,6 +17,7 @@
     - selenium
     # - mysql-connector-python
     - beautifulsoup4
+    - flask
 
   - name: "Delete old /var/www"
     file:
@@ -42,20 +43,23 @@
       recurse: yes
     with_items: ["/var/www", "/tmp/apache"]
 
-  - name: "Restart Apache service"
-    service:
-      name: apache2
-      state: restarted
-  - shell: "systemctl status apache2"
-    register: apache2_status
-  - debug:
-      var: apache2_status.stdout
-
-  - name: "Verify with test job"
-    shell: "/var/www/script/scrape.py pccg hdd"
-    register: scrape
+  # - name: "Restart Apache service"
+  #   service:
+  #     name: apache2
+  #     state: restarted
+  # - shell: "systemctl status apache2"
+  #   register: apache2_status
   # - debug:
-  #     var: scrape.stdout
+  #     var: apache2_status.stdout
+
+  # - name: "Verify with test job"
+  #   shell: "/var/www/script/scrape.py pccg hdd"
+  #   register: scrape
+  # # - debug:
+  # #     var: scrape.stdout
+
+  - name: "Start flask webserver"
+    shell: "python3 /var/www/run.py &"
 
 
 
