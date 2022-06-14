@@ -10,6 +10,7 @@
       name: pip
       extra_args: --upgrade
   
+  ### TODO: check if python modules are installed first 
   - name: "Install python modules"
     pip:
       name: "{{ item }}"
@@ -58,8 +59,9 @@
   # # - debug:
   # #     var: scrape.stdout
 
-  - name: "Start flask webserver"
-    shell: "python3 /var/www/run.py &"
+  # - name: "Start flask webserver"
+  #   # shell: "python3 /var/www/run.py"
+  #   shell: 'cd /var/www/; python3 </dev/null >/dev/null 2>&1 &'
 
 
 

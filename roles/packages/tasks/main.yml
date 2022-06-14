@@ -13,21 +13,23 @@
 
   - name: "Prepare list of packages to install"
     set_fact:
-      packages_to_install: "{{ required_packages }}"
+      packages_to_check: "{{ required_packages }}"
+
+  - name: "Get apt updates"
+    apt:
+      update_cache: yes
+
 
   ### Update (Base template only)
   - block:
     - name: "Install updates"
       apt:
         upgrade: full
-        update_cache: yes
       register: update
-    # - debug:
-    #     var: update.stdout
 
     - name: "Append base packages to install list"
       set_fact:
-        packages_to_install: "{{ base_packages + required_packages }}"
+        packages_to_check: "{{ base_packages + required_packages }}"
 
     # when: inventory_hostname == "base"
     when: base_packages is defined # Same thing
@@ -39,20 +41,28 @@
   - set_fact:
       missing_packages: false # Run every time
 
-  - name: "Check if packages are already installed" # Looped to increase verbosity
+  ### TODO: Check, then add to "packages_to_install"
+  - name: "Create empty list"
     set_fact:
-      missing_packages: true # Run on failure
-    when: "pkg_to_check not in ansible_facts.packages"
-    loop_control: # Avoid warnings from reusing "{{ item }}"
-      loop_var: pkg_to_check
-    with_items: "{{ packages_to_install }}"
+      packages_to_install: []
+
+  - name: "Populate list of packages to be installed" # Looped to increase verbosity
+    set_fact:
+      missing_packages: true
+      packages_to_install: "{{ packages_to_install + [item] }}"
+    when: "item not in ansible_facts.packages"
+    # when: "pkg_to_check not in ansible_facts.packages"
+    # loop_control: # Avoid warnings from reusing "{{ item }}"
+    #   loop_var: pkg_to_check
+    with_items: "{{ packages_to_check }}"
     
   - name: "Install packages"
     apt:
-      pkg: "{{ pkg_to_install }}"
+      # pkg: "{{ pkg_to_install }}"
+      pkg: "{{ item }}"
     with_items: "{{ packages_to_install }}"
-    loop_control: # Avoid warnings from reusing "{{ item }}"
-      loop_var: pkg_to_install
+    # loop_control: # Avoid warnings from reusing "{{ item }}"
+    #   loop_var: pkg_to_install
     become: yes
     when: missing_packages == true
     retries: 3
