@@ -1,0 +1,26 @@
+- name: "RUNNING 'delete' ROLE, WITH CONTAINER {{ id }}"
+  debug:
+
+- name: "Stop containers"
+  delegate_to: localhost
+  proxmox:
+    api_host: "{{ prox_host }}"
+    api_user: "{{ prox_user }}"
+    api_password: "{{ prox_password }}"
+
+    vmid: "{{ id }}"
+    state: stopped
+
+- name: "Destroy containers"
+  delegate_to: localhost
+  proxmox:
+    api_host: "{{ prox_host }}"
+    api_user: "{{ prox_user }}"
+    api_password: "{{ prox_password }}"
+
+    vmid: "{{ id }}"
+    state: absent
+
+- name: "Remove orphaned SSH keys"
+  delegate_to: localhost
+  command: "ssh-keygen -f ~/.ssh/known_hosts -R {{ ansible_host }}"

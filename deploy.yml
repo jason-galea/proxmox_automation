@@ -3,7 +3,7 @@
 ---
 ### Workaround???
   ### TODO: FIX
-- name: "Literally do nothing, but everything breaks if you don't???????????????"
+- name: "Literally do nothing, but everything breaks if you don't?"
   hosts: all_but_localhost
   gather_facts: no
   tasks:

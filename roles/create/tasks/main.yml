@@ -6,7 +6,7 @@
 
 - block:
 
-    ### Discover template
+    ### Discover base template
   - block:
     - name: "Discover base template name"
       delegate_to: prox
@@ -16,7 +16,9 @@
     - set_fact:
         ct_ostemplate: "local:vztmpl/{{ name.stdout }}"
 
-    when: ct_ostemplate is not defined # End block
+    # when: ct_ostemplate is not defined
+    # when: ct_hostname != "base"
+    when: id != 200
 
   - debug:
       var: ct_ostemplate
@@ -48,11 +50,6 @@
       unprivileged: "{{ ct_unprivileged }}"
       onboot: "{{ ct_onboot }}"
       features: "{{ ct_features }}"
-
-      ### TODO:
-      #   - "lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0"
-      # mounts:
-      #   mp0: /host_mount,mp=/container_mount
       
 
   ### Additional features
@@ -62,7 +59,7 @@
     shell: "echo '{{ config_line }}' >> /etc/pve/lxc/{{ id }}.conf"
     with_items: "{{ ct_custom_configs }}"
     loop_control:
-      loop_var: config_line # Avoid warnings
+      loop_var: config_line # Avoid warning
     when: ct_custom_configs is defined
 
   ### Start
@@ -86,5 +83,25 @@
   vars:
     ansible_user: root # Workaround
   wait_for_connection:
-    timeout: 30
-  retries: 3
+    timeout: 5
+  retries: 5
+
+- name: "Install SSH in Alpine"
+  delegate_to: prox
+  command: "pct exec {{ id }} {{ alpine_cmd }}"
+  with_items:
+  - 'apk update'
+  - 'apk add openssh'
+  - 'rc-update add sshd'
+  - 'rc-status'
+  - '/etc/init.d/sshd start'
+  loop_control:
+    loop_var: alpine_cmd # Avoid warning
+  when: (id == 200) and (distro == "alpine")
+  timeout: 5
+  retries: 5
+
+- name: "Add new SSH key to known hsots"
+  delegate_to: localhost
+  connection: local
+  shell: "ssh-keyscan -H {{ ip }} >> ~/.ssh/known_hosts"

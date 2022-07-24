@@ -8,6 +8,8 @@ all:
     password: "{{ lookup('file', inventory_dir + '/../password.txt') }}"
     template_dir: "/var/lib/vz/template/cache/"
     resolv: "/etc/resolv.conf"
+    # distro: "ubuntu"
+    distro: "alpine"
 
     ### Prox
     prox_host: "{{ hostvars['prox'].ip }}"
@@ -54,8 +56,9 @@ all:
         base:
           id: 200
           # ct_ostemplate: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
-          ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
+          # ct_ostemplate: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
           # ct_ostemplate: "local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
+          ct_ostemplate: "local:vztmpl/alpine-3.15-default_20211202_amd64.tar.xz"
           base_packages: [git,curl,unzip,idn2,htop,tree]
 
 
@@ -116,8 +119,9 @@ all:
           ct_cores: 2
           ct_memory: 1024
           ct_swap: 100
-          required_packages: [apache2,php,libapache2-mod-php,python3-pip,firefox,firefox-geckodriver]
+          # required_packages: [apache2,php,libapache2-mod-php,python3-pip,firefox,firefox-geckodriver]
           # required_packages: [apache2,php,libapache2-mod-php,python3-pip,firefox]
+          required_packages: [python3-pip,firefox,firefox-geckodriver]
           # additional_ports: [3306, 33060]
           # ct_features:
           # - fuse=1

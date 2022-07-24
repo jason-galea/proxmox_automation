@@ -22,10 +22,17 @@
 
   ### Update (Base template only)
   - block:
-    - name: "Install updates"
+    - name: "Install apt updates"
       apt:
         upgrade: full
       register: update
+      when: distro == "ubuntu"
+
+    - name: "Install apk updates"
+      apk:
+        upgrade: full
+      register: update
+      when: distro == "alpine"
 
     - name: "Append base packages to install list"
       set_fact:
@@ -49,22 +56,30 @@
   - name: "Populate list of packages to be installed" # Looped to increase verbosity
     set_fact:
       missing_packages: true
-      packages_to_install: "{{ packages_to_install + [item] }}"
-    when: "item not in ansible_facts.packages"
-    # when: "pkg_to_check not in ansible_facts.packages"
-    # loop_control: # Avoid warnings from reusing "{{ item }}"
-    #   loop_var: pkg_to_check
+      packages_to_install: "{{ packages_to_install + [pkg_to_check] }}"
+    when: "pkg_to_check not in ansible_facts.packages"
+    loop_control: # Avoid warnings from reusing "{{ item }}"
+      loop_var: pkg_to_check
     with_items: "{{ packages_to_check }}"
     
-  - name: "Install packages"
+  - name: "Install apt packages"
     apt:
-      # pkg: "{{ pkg_to_install }}"
-      pkg: "{{ item }}"
+      pkg: "{{ pkg_to_install }}"
     with_items: "{{ packages_to_install }}"
-    # loop_control: # Avoid warnings from reusing "{{ item }}"
-    #   loop_var: pkg_to_install
+    loop_control: # Avoid warnings from reusing "{{ item }}"
+      loop_var: pkg_to_install
     become: yes
-    when: missing_packages == true
+    when: (missing_packages == true) and ( distro == "ubuntu") 
+    retries: 3
+    
+  - name: "Install apk packages"
+    apk:
+      pkg: "{{ pkg_to_install }}"
+    with_items: "{{ packages_to_install }}"
+    loop_control: # Avoid warnings from reusing "{{ item }}"
+      loop_var: pkg_to_install
+    become: yes
+    when: (missing_packages == true) and ( distro == "alpine") 
     retries: 3
 
 ### Fail condition

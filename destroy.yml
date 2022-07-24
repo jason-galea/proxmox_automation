@@ -6,25 +6,87 @@
   tasks:
   - shell: "ps x | grep -v grep | grep {{ item }} | awk '{print $1}' | xargs -n 1 kill -9"
     register: fix_stalled
-    failed_when: "fix_stalled.rc not in [0, 123]" # Ignore errors
+    failed_when: (fix_stalled.rc not in [0, 123]) # Ignore errors
     with_items: [lxc-start, vzstart]
 
-- name: "Destroy environment"
+- name: "Check if base container exists"
+  hosts: prox
+  gather_facts: no
+  tasks:
+  - shell: "pct list | grep 200 | wc --lines"
+    register: base_container_check
+
+  # - debug:
+  #     var: base_container_check.stdout
+
+  - set_fact:
+      base_container_check: "{{ base_container_check.stdout }}"
+
+
+- name: "Delete base container"
+  hosts: base
+  gather_facts: no
+  vars:
+    base_container_check: "{{ hostvars['prox']['base_container_check'] }}"
+  tasks:
+  # - debug:
+  #     var: base_container_check
+
+  # - include_role:
+  #     name: delete
+  #   when: base_container_check == "1"
+
+  ### This entire block is duplicated below, because the role wasn't working :(
+  - block:
+    # - name: "RUNNING 'delete' BLOCK, WITH CONTAINER {{ id }}"
+    #   debug:
+
+    # - name: "Stop containers"
+    #   delegate_to: localhost
+    #   proxmox:
+    #     api_host: "{{ prox_host }}"
+    #     api_user: "{{ prox_user }}"
+    #     api_password: "{{ prox_password }}"
+
+    #     vmid: "{{ id }}"
+    #     state: stopped
+
+    - name: "Destroy containers"
+      delegate_to: localhost
+      proxmox:
+        api_host: "{{ prox_host }}"
+        api_user: "{{ prox_user }}"
+        api_password: "{{ prox_password }}"
+
+        vmid: "{{ id }}"
+        state: absent
+
+    - name: "Remove orphaned SSH keys"
+      delegate_to: localhost
+      command: "ssh-keygen -f ~/.ssh/known_hosts -R {{ ansible_host }}"
+
+    when: base_container_check == "1"
+
+- name: "Destroy containers"
   hosts: infrastructure, all_services
   gather_facts: no
   vars:
     ansible_user: root
+  # roles:
+  # - delete
   tasks:
-  
-  - name: "Stop containers"
-    delegate_to: localhost
-    proxmox:
-      api_host: "{{ prox_host }}"
-      api_user: "{{ prox_user }}"
-      api_password: "{{ prox_password }}"
+  # - name: "RUNNING 'delete' BLOCK, WITH CONTAINER {{ id }}"
+  #   debug:
 
-      vmid: "{{ id }}"
-      state: stopped
+  # - name: "Stop containers"
+  #   delegate_to: localhost
+  #   proxmox:
+  #     api_host: "{{ prox_host }}"
+  #     api_user: "{{ prox_user }}"
+  #     api_password: "{{ prox_password }}"
+
+  #     vmid: "{{ id }}"
+  #     state: stopped
 
   - name: "Destroy containers"
     delegate_to: localhost
@@ -52,8 +114,7 @@
     register: my_gateway
 
   - name: "Set DNS server to default gateway"
-    shell: sed -i 's/.*nameserver.*/nameserver {{ my_gateway.stdout }}/' {{ resolv }}
-    # shell: sed -i 's/.*nameserver.*/nameserver $(ip r | grep default | awk '{printf $3}')/' {{ resolv }} # IDK
+    shell: "sed -i 's/.*nameserver.*/nameserver {{ my_gateway.stdout }}/' {{ resolv }}"
     become: yes
     
 ### Verify
