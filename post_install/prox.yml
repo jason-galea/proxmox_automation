@@ -1,22 +1,34 @@
-### This playbook expects a freshly install Proxmox VM, with IP matching inv.yml
+### This playbook expects a freshly install Proxmox VM, with IP matching inv/dev.yml
 
 ### Steps:
 # Create VM in Hyper-V
 # Boot ISO
+
 ### Installation Summary:
-# Filesystem:     ext4
-# Disk(s):        /dev/sda
-# Country:        Australia
-# Timezone:       Australia/Melbourne
-# Keymap:         en-US
-# Email:          1@2.3
-# Management Int: eth0
-# Hostname:       prox
-# Domain:         test.lan
-# IP:             172.26.0.2
-# Gateway:        172.26.0.1
-# DNS:            172.26.0.1
+# Screen 1:
+#   (Agree)
+# Screen 2:
+#   (Default disk options, /dev/sda, ext4)
+# Screen 3:
+#   Country:        Australia
+#   Timezone:       Australia/Melbourne
+#   Keymap:         en-US
+# Screen 4:
+#   (Password)
+#   Email:          1@2.3
+# Screen 5:
+#   Management Interface:   (Default)
+#   Hostname (FQDN):        prox.test.lan
+#   IP:                     172.26.0.2/24
+#   Gateway:                172.26.0.1
+#   DNS:                    172.26.0.1
+
 ### VM will be ready after first reboot
+
+### To run this playbook:
+# sudo apt update -y
+# sudo apt install -y sshpass
+# ansible-playbook -i inv/dev.yml post_install/prox.yml
 
 ---
   ### TODO: Convert this into a role???
@@ -24,7 +36,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-    # host_to_configure: prox
+    host_to_configure: prox
 
     ### TODO: Move these vars into "set_facts" inside role
     prox_ip: "{{ hostvars[host_to_configure].ip }}"
@@ -44,22 +56,22 @@
     command: "ssh-keygen -R {{ prox_ip }}"
     # when: ???
 
-  - name: "Install sshpass on localhost"
-    apt:
-      pkg: sshpass
-      state: present
-      update_cache: yes
-    become: yes
-    register: install_sshpass
-    # when: ???
-  - debug:
-      var: install_sshpass.stdout
-    when: install_sshpass.stdout is defined
+  # - name: "Install sshpass on localhost"
+  #   apt:
+  #     pkg: sshpass
+  #     state: present
+  #     update_cache: yes
+  #   become: yes
+  #   register: install_sshpass
+  #   # when: ???
+  # - debug:
+  #     var: install_sshpass.stdout
+  #   when: install_sshpass.stdout is defined
 
   - name: "Authorise localhost key on Proxmox"
     command: "sshpass -p {{ password }} ssh-copy-id -o 'StrictHostKeyChecking no' {{ prox_user }}@{{ prox_ip }}"
     # when: ???
-    
+
 
 - name: "Configure Proxmox"
   hosts: prox
