@@ -35,11 +35,17 @@ It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM
 4. Set your subnet & host IPs in `inv.yml`
     - `vi ansible/inv.yml`
 
-5. Set your Proxmox password (Temporarily!):
+5. Set your Proxmox password:
     - `vi password.txt`
 
 6. Run initial Proxmox configuration with Ansible:
     - `ansible-playbook -i ansible/inv.yml ansible/prox_initial_config.yml`
 
-7. Delete your Proxmox password, as you can now connect via SSH key:
-    - `rm password.txt`
+<!-- 7. Delete your Proxmox password, as you can now connect via SSH key:
+    - `rm password.txt` -->
+
+7. (Create base container template)
+    - `ansible-playbook -i ansible/inv.yml ansible/create_base_ct_template.yml`
+
+8. Create the Pihole container
+    - `ansible-playbook -i ansible/inv.yml ansible/pihole.yml`

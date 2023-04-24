@@ -1,7 +1,5 @@
 ---
-  ### TODO: Convert this into a role???
 - name: "Prepare Proxmox for SSH"
-  # hosts: localhost
   hosts: prox
   gather_facts: false
   tasks:
@@ -101,27 +99,27 @@
         var: apt_upgrade_result.stdout_lines
       # when: apt_upgrade_result.stdout_lines is defined
 
-    #   ### Download most recent ubuntu CT template
-    # - name: "Update PVEAM"
-    #   ansible.builtin.command: "pveam update"
-    #   register: pveam_update
-    # - debug:
-    #     var: pveam_update.stdout
-    #   when: pveam_update.stdout is defined
+      ### Download most recent ubuntu CT template
+    - name: "Update PVEAM"
+      ansible.builtin.command: "pveam update"
+      register: pveam_update
+    - debug:
+        var: pveam_update.stdout
+      when: pveam_update.stdout is defined
 
-    # - name: "Find most recent ubuntu CT template"
-    #   ansible.builtin.shell: "pveam available | grep ubuntu | awk '{print $2}' | sort | tail -n 1"
-    #   register: ubuntu_ct
-    # - debug:
-    #     var: ubuntu_ct.stdout
-    #   when: ubuntu_ct.stdout is defined
+    - name: "Find most recent ubuntu CT template"
+      ansible.builtin.shell: "pveam available | grep ubuntu | awk '{print $2}' | sort | tail -n 1"
+      register: ubuntu_ct
+    - debug:
+        var: ubuntu_ct.stdout
+      when: ubuntu_ct.stdout is defined
 
-    # - name: "Download most recent ubuntu CT template"
-    #   ansible.builtin.command: "pveam download local {{ ubuntu_ct.stdout }}"
-    #   register: pveam_download
-    # - debug:
-    #     var: pveam_download.stdout
-    #   when: pveam_download.stdout is defined
+    - name: "Download most recent ubuntu CT template"
+      ansible.builtin.command: "pveam download local {{ ubuntu_ct.stdout }}"
+      register: pveam_download
+    - debug:
+        var: pveam_download.stdout
+      when: pveam_download.stdout is defined
 
     - name: "DEBUG: Show Proxmox webserver URL"
       ansible.builtin.debug:

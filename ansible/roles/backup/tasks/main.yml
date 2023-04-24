@@ -1,0 +1,39 @@
+### Stop
+- name: "Stop container"
+  delegate_to: localhost
+  proxmox:
+    api_host: "{{ prox_host }}"
+    api_user: "{{ prox_user }}"
+    api_password: "{{ prox_password }}"
+
+    vmid: "{{ id }}"
+    state: stopped
+
+### Prepare
+- name: "Remove network config"
+  delegate_to: prox
+  command: "pct set {{ id }} --delete net0"
+
+### Backup
+- name: "Backup container"
+  delegate_to: prox
+  command: "vzdump {{ id }} --mode stop --dumpdir {{ template_dir }} --compress zstd"
+  register: convert
+- debug:
+    var: convert.stdout
+
+### Wait
+- pause:
+    seconds: 2
+
+
+### TODO: remove CT200 after backup
+- name: "Delete base container, no longer needed"
+  delegate_to: localhost
+  proxmox:
+    api_host: "{{ prox_host }}"
+    api_user: "{{ prox_user }}"
+    api_password: "{{ prox_password }}"
+
+    vmid: "{{ id }}"
+    state: absent

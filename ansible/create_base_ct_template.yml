@@ -1,0 +1,24 @@
+---
+- name: "Create base CT template"
+  hosts: base_ct_template
+  gather_facts: false
+  tasks:
+    - name: "Check if base template exists"
+      delegate_to: prox
+      vars:
+        template_dir: "/var/lib/vz/template/cache/"
+      # ansible.builtin.shell: "find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar' | cat"
+      ansible.builtin.shell: |
+        set -o pipefail
+        find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar' | cat
+      register: check_base_template_result
+      changed_when: check_base_template_result.rc != 0
+
+    - name: "Creating base template"
+      ansible.builtin.include_role:
+        name: "{{ item }}" # Gross, very gross
+      with_items:
+        - create
+        # - packages
+        # - backup # This deletes the container!
+      when: check_base_template_result.stdout == ""
