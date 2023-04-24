@@ -2,9 +2,141 @@
 - name: "Create base CT template"
   ansible.builtin.import_playbook: create_base_ct_template.yml
 
-
 - name: "Create pihole CT"
   hosts: pihole
   gather_facts: false
   tasks:
-    - name: "???"
+    - name: "Ignore strict host key checking"
+      ansible.builtin.set_fact:
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+
+    - name: "Create pihole container"
+      ansible.builtin.include_role:
+        name: create
+
+    - name: "Check if pihole is already installed"
+      ansible.builtin.include_role:
+        name: pihole
+        tasks_from: check_if_already_installed
+
+    - name: "Install pihole"
+      ansible.builtin.include_role:
+        name: pihole
+        tasks_from: install_pihole
+
+
+# ### Populate records
+# - name: "Add DNS records to Pihole"
+#   hosts: pihole
+#   gather_facts: false
+#   vars:
+#     a_records_file: /etc/pihole/custom.list
+#     cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
+#   tasks:
+
+#     ### Check
+#     - block:
+#         - name: "Check if DNS is already working from pihole"
+#           ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
+#           register: verify
+#           failed_when: "verify.stdout != hostvars[item].fqdn"
+#           with_items: "{{ groups['all_hosts'] }}"
+#           no_log: true
+
+#         - name: "PASS: Skipping..."
+#           ansible.builtin.meta: end_play
+#       rescue:
+#         - name: "FAIL: Continuing to populate DNS records"
+#           ansible.builtin.meta: noop
+
+#     - name: "Wipe all records"
+#       ansible.builtin.command: "echo '' > {{ item }}"
+#       with_items: ["{{ a_records_file }}", "{{ cname_records_file }}"]
+#       become: true
+
+#       ### TODO: Combine these two tasks. Implement "www.test.lan" CNAME & test.
+#     - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
+#       ansible.builtin.shell: "echo '{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
+#       with_items: "{{ groups['all_hosts'] }}" # TODO: Use a seperate play, with delegation instead
+#       become: true
+#     # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
+#     #   ansible.builtin.shell: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
+#     #   with_items: "{{ groups['all_hosts'] }}"
+#     #   become: true
+
+#       ### TODO: Combine these two tasks
+#       # Can't loop multiple tasks (cat + debug) using "with_items"
+#       # Recommended solution is to "include_tasks" from another file (._.)
+#     - name: "Display A records"
+#       ansible.builtin.shell: "cat {{ a_records_file }} | cat"
+#       register: a_result
+#     - ansible.builtin.debug:
+#         var: a_result.stdout
+#     # - name: "Display CNAME records"
+#     #   ansible.builtin.shell: "cat {{ cname_records_file }} | cat"
+#     #   register: cname_result
+#     # - ansible.builtin.debug:
+#     #       var: cname_result.stdout
+
+#     - name: "Restart DNS"
+#       ansible.builtin.command: "pihole restartdns"
+#       register: restart
+#     - ansible.builtin.debug:
+#         var: restart.stdout
+
+#     ### Verify from pihole
+#     - name: "Verify DNS from pihole"
+#       ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
+#       register: verify
+#       failed_when: "verify.stdout != hostvars[item].fqdn"
+#       with_items: "{{ groups['all_hosts'] }}"
+
+
+# ### Apply DNS to hosts
+# - name: "Apply DNS and verify"
+#   hosts: prox
+#   gather_facts: false
+#   vars:
+#     resolv: "/etc/resolv.conf"
+#   tasks:
+
+#     ### Check
+#     # - block:
+#     #   - name: "Check if DNS is already working from hosts"
+#     #     ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
+#     #     register: verify
+#     #     failed_when: "verify.stdout != hostvars[item].fqdn"
+#     #     with_items: "{{ groups['all_hosts'] }}"
+#     #     no_log: true
+
+#     #   - name: "PASS: Skipping..."
+#     #     ansible.builtin.meta: end_play
+#     #   rescue:
+#     #   - name: "FAIL: Continuing to update host DNS settings"
+#     #     ansible.builtin.meta: noop
+
+#     - name: "Backup /etc/resolv.conf"
+#       ansible.builtin.copy:
+#         remote_src: true
+#         src: "{{ resolv }}"
+#         dest: "{{ resolv }}.bak"
+#         force: true
+#       # become: true
+
+#     - name: "Set DNS server to pihole"
+#       ansible.builtin.shell: |
+#         sed -i 's/.*nameserver.*/nameserver {{ hostvars['pihole'].ansible_ssh_host }}/' {{ resolv }}
+#       # become: true
+
+#     ### Verify from hosts
+#     # - ansible.builtin.command: "cat {{ resolv }}"
+#     #   register: cat_resolv
+#     # - name: "Display /etc/resolv.conf"
+#     #   ansible.builtin.debug:
+#     #     var: cat_resolv.stdout
+
+#     # - name: "Verify DNS from hosts"
+#     #   ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
+#     #   register: verify
+#     #   failed_when: "verify.stdout != hostvars[item].fqdn"
+#     #   with_items: "{{ groups['all_hosts'] }}"

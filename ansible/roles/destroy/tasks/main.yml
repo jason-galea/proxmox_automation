@@ -1,0 +1,26 @@
+- name: "Stop containers"
+  delegate_to: localhost
+  community.general.proxmox:
+    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+    api_user: root@pam
+    api_password: "{{ hostvars['prox'].password }}"
+
+    vmid: "{{ id }}"
+    state: stopped
+  failed_when: false ### Don't care if CT doesn't exist
+
+- name: "Destroy containers"
+  delegate_to: localhost
+  community.general.proxmox:
+    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+    api_user: root@pam
+    api_password: "{{ hostvars['prox'].password }}"
+
+    vmid: "{{ id }}"
+    state: absent
+
+- name: "Remove orphaned SSH keys"
+  delegate_to: localhost
+  ansible.builtin.command: "ssh-keygen -R {{ ansible_host }}"
+  register: remove_orphaned_keys
+  changed_when: remove_orphaned_keys.rc != 0

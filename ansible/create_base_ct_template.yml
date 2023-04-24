@@ -1,24 +1,27 @@
 ---
 - name: "Create base CT template"
-  hosts: base_ct_template
+  hosts: base
   gather_facts: false
   tasks:
-    - name: "Check if base template exists"
-      delegate_to: prox
-      vars:
-        template_dir: "/var/lib/vz/template/cache/"
-      # ansible.builtin.shell: "find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar' | cat"
-      ansible.builtin.shell: |
-        set -o pipefail
-        find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar' | cat
-      register: check_base_template_result
-      changed_when: check_base_template_result.rc != 0
+    - name: "Ignore strict host key checking"
+      ansible.builtin.set_fact:
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
-    - name: "Creating base template"
-      ansible.builtin.include_role:
-        name: "{{ item }}" # Gross, very gross
-      with_items:
+    - name: "Create base container"
+      loop:
         - create
         # - packages
-        # - backup # This deletes the container!
-      when: check_base_template_result.stdout == ""
+        - backup
+        - destroy
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+
+    # - name: "DEBUG: Get contents of {{ template_dir }}"
+    #   delegate_to: prox
+    #   ansible.builtin.command: "ls -lh {{ template_dir }}"
+    #   register: ls_template_dir
+    #   changed_when: ls_template_dir.rc != 0
+
+    # - name: "DEBUG: Show contents of {{ template_dir }}"
+    #   ansible.builtin.debug:
+    #     var: ls_template_dir.stdout_lines

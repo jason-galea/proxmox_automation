@@ -1,0 +1,15 @@
+- name: "Check if pihole is already installed in container"
+  ansible.builtin.stat:
+    path: /usr/local/bin/pihole
+  register: stat_pihole_bin
+
+- name: "Check if pihole webserver is active"
+  ansible.builtin.wait_for:
+    port: "{{ port }}"
+    timeout: 3
+  register: wait_for_pihole_webserver
+  failed_when: false ### Ignore fails, we just want the return code
+
+- name: "End play if Pihole is already installed"
+  ansible.builtin.meta: end_play
+  when: (stat_pihole_bin.stat.exists) and (wait_for_pihole_webserver.rc == 0)

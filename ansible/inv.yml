@@ -5,44 +5,61 @@ all:
     # subnet: "YOUR_SUBNET_HERE"
     subnet: "10.1.1"
     gateway: "{{ subnet }}.1"
+    domain: "test.lan"
+    fqdn: "{{ domain }}.{{ inventory_hostname }}"
+
+    template_dir: "/var/lib/vz/template/cache/"
+
+    ansible_ssh_host: "{{ subnet }}.{{ id }}"
+    ansible_user: root
 
   hosts:
     prox:
       # id: "YOUR_HOST_IP_AFFIX_HERE"
       id: 240
-      ansible_ssh_host: "{{ subnet }}.{{ id }}"
-      ansible_user: root
+      # ansible_ssh_host: "{{ subnet }}.{{ id }}"
+      # ansible_user: root
       password: "{{ lookup('file', './../password.txt') }}"
       port: 8006
 
-    base_ct_template:
-      id: 241
-      ansible_ssh_host: "{{ subnet }}.{{ id }}"
-      ansible_user: root
+  children:
+    vms:
+      hosts:
+        portainer:
+          id: 241
+          vm: true
 
-    pihole:
-      id: 242
-      ansible_ssh_host: "{{ subnet }}.{{ id }}"
-      ansible_user: root
-      # ansible_ssh_private_key_file: "TODO"
+    lxc_containers:
+      hosts:
+        base:
+          id: 249
+          # ansible_ssh_host: "{{ subnet }}.{{ id }}"
+          # ansible_user: root
+          base_packages: [git, curl, unzip, idn2, htop, tree]
 
-    # scraper:
-    #   id: 125
-    #   # port: 80
-    #   port: 5000
-    #   ct_cores: 2
-    #   ct_memory: 1024
-    #   ct_swap: 100
-    #   # required_packages: [apache2,php,libapache2-mod-php,python3-pip,firefox,firefox-geckodriver]
-    #   # required_packages: [apache2,php,libapache2-mod-php,python3-pip,firefox]
-    #   required_packages: [python3-pip,firefox,firefox-geckodriver]
-    #   # additional_ports: [3306, 33060]
-    #   # ct_features:
-    #   # - fuse=1
-    #   # - mount=nfs
-    #   # - nesting=1
-    #   # ct_custom_configs:
-    #   # - "lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0"
+        pihole:
+          id: 242
+          # ansible_ssh_host: "{{ subnet }}.{{ id }}"
+          # ansible_user: root
+          # ansible_ssh_private_key_file: "TODO"
+          port: 80
 
-
-  # children:
+    # docker_containers:
+    #   hosts:
+    #     scraper:
+    #       id: 125
+    #       # port: 80
+    #       port: 5000
+    #       ct_cores: 2
+    #       ct_memory: 1024
+    #       ct_swap: 100
+    #       # required_packages: [apache2,php,libapache2-mod-php,python3-pip,firefox,firefox-geckodriver]
+    #       # required_packages: [apache2,php,libapache2-mod-php,python3-pip,firefox]
+    #       required_packages: [python3-pip,firefox,firefox-geckodriver]
+    #       # additional_ports: [3306, 33060]
+    #       # ct_features:
+    #       # - fuse=1
+    #       # - mount=nfs
+    #       # - nesting=1
+    #       # ct_custom_configs:
+    #       # - "lxc.mount.entry = /dev/fuse dev/fuse none bind,create=file 0 0"

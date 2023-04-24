@@ -1,0 +1,6 @@
+---
+- name: "Destroy all LXC containers"
+  hosts: lxc_containers
+  gather_facts: false
+  roles:
+    - destroy
