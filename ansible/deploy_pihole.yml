@@ -12,12 +12,13 @@
 
     - name: "Create pihole container"
       ansible.builtin.include_role:
-        name: check_create_install_packages
+        name: create_lxc
 
     - name: "Install pihole"
       loop:
-        - end_play_if_already_installed
-        - install_pihole
+        - end_play_if_installed
+        - install
+      vars:
       ansible.builtin.include_role:
         name: pihole
         tasks_from: "{{ item }}"

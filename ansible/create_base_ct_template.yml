@@ -7,21 +7,32 @@
       ansible.builtin.set_fact:
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
+    - name: "Check if base template exists"
+      delegate_to: prox
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          ls {{ template_dir }}/vzdump-lxc-{{ id }}*tar.zst | head -n1
+        executable: /bin/bash
+      register: check_base_template_result
+      changed_when: check_base_template_result.rc != 0
+      failed_when: false ### Ignore fails, just want stdout
+
     - name: "Create base container"
-      loop:
-        - check_create_install_packages
-        - backup
-        - destroy
+      when: check_base_template_result.stdout == ""
+      block:
+        - name: "Create base container"
+          ansible.builtin.include_role:
+            name: create_lxc
+
+        - name: "Backup base container"
+          loop:
+            - backup_lxc
+            - destroy_lxc
+          ansible.builtin.include_role:
+            name: "{{ item }}"
+
+    - name: "Show VZdump backup dir contents"
       ansible.builtin.include_role:
-        name: manage_lxc
-        tasks_from: "{{ item }}"
-
-    # - name: "DEBUG: Get contents of {{ template_dir }}"
-    #   delegate_to: prox
-    #   ansible.builtin.command: "ls -lh {{ template_dir }}"
-    #   register: ls_template_dir
-    #   changed_when: ls_template_dir.rc != 0
-
-    # - name: "DEBUG: Show contents of {{ template_dir }}"
-    #   ansible.builtin.debug:
-    #     var: ls_template_dir.stdout_lines
+        name: backup_lxc
+        tasks_from: show_vzdump_backups.yml

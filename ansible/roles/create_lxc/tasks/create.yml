@@ -7,7 +7,7 @@
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
-          ls {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar' | cat
+          ls {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar.zst' | head -n1
         executable: /bin/bash
       register: name
       changed_when: check_if_container_already_exists_result.rc != 0
@@ -101,12 +101,16 @@
 
 
 ### Verify
+### TODO: Fix warning
 - name: "Verify container is online"
-  # delegate_to: localhost
-  ansible.builtin.wait_for:
-    port: 22
+  delegate_to: localhost
+  ansible.builtin.wait_for_connection:
     timeout: 5
-  retries: 3
+# - name: "Verify container is online"
+#   ansible.builtin.wait_for_connection:
+#     port: 22
+#     timeout: 5
+#   retries: 3
 
 # - name: "Install SSH in Alpine"
 #   delegate_to: prox

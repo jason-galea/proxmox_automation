@@ -17,13 +17,13 @@
 
 - name: "Backup container with vzdump"
   delegate_to: prox
-  ansible.builtin.command: "vzdump {{ id }} --mode stop --dumpdir {{ template_dir }} --compress zstd"
+  ansible.builtin.command: "vzdump {{ id }} --mode stop --dumpdir {{ template_dir }}/ --compress zstd"
   register: vzdump_container
   changed_when: vzdump_container.rc != 0
 
 - name: "DEBUG: Show output of container backup"
   ansible.builtin.debug:
-    var: convert.stdout
+    var: vzdump_container.stdout_lines
 
 - name: "Wait for container to finish being deleted"
   ansible.builtin.pause:

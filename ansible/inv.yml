@@ -8,7 +8,7 @@ all:
     domain: "test.lan"
     fqdn: "{{ domain }}.{{ inventory_hostname }}"
 
-    template_dir: "/var/lib/vz/template/cache/"
+    template_dir: "/var/lib/vz/template/cache"
 
     ansible_ssh_host: "{{ subnet }}.{{ id }}"
     ansible_user: root

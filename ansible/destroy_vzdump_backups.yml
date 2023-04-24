@@ -1,0 +1,25 @@
+---
+- name: "Destroy all VZdump CT backups"
+  hosts: prox
+  gather_facts: false
+  tasks:
+    - name: "Get list of VZdump files"
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          find {{ template_dir }}/ | grep vzdump
+        executable: /bin/bash
+      register: vzdumps_to_destroy
+      changed_when: vzdumps_to_destroy.rc != 0
+      failed_when: false
+
+    - name: "Destroy VZdump CT backups"
+      loop: "{{ vzdumps_to_destroy.stdout_lines }}"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+
+    - name: "Show VZdump backup dir contents"
+      ansible.builtin.include_role:
+        name: backup_lxc
+        tasks_from: show_vzdump_backups.yml

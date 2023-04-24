@@ -1,9 +1,0 @@
----
-- name: "Destroy all LXC containers"
-  hosts: lxc_containers
-  gather_facts: false
-  tasks:
-    - name: "Destroy all LXC containers"
-      ansible.builtin.include_role:
-        name: manage_lxc
-        tasks_from: destroy
