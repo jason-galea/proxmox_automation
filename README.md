@@ -22,7 +22,9 @@ It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM
     - Boot the ISO from a USB (E.G: Ventoy, Rufus, etc.)
     - Accept default options for everything
     - Set a static IP
-    - Remember the password & IP!
+    - *Remember the password & IP!*
+    - Restart
+    - Login and verify you have internet access (E.G: $ ping example.com)
 
 2. Clone this repo:
     - `git clone https://github.com/jason-galea/proxmox_automation.git`

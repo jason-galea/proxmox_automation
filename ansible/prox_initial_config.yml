@@ -1,110 +1,133 @@
 ---
   ### TODO: Convert this into a role???
 - name: "Prepare Proxmox for SSH"
-  hosts: localhost
+  # hosts: localhost
+  hosts: prox
   gather_facts: false
-  vars:
-    # host_to_configure: prox
-
-    ### TODO: Move these vars into "set_facts" inside role
-    prox_user: "{{ hostvars['prox'].ansible_user }}"
-    prox_ip: "{{ hostvars['prox'].ansible_ssh_host }}"
-    # prox_ip: 172.26.0.2
-    # prox_user: root
   tasks:
-    - name: "Remove old Proxmox key from localhost"
-      ansible.builtin.command: "ssh-keygen -R {{ prox_ip }}"
-      register: remove_old_prox_key_result
-      changed_when: remove_old_prox_key_result != 0
+    - name: "Check if ansible can connect to Proxmox already"
+      ansible.builtin.ping:
+      register: ansible_ping_result
 
-    - name: "Authorise localhost key on Proxmox"
-      ansible.builtin.command: |
-        sshpass \
-          -f ./../password.txt \
-          ssh-copy-id \
-            -o 'StrictHostKeyChecking no' \
-            {{ prox_user }}@{{ prox_ip }}
-      register: ssh_copy_id_result
-      changed_when: ssh_copy_id_result != 0
+    # - name: "DEBUG: ansible_ping_result"
+    #   ansible.builtin.debug:
+    #     var: ansible_ping_result.ping
+
+    - name: "Configure SSH access to Proxmox"
+      delegate_to: localhost
+      vars:
+        prox_user: "{{ hostvars['prox'].ansible_user }}"
+        prox_ip: "{{ hostvars['prox'].ansible_ssh_host }}"
+      when: ansible_ping_result.ping != "pong"
+      block:
+        - name: "Remove any existing SSH keys belonging to Proxmox from localhost"
+          ansible.builtin.command: "ssh-keygen -R {{ prox_ip }}"
+          register: remove_old_prox_key_result
+          changed_when: remove_old_prox_key_result != 0
+
+        - name: "Exchange SSH keys with Proxmox"
+          ansible.builtin.command: |
+            sshpass \
+              -f ./../password.txt \
+              ssh-copy-id \
+                -o 'StrictHostKeyChecking no' \
+                {{ prox_user }}@{{ prox_ip }}
+          register: ssh_copy_id_result
+          changed_when: ssh_copy_id_result != 0
 
 
 - name: "Configure Proxmox"
   hosts: prox
   gather_facts: false
   tasks:
-    - name: "DEBUG: Run 'id' command on Proxmox"
-      ansible.builtin.command: "id"
-      register: id_command_result
-      changed_when: id_command_result != 0
+  #   - name: "DEBUG: Run 'id' command on Proxmox"
+  #     ansible.builtin.command: "id"
+  #     register: id_command_result
+  #     changed_when: id_command_result != 0
 
-    - name: "DEBUG: Show 'id' command output"
+  #   - name: "DEBUG: Show 'id' command output"
+  #     ansible.builtin.debug:
+  #       var: id_command_result.stdout
+
+    - name: "Verify DNS & internet via ping"
+      ansible.builtin.command: "ping -c 3 example.com"
+      register: ping_result
+      changed_when: ping_result != 0
+
+    - name: "DEBUG: Show ping output"
       ansible.builtin.debug:
-        var: id_command_result
+        var: ping_result.stdout_lines
 
-    # - name: "Verify DNS & internet via ping"
-    #   command: "ping -c 3 example.com"
-    #   register: ping
-    # - debug:
-    #     var: ping.stdout
+    - name: "Detect debian version nickname"
+      # ansible.builtin.shell: |
+      #   set -o pipefail #
+      #   cat /etc/apt/sources.list | head -n1 | awk '{print $3}'
+      ansible.builtin.shell: "cat /etc/apt/sources.list | head -n1 | awk '{print $3}'"
+      register: debian_version_nickname_result
+      changed_when: debian_version_nickname_result != 0
 
-    #   ### TODO: Use templates module
-    # - name: "Add non-subscription repo"
-    #   ### OPTION 1:
-    #   # templates:
-    #   #   path: ???
-    #   ### OPTION 2:
-    #   # vars:
-    #   #   apt_sources: "/etc/apt/sources.list"
-    #   # shell: |
-    #   #   echo '' >> {{ apt_sources }}
-    #   #   echo '# PVE pve-no-subscription repository provided by proxmox.com,' >> {{ apt_sources }}
-    #   #   echo '# NOT recommended for production use' >> {{ apt_sources }}
-    #   #   echo 'deb http://download.proxmox.com/debian/pve bullseye pve-no-subscription' >> {{ apt_sources }}
-    #   ### OPTION 3:
-    #   shell: echo '{{ item }}' >> /etc/apt/sources.list
-    #   with_items:
-    #   - ''
-    #   - '# PVE pve-no-subscription repository provided by proxmox.com,'
-    #   - '# NOT recommended for production use'
-    #   - 'deb http://download.proxmox.com/debian/pve bullseye pve-no-subscription'
+    - name: "DEBUG: Show debian version nickname"
+      ansible.builtin.debug:
+        var: debian_version_nickname_result.stdout
 
-    # - name: "Disable enterprise repo"
-    #   file:
-    #     path: "/etc/apt/sources.list.d/pve-enterprise.list"
-    #     state: absent
+    - name: "Disable enterprise repo list"
+      vars:
+        debian_nickname: "{{ debian_version_nickname_result.stdout }}"
+      ansible.builtin.template:
+        src: "templates/pve-enterprise.list.j2"
+        dest: "/etc/apt/sources.list.d/pve-enterprise.list"
+        owner: root
+        group: root
+        mode: "644"
 
-    # - name: "Update & upgrade"
-    #   apt:
-    #     upgrade: yes
-    #     update_cache: yes
-    #   register: update
-    # - debug:
-    #     var: update.stdout
-    #   when: update.stdout is defined
+    - name: "Add non-subscription repo"
+      vars:
+        debian_nickname: "{{ debian_version_nickname_result.stdout }}"
+      ansible.builtin.template:
+        src: "templates/sources.list.j2"
+        dest: "/etc/apt/sources.list"
+        owner: root
+        group: root
+        mode: "644"
+
+    - name: "Update & upgrade"
+      ansible.builtin.apt:
+        upgrade: true
+        update_cache: true
+      register: apt_upgrade_result
+
+    - name: "DEBUG: Show apt upgrade output"
+      ansible.builtin.debug:
+        var: apt_upgrade_result.stdout_lines
+      # when: apt_upgrade_result.stdout_lines is defined
 
     #   ### Download most recent ubuntu CT template
     # - name: "Update PVEAM"
-    #   command: "pveam update"
+    #   ansible.builtin.command: "pveam update"
     #   register: pveam_update
     # - debug:
     #     var: pveam_update.stdout
     #   when: pveam_update.stdout is defined
 
     # - name: "Find most recent ubuntu CT template"
-    #   shell: "pveam available | grep ubuntu | awk '{print $2}' | sort | tail -n 1"
+    #   ansible.builtin.shell: "pveam available | grep ubuntu | awk '{print $2}' | sort | tail -n 1"
     #   register: ubuntu_ct
     # - debug:
     #     var: ubuntu_ct.stdout
     #   when: ubuntu_ct.stdout is defined
 
     # - name: "Download most recent ubuntu CT template"
-    #   command: "pveam download local {{ ubuntu_ct.stdout }}"
+    #   ansible.builtin.command: "pveam download local {{ ubuntu_ct.stdout }}"
     #   register: pveam_download
     # - debug:
     #     var: pveam_download.stdout
     #   when: pveam_download.stdout is defined
 
-    # - name: "Verify webserver at https://{{ ansible_host }}:{{ port }}"
-    #   wait_for:
-    #     port: "{{ port }}"
-    #     timeout: 10
+    - name: "DEBUG: Show Proxmox webserver URL"
+      ansible.builtin.debug:
+        msg: "https://{{ ansible_host }}:{{ port }}"
+
+    - name: "Verify Proxmox webserver is active"
+      ansible.builtin.wait_for:
+        port: "{{ port }}"
+        timeout: 10

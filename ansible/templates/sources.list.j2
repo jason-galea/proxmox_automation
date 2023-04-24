@@ -1,0 +1,9 @@
+deb http://ftp.debian.org/debian {{ debian_nickname }} main contrib
+deb http://ftp.debian.org/debian {{ debian_nickname }}-updates main contrib
+
+# PVE pve-no-subscription repository provided by proxmox.com,
+# NOT recommended for production use
+deb http://download.proxmox.com/debian/pve {{ debian_nickname }} pve-no-subscription
+
+# security updates
+deb http://security.debian.org/debian-security {{ debian_nickname }}-security main contrib

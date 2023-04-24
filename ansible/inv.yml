@@ -10,7 +10,7 @@ all:
       # ansible_ssh_host: "{{ subnet }}.YOUR_IP_AFFIX_HERE"
       ansible_ssh_host: "{{ subnet }}.240"
       ansible_user: root
-      # ansible_ssh_pass: "{{ lookup('file', inventory_dir + './../password.txt') }}"
+      port: 8006
     opnsense:
       ansible_ssh_host: "{{ subnet }}.241"
       ansible_user: root
