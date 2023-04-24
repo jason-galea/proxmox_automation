@@ -4,6 +4,8 @@
     install_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
     answers_file: "/etc/pihole/setupVars.conf"
 
+- name: ""
+
 - name: "Clone pihole git repo"
   ansible.builtin.git:
     repo: "https://github.com/pi-hole/pi-hole.git"

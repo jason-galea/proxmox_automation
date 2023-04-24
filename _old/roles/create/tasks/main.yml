@@ -57,7 +57,7 @@
   - name: "Add custom LXC configs"
     delegate_to: prox
     shell: "echo '{{ config_line }}' >> /etc/pve/lxc/{{ id }}.conf"
-    with_items: "{{ ct_custom_configs }}"
+    loop: "{{ ct_custom_configs }}"
     loop_control:
       loop_var: config_line # Avoid warning
     when: ct_custom_configs is defined
@@ -89,7 +89,7 @@
 - name: "Install SSH in Alpine"
   delegate_to: prox
   command: "pct exec {{ id }} {{ alpine_cmd }}"
-  with_items:
+  loop:
   - 'apk update'
   - 'apk add openssh'
   - 'rc-update add sshd'

@@ -9,12 +9,12 @@
 
     - name: "Create base container"
       loop:
-        - create
-        # - packages
+        - check_create_install_packages
         - backup
         - destroy
       ansible.builtin.include_role:
-        name: "{{ item }}"
+        name: manage_lxc
+        tasks_from: "{{ item }}"
 
     # - name: "DEBUG: Get contents of {{ template_dir }}"
     #   delegate_to: prox

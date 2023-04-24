@@ -27,7 +27,7 @@
   - name: "Creating base template"
     include_role:
       name: "{{ item }}" # Gross, very gross
-    with_items:
+    loop:
     - create
     - packages
     - backup # This deletes the container!

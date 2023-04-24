@@ -3,22 +3,16 @@
   register: verify_dns_internet
   changed_when: verify_dns_internet != 0
 
-# - name: "Update apt package list"
-#   ansible.builtin.apt:
-#     update_cache: true
-
-
-### Upgrade & install base packages
 - name: "Special case for base container"
   when: inventory_hostname == "base"
   block:
 
-    - name: "Install base packages"
+    - name: "(base) Install base packages"
       ansible.builtin.apt:
         pkg: "{{ base_packages }}"
         update_cache: true
 
-    - name: "Upgrade apt"
+    - name: "(base) Upgrade apt"
       ansible.builtin.apt:
         upgrade: true
 
@@ -30,15 +24,15 @@
 
 
 ### Install packages
-- name: "Install apt packages"
+- name: "(all) Install apt packages"
   ansible.builtin.apt:
     pkg: "{{ required_packages }}"
     update_cache: true
   when: required_packages is defined
 
 # - name: "Install apk packages"
+#   loop: "{{ required_packages }}"
 #   community.general.apk:
 #     name: "{{ item }}"
 #     update_cache: true
-#   loop: "{{ required_packages }}"
 #   when: required_packages is defined

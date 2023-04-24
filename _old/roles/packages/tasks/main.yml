@@ -60,12 +60,12 @@
     when: "pkg_to_check not in ansible_facts.packages"
     loop_control: # Avoid warnings from reusing "{{ item }}"
       loop_var: pkg_to_check
-    with_items: "{{ packages_to_check }}"
+    loop: "{{ packages_to_check }}"
 
   - name: "Install apt packages"
     apt:
       pkg: "{{ pkg_to_install }}"
-    with_items: "{{ packages_to_install }}"
+    loop: "{{ packages_to_install }}"
     loop_control: # Avoid warnings from reusing "{{ item }}"
       loop_var: pkg_to_install
     become: yes
@@ -75,7 +75,7 @@
   - name: "Install apk packages"
     apk:
       pkg: "{{ pkg_to_install }}"
-    with_items: "{{ packages_to_install }}"
+    loop: "{{ packages_to_install }}"
     loop_control: # Avoid warnings from reusing "{{ item }}"
       loop_var: pkg_to_install
     become: yes

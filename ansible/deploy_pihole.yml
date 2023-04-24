@@ -12,17 +12,15 @@
 
     - name: "Create pihole container"
       ansible.builtin.include_role:
-        name: create
-
-    - name: "Check if pihole is already installed"
-      ansible.builtin.include_role:
-        name: pihole
-        tasks_from: check_if_already_installed
+        name: check_create_install_packages
 
     - name: "Install pihole"
+      loop:
+        - end_play_if_already_installed
+        - install_pihole
       ansible.builtin.include_role:
         name: pihole
-        tasks_from: install_pihole
+        tasks_from: "{{ item }}"
 
 
 # ### Populate records
@@ -37,10 +35,10 @@
 #     ### Check
 #     - block:
 #         - name: "Check if DNS is already working from pihole"
+#           loop: "{{ groups['all_hosts'] }}"
 #           ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
 #           register: verify
 #           failed_when: "verify.stdout != hostvars[item].fqdn"
-#           with_items: "{{ groups['all_hosts'] }}"
 #           no_log: true
 
 #         - name: "PASS: Skipping..."
@@ -50,22 +48,22 @@
 #           ansible.builtin.meta: noop
 
 #     - name: "Wipe all records"
+#       loop: ["{{ a_records_file }}", "{{ cname_records_file }}"]
 #       ansible.builtin.command: "echo '' > {{ item }}"
-#       with_items: ["{{ a_records_file }}", "{{ cname_records_file }}"]
 #       become: true
 
 #       ### TODO: Combine these two tasks. Implement "www.test.lan" CNAME & test.
 #     - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
+#       loop: "{{ groups['all_hosts'] }}" # TODO: Use a seperate play, with delegation instead
 #       ansible.builtin.shell: "echo '{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
-#       with_items: "{{ groups['all_hosts'] }}" # TODO: Use a seperate play, with delegation instead
 #       become: true
 #     # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
+#     #   loop: "{{ groups['all_hosts'] }}"
 #     #   ansible.builtin.shell: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
-#     #   with_items: "{{ groups['all_hosts'] }}"
 #     #   become: true
 
 #       ### TODO: Combine these two tasks
-#       # Can't loop multiple tasks (cat + debug) using "with_items"
+#       # Can't loop multiple tasks (cat + debug) using "loop"
 #       # Recommended solution is to "include_tasks" from another file (._.)
 #     - name: "Display A records"
 #       ansible.builtin.shell: "cat {{ a_records_file }} | cat"
@@ -86,10 +84,10 @@
 
 #     ### Verify from pihole
 #     - name: "Verify DNS from pihole"
+#       loop: "{{ groups['all_hosts'] }}"
 #       ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
 #       register: verify
 #       failed_when: "verify.stdout != hostvars[item].fqdn"
-#       with_items: "{{ groups['all_hosts'] }}"
 
 
 # ### Apply DNS to hosts
@@ -103,10 +101,10 @@
 #     ### Check
 #     # - block:
 #     #   - name: "Check if DNS is already working from hosts"
+#     #     loop: "{{ groups['all_hosts'] }}"
 #     #     ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
 #     #     register: verify
 #     #     failed_when: "verify.stdout != hostvars[item].fqdn"
-#     #     with_items: "{{ groups['all_hosts'] }}"
 #     #     no_log: true
 
 #     #   - name: "PASS: Skipping..."
@@ -136,7 +134,7 @@
 #     #     var: cat_resolv.stdout
 
 #     # - name: "Verify DNS from hosts"
+#     #   loop: "{{ groups['all_hosts'] }}"
 #     #   ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
 #     #   register: verify
 #     #   failed_when: "verify.stdout != hostvars[item].fqdn"
-#     #   with_items: "{{ groups['all_hosts'] }}"

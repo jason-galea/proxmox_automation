@@ -87,7 +87,7 @@
 #       shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
 #       register: verify
 #       failed_when: "verify.stdout != hostvars[item].fqdn"
-#       with_items: "{{ groups['all_hosts'] }}"
+#       loop: "{{ groups['all_hosts'] }}"
 #       no_log: true
 
 #     - name: "PASS: Skipping..."
@@ -98,21 +98,21 @@
 
 #   - name: "Wipe all records"
 #     command: "echo '' > {{ item }}"
-#     with_items: ["{{ a_records_file }}", "{{ cname_records_file }}"]
+#     loop: ["{{ a_records_file }}", "{{ cname_records_file }}"]
 #     become: yes
 
 #     ### TODO: Combine these two tasks. Implement "www.test.lan" CNAME & test.
 #   - name: "Populate A records" # E.g: 1.2.3.4 a.test.lan
 #     shell: "echo '{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}' >> {{ a_records_file }}"
-#     with_items: "{{ groups['all_hosts'] }}" # TODO: Use a seperate play, with delegation instead
+#     loop: "{{ groups['all_hosts'] }}" # TODO: Use a seperate play, with delegation instead
 #     become: yes
 #   # - name: "Populate CNAME records" # E.g: cname=cname.test.lan,a.test.lan
 #   #   shell: "echo '{{ CNAME_GOES_HERE }}.{{ domain }},{{ fqdn }}' >> {{ cname_records_file }}"
-#   #   with_items: "{{ groups['all_hosts'] }}"
+#   #   loop: "{{ groups['all_hosts'] }}"
 #   #   become: yes
 
 #     ### TODO: Combine these two tasks
-#     # Can't loop multiple tasks (cat + debug) using "with_items"
+#     # Can't loop multiple tasks (cat + debug) using "loop"
 #     # Recommended solution is to "include_tasks" from another file (._.)
 #   - name: "Display A records" 
 #     shell: "cat {{ a_records_file }} | cat"
@@ -136,7 +136,7 @@
 #     shell: "nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep Name | awk '{print $2}'"
 #     register: verify
 #     failed_when: "verify.stdout != hostvars[item].fqdn"
-#     with_items: "{{ groups['all_hosts'] }}"
+#     loop: "{{ groups['all_hosts'] }}"
 
 
 
@@ -152,7 +152,7 @@
   #     shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
   #     register: verify
   #     failed_when: "verify.stdout != hostvars[item].fqdn"
-  #     with_items: "{{ groups['all_hosts'] }}"
+  #     loop: "{{ groups['all_hosts'] }}"
   #     no_log: true
 
   #   - name: "PASS: Skipping..."
@@ -184,4 +184,4 @@
   #   shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
   #   register: verify
   #   failed_when: "verify.stdout != hostvars[item].fqdn"
-  #   with_items: "{{ groups['all_hosts'] }}"
+  #   loop: "{{ groups['all_hosts'] }}"

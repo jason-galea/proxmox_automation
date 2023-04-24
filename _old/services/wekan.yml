@@ -56,7 +56,7 @@
     systemd:
       name: "{{ item }}"
       state: restarted
-    with_items:
+    loop:
     - snap.wekan.mongodb
     - snap.wekan.wekan
 

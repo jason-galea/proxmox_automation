@@ -11,7 +11,7 @@
 
 - name: "Creating container"
   loop:
-    - create_ct
+    - create
     - install_packages
   ansible.builtin.include_role:
     name: create

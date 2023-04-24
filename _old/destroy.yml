@@ -7,7 +7,7 @@
   - shell: "ps x | grep -v grep | grep {{ item }} | awk '{print $1}' | xargs -n 1 kill -9"
     register: fix_stalled
     failed_when: (fix_stalled.rc not in [0, 123]) # Ignore errors
-    with_items: [lxc-start, vzstart]
+    loop: [lxc-start, vzstart]
 
 - name: "Check if base container exists"
   hosts: prox

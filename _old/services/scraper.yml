@@ -14,7 +14,7 @@
   - name: "Install python modules"
     pip:
       name: "{{ item }}"
-    with_items:
+    loop:
     - selenium
     # - mysql-connector-python
     - beautifulsoup4
@@ -42,7 +42,7 @@
       owner: www-data
       group: www-data
       recurse: yes
-    with_items: ["/var/www", "/tmp/apache"]
+    loop: ["/var/www", "/tmp/apache"]
 
   # - name: "Restart Apache service"
   #   service:
