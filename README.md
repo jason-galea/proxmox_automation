@@ -1,28 +1,43 @@
 # proxmox_automation
 Automating Proxmox with Ansible
 
-# Requirements
-1. A proxmox host (with SSH access)
-2. Python3 (version 3.8+)
-3. Ansible + proxmoxer + requests:
 
-    python3 -m pip install ansible proxmoxer requests
+## Summary
 
-# Instructions
-Prepare:
+This repo is intended to configure a physical device, running a fresh Proxmox installation.
 
-    git clone https://github.com/jason-galea/proxmox_automation.git
-    cd proxmox_automation
-    echo 'PASSWORD_GO_HERE' > password.txt
+The goal for this device is to host:
 
-Run:
+- Proxmox itself
+- A few CTs for critical services, such as DNS
+- A VM running Portainer, for services hosted with docker
+- Misc. VMs/CTs for services not using docker
 
-    ansible-playbook -i inv.yml deploy.yml
+It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM/CT expects its own IP.
 
-Destroy containers:
+## Instructions
 
-    ansible-playbook -i inv.yml destroy.yml
+1. Manually install Proxmox on your chosen device:
+    - Download the installer ISO from "https://www.proxmox.com/en/downloads/category/iso-images-pve"
+    - Boot the ISO from a USB (E.G: Ventoy, Rufus, etc.)
+    - Accept default options for everything
+    - Set a static IP
+    - Remember the password & IP!
 
-Destroy base template:
+2. Clone this repo:
+    - `git clone https://github.com/jason-galea/proxmox_automation.git`
 
-    ansible-playbook -i inv.yml destroy_templates.yml
+3. Install dependencies:
+    - `./setup.sh`
+
+4. Set your subnet & host IPs in `inv.yml`
+    - `vi ansible/inv.yml`
+
+5. Set your Proxmox password (Temporarily!):
+    - `vi password.txt`
+
+6. Run initial Proxmox configuration with Ansible:
+    - `ansible-playbook -i ansible/inv.yml ansible/prox_initial_config.yml`
+
+7. Delete your Proxmox password, as you can now connect via SSH key:
+    - `rm password.txt`

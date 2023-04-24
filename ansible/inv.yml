@@ -1,0 +1,23 @@
+---
+
+all:
+  vars:
+    # subnet: "YOUR_SUBNET_HERE"
+    subnet: "10.1.1"
+
+  hosts:
+    prox:
+      # ansible_ssh_host: "{{ subnet }}.YOUR_IP_AFFIX_HERE"
+      ansible_ssh_host: "{{ subnet }}.240"
+      ansible_user: root
+      # ansible_ssh_pass: "{{ lookup('file', inventory_dir + './../password.txt') }}"
+    opnsense:
+      ansible_ssh_host: "{{ subnet }}.241"
+      ansible_user: root
+      ansible_ssh_private_key_file: "TODO"
+    # pihole:
+    #   ansible_ssh_host: "{{ subnet }}.YOUR_IP_AFFIX_HERE"
+    #   ansible_user: root
+    #   ansible_ssh_private_key_file: "TODO"
+
+  # children: ### No subgroups so far
