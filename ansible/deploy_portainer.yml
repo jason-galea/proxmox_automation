@@ -7,6 +7,6 @@
 
     - name: "Create VM"
 
-    - name: "Check if Portainer is already installed"
+    # - name: "Check if Portainer is already installed"
 
-    # - name: "Install Portainer"
+    - name: "Install Portainer"

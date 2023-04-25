@@ -19,14 +19,14 @@
     group: root
     mode: "644"
 
-- name: "Fetch contents of {{ answers_file }}"
-  ansible.builtin.command: "cat {{ answers_file }}"
-  register: answers_file_contents
-  changed_when: answers_file_contents.rc != 0
+# - name: "DEBUG: Fetch contents of {{ answers_file }}"
+#   ansible.builtin.command: "cat {{ answers_file }}"
+#   register: answers_file_contents
+#   changed_when: answers_file_contents.rc != 0
 
-- name: "Show contents of {{ answers_file }}"
-  ansible.builtin.debug:
-    var: answers_file_contents.stdout_lines
+# - name: "DEBUG: Show contents of {{ answers_file }}"
+#   ansible.builtin.debug:
+#     var: answers_file_contents.stdout_lines
 
 - name: "Install Pihole"
   ansible.builtin.command: "bash {{ install_script }} --unattended"

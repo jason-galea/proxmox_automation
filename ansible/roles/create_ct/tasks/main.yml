@@ -5,8 +5,8 @@
       set -o pipefail
       pct list | grep -E '{{ id }}\ *running'
     executable: /bin/bash
-  register: check_if_container_already_exists_result
-  changed_when: check_if_container_already_exists_result.rc != 0
+  register: check_if_ct_exists
+  changed_when: check_if_ct_exists.rc != 0
   failed_when: false ### Ignore failures, we just want the stdout
 
 - name: "Creating container"
@@ -16,4 +16,4 @@
   ansible.builtin.include_role:
     name: create_ct
     tasks_from: "{{ item }}"
-  when: check_if_container_already_exists_result.stdout == ""
+  when: check_if_ct_exists.stdout == ""

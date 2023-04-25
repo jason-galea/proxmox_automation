@@ -2,21 +2,21 @@
 - name: "Chose CT template"
   when: inventory_hostname != "base"
   block:
-    - name: "Discover base CT template name"
+    - name: "Discover base CT VZdump name"
       delegate_to: prox
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
           ls {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar.zst' | head -n1
         executable: /bin/bash
-      register: name
-      changed_when: check_if_container_already_exists_result.rc != 0
+      register: discover_base_ct_vzdump_name
+      changed_when: discover_base_ct_vzdump_name.rc != 0
 
-    - name: "Save base CT template name as fact"
+    - name: "Save base CT VZdump name as fact"
       ansible.builtin.set_fact:
-        chosen_ct_template: "local:vztmpl/{{ name.stdout }}"
+        chosen_ct_template: "local:vztmpl/{{ discover_base_ct_vzdump_name.stdout }}"
 
-- name: "(base) Statically set Proxmox CT template to create base CT template from"
+- name: "(base) Statically set Proxmox CT template to create base CT from"
   ansible.builtin.set_fact:
     # chosen_ct_template: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
     # chosen_ct_template: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
@@ -36,12 +36,11 @@
 #   ansible.builtin.debug:
 #     var: "{{ item }}"
 
+
 ### Create container
 - name: "Create container"
   delegate_to: localhost
   community.general.proxmox:
-    # proxmox_default_behavior: no_defaults
-
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
     api_password: "{{ hostvars['prox'].password }}"
@@ -70,18 +69,21 @@
       - nesting=1
 
 
-# ### Custom configs
-# - name: "Add custom LXC configs"
-#   delegate_to: prox
-#   loop: "{{ ct_custom_configs }}"
-#   ansible.builtin.shell:
-#     cmd: |
-#       set -o pipefail
-#       echo '{{ item }}' >> /etc/pve/lxc/{{ id }}.conf
-#     executable: /bin/bash
-#   register: add_custom_ct_configs_result
-#   changed_when: add_custom_ct_configs_result.rc != 0
-#   when: ct_custom_configs is defined
+### Custom configs
+- name: "Add custom LXC configs"
+  delegate_to: prox
+  loop: "{{ ct_custom_configs }}"
+  when: ct_custom_configs is defined
+  # ansible.builtin.shell:
+  #   cmd: |
+  #     set -o pipefail
+  #     echo '{{ item }}' >> /etc/pve/lxc/{{ id }}.conf
+  #   executable: /bin/bash
+  # register: add_custom_ct_configs_result
+  # changed_when: add_custom_ct_configs_result.rc != 0
+  ansible.builtin.lineinfile:
+    dest: "/etc/pve/lxc/{{ id }}.conf"
+    line: "{{ item }}"
 
 
 ### Start
