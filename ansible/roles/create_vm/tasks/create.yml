@@ -1,75 +1,75 @@
 - name: "DEBUG: Show ISO"
   ansible.builtin.debug:
-    var: chosen_ct_template
+    var: chosen_iso
 
 
 ### Create VM
 - name: "Create VM"
   delegate_to: localhost
-  community.general.proxmox:
+  community.general.proxmox_kvm:
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
     api_password: "{{ hostvars['prox'].password }}"
 
+    name: "{{ inventory_hostname }}"
     vmid: "{{ id }}"
 
     node: prox
     state: present
-    # netif: "{{ ct_netif }}"
-    netif: '{"net0":"name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}"}'
-    ostemplate: "{{ chosen_ct_template }}"
-    hostname: "{{ inventory_hostname }}"
-    # password: "{{ hostvars['prox'].password }}"
-    pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    net:
+      net0: "virtio,bridge=vm0"
+    sockets: 1
     cores: 2
-    memory: 512 # MB
-    swap: 100 # MB
-    disk: 8 # GB
-    storage: local-lvm
-    # [DEPRECATION WARNING]: The default value `false` for the parameter "unprivileged" is deprecated and it will be
-    # replaced with `true`. This feature will be removed from community.general in version 7.0.0. Deprecation warnings
-    # can be disabled by setting deprecation_warnings=False in ansible.cfg.
-    unprivileged: true
-    onboot: true
-    features:
-      - nesting=1
+    memory: 512
+    scsihw: virtio-scsi-single
+    scsi:
+      sata0: "local-lvm:32,format=qcow2"
+    bios: ovmf
+    efidisk0:
+      storage: local-lvm
+      format: raw
+      efitype: 4m
+      pre_enrolled_keys: false
+    autostart: true
 
 
-### Custom configs
-- name: "Add custom LXC configs"
-  delegate_to: prox
-  loop: "{{ ct_custom_configs }}"
-  when: ct_custom_configs is defined
-  # ansible.builtin.shell:
-  #   cmd: |
-  #     set -o pipefail
-  #     echo '{{ item }}' >> /etc/pve/lxc/{{ id }}.conf
-  #   executable: /bin/bash
-  # register: add_custom_ct_configs_result
-  # changed_when: add_custom_ct_configs_result.rc != 0
-  ansible.builtin.lineinfile:
-    dest: "/etc/pve/lxc/{{ id }}.conf"
-    line: "{{ item }}"
+    # # netif: "{{ ct_netif }}"
+    # netif: '{"net0":"name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}"}'
+    # ???: "{{ chosen_iso }}"
+    # hostname: "{{ inventory_hostname }}"
+    # # password: "{{ hostvars['prox'].password }}"
+    # pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    # cores: 2
+    # memory: 512 # MB
+    # swap: 100 # MB
+    # disk: 8 # GB
+    # storage: local-lvm
+    # # [DEPRECATION WARNING]: The default value `false` for the parameter "unprivileged" is deprecated and it will be
+    # # replaced with `true`. This feature will be removed from community.general in version 7.0.0. Deprecation warnings
+    # # can be disabled by setting deprecation_warnings=False in ansible.cfg.
+    # unprivileged: true
+    # onboot: true
+    # features:
+    #   - nesting=1
 
 
-### Start
-- name: "Start VM"
-  delegate_to: localhost
-  community.general.proxmox:
-    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-    api_user: root@pam
-    api_password: "{{ hostvars['prox'].password }}"
+# ### Start
+# - name: "Start VM"
+#   delegate_to: localhost
+#   community.general.proxmox:
+#     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+#     api_user: root@pam
+#     api_password: "{{ hostvars['prox'].password }}"
 
-    vmid: "{{ id }}"
-    state: started
+#     vmid: "{{ id }}"
+#     state: started
 
-- name: "Wait 5 seconds to VM to start"
-  ansible.builtin.pause:
-    seconds: 5
+# - name: "Wait 5 seconds to VM to start"
+#   ansible.builtin.pause:
+#     seconds: 5
 
 
 ### Verify
-### TODO: Fix warning
 - name: "Verify VM is online"
   delegate_to: localhost
   ansible.builtin.wait_for_connection:
@@ -79,19 +79,6 @@
 #     port: 22
 #     timeout: 5
 #   retries: 3
-
-# - name: "Install SSH in Alpine"
-#   delegate_to: prox
-#   loop:
-#   - 'apk update'
-#   - 'apk add openssh'
-#   - 'rc-update add sshd'
-#   - 'rc-status'
-#   - '/etc/init.d/sshd start'
-#   ansible.builtin.command: "pct exec {{ id }} {{ item }}"
-#   when: (id == 200) and (distro == "alpine")
-#   timeout: 5
-#   retries: 5
 
 - name: "Add new SSH key to known hosts"
   delegate_to: localhost
@@ -103,11 +90,11 @@
   register: add_to_known_hosts
   changed_when: add_to_known_hosts.rc != 0
 
-# - name: "DEBUG: Run 'id' command on new VM"
-#   ansible.builtin.command: "id"
-#   register: id_command_result
-#   changed_when: id_command_result != 0
+- name: "DEBUG: Run 'id' command on new VM"
+  ansible.builtin.command: "id"
+  register: id_command_result
+  changed_when: id_command_result != 0
 
-# - name: "DEBUG: Show 'id' command output"
-#   ansible.builtin.debug:
-#     var: id_command_result.stdout
+- name: "DEBUG: Show 'id' command output"
+  ansible.builtin.debug:
+    var: id_command_result.stdout

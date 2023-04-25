@@ -3,9 +3,9 @@
   hosts: portainer
   gather_facts: false
   tasks:
-    # - name: "Check if Portainer VM already exists"
-
     - name: "Create VM"
+      ansible.builtin.include_role:
+        name: create_vm
 
     # - name: "Check if Portainer is already installed"
 

@@ -29,13 +29,6 @@
   ansible.builtin.debug:
     var: chosen_ct_template
 
-# - name: "DEBUG: Show hostnames"
-#   loop:
-#     - ansible_hostname
-#     - inventory_hostname
-#   ansible.builtin.debug:
-#     var: "{{ item }}"
-
 
 ### Create container
 - name: "Create container"
@@ -45,6 +38,7 @@
     api_user: root@pam
     api_password: "{{ hostvars['prox'].password }}"
 
+    hostname: "{{ inventory_hostname }}"
     vmid: "{{ id }}"
 
     node: prox
@@ -52,7 +46,6 @@
     # netif: "{{ ct_netif }}"
     netif: '{"net0":"name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}"}'
     ostemplate: "{{ chosen_ct_template }}"
-    hostname: "{{ inventory_hostname }}"
     # password: "{{ hostvars['prox'].password }}"
     pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
     cores: 2
@@ -60,10 +53,7 @@
     swap: 100 # MB
     disk: 8 # GB
     storage: local-lvm
-    # [DEPRECATION WARNING]: The default value `false` for the parameter "unprivileged" is deprecated and it will be
-    # replaced with `true`. This feature will be removed from community.general in version 7.0.0. Deprecation warnings
-    # can be disabled by setting deprecation_warnings=False in ansible.cfg.
-    unprivileged: true
+    # unprivileged: true
     onboot: true
     features:
       - nesting=1
@@ -74,13 +64,6 @@
   delegate_to: prox
   loop: "{{ ct_custom_configs }}"
   when: ct_custom_configs is defined
-  # ansible.builtin.shell:
-  #   cmd: |
-  #     set -o pipefail
-  #     echo '{{ item }}' >> /etc/pve/lxc/{{ id }}.conf
-  #   executable: /bin/bash
-  # register: add_custom_ct_configs_result
-  # changed_when: add_custom_ct_configs_result.rc != 0
   ansible.builtin.lineinfile:
     dest: "/etc/pve/lxc/{{ id }}.conf"
     line: "{{ item }}"
@@ -103,7 +86,6 @@
 
 
 ### Verify
-### TODO: Fix warning
 - name: "Verify container is online"
   delegate_to: localhost
   ansible.builtin.wait_for_connection:
@@ -136,12 +118,3 @@
     executable: /bin/bash
   register: add_to_known_hosts
   changed_when: add_to_known_hosts.rc != 0
-
-# - name: "DEBUG: Run 'id' command on new container"
-#   ansible.builtin.command: "id"
-#   register: id_command_result
-#   changed_when: id_command_result != 0
-
-# - name: "DEBUG: Show 'id' command output"
-#   ansible.builtin.debug:
-#     var: id_command_result.stdout

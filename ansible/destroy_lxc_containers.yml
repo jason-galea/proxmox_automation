@@ -1,6 +1,6 @@
 ---
 - name: "Destroy LXC containers"
-  hosts: lxc_containers
+  hosts: cts
   gather_facts: false
   roles:
     - destroy_ct

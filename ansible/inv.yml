@@ -32,16 +32,10 @@ all:
       port: 8006
 
   children:
-    vms:
-      hosts:
-        portainer:
-          id: 241
-          vm: true
-
-    lxc_containers:
+    cts:
       hosts:
         base:
-          id: 249
+          id: 241
           # ansible_ssh_host: "{{ subnet }}.{{ id }}"
           # ansible_user: root
           base_packages: [git, curl, unzip, idn2, htop, tree]
@@ -53,6 +47,12 @@ all:
           # ansible_ssh_private_key_file: "TODO"
           port: 80
           cname: "{{ domain }}"
+
+    vms:
+      hosts:
+        portainer:
+          id: 250
+          chosen_iso: "asd"
 
     # docker_containers:
     #   hosts:
