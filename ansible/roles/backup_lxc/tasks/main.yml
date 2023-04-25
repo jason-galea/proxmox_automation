@@ -21,10 +21,6 @@
   register: vzdump_container
   changed_when: vzdump_container.rc != 0
 
-- name: "DEBUG: Show output of container backup"
-  ansible.builtin.debug:
-    var: vzdump_container.stdout_lines
-
-- name: "Wait for container to finish being deleted"
-  ansible.builtin.pause:
-    seconds: 2
+# - name: "DEBUG: Show output of container backup"
+#   ansible.builtin.debug:
+#     var: vzdump_container.stdout_lines

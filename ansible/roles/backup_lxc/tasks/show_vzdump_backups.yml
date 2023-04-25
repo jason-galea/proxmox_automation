@@ -1,9 +1,9 @@
-- name: "Get contents of {{ template_dir }}"
+- name: "DEBUG: Get contents of {{ template_dir }}"
   delegate_to: prox
   ansible.builtin.command: "ls -lh {{ template_dir }}"
   register: ls_template_dir
   changed_when: ls_template_dir.rc != 0
 
-- name: "Show contents of {{ template_dir }}"
+- name: "DEBUG: Show contents of {{ template_dir }}"
   ansible.builtin.debug:
     var: ls_template_dir.stdout_lines

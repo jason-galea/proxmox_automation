@@ -19,6 +19,10 @@
     vmid: "{{ id }}"
     state: absent
 
+- name: "Wait for container to finish being destroyed"
+  ansible.builtin.pause:
+    seconds: 2
+
 - name: "Remove orphaned SSH keys"
   delegate_to: localhost
   ansible.builtin.command: "ssh-keygen -R {{ ansible_host }}"

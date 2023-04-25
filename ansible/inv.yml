@@ -2,15 +2,23 @@
 
 all:
   vars:
+    ### Network settings
     # subnet: "YOUR_SUBNET_HERE"
     subnet: "10.1.1"
+    ip: "{{ subnet }}.{{ id }}"
+    # mask: "255.255.255.0"
     gateway: "{{ subnet }}.1"
-    domain: "test.lan"
-    fqdn: "{{ domain }}.{{ inventory_hostname }}"
 
+    ### DNS settings
+    domain: "test.lan"
+    fqdn: "{{ inventory_hostname }}.{{ domain }}"
+    dns: "{{ hostvars['pihole'].ip }}"
+
+    ### Misc. constants
     template_dir: "/var/lib/vz/template/cache"
 
-    ansible_ssh_host: "{{ subnet }}.{{ id }}"
+    ### Ansible vars
+    ansible_ssh_host: "{{ ip }}"
     ansible_user: root
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
@@ -44,6 +52,7 @@ all:
           # ansible_user: root
           # ansible_ssh_private_key_file: "TODO"
           port: 80
+          cname: "{{ domain }}"
 
     # docker_containers:
     #   hosts:

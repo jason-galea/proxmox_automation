@@ -10,6 +10,10 @@
   register: wait_for_pihole_webserver
   failed_when: false ### Ignore fails, we just want the return code
 
+# - name: "DEBUG: wait_for_pihole_webserver"
+#   ansible.builtin.debug:
+#     var: wait_for_pihole_webserver
+
 - name: "End play if Pihole is already installed"
   ansible.builtin.meta: end_play
-  when: (stat_pihole_bin.stat.exists) and (wait_for_pihole_webserver.rc == 0)
+  when: (stat_pihole_bin.stat.exists) and (wait_for_pihole_webserver.state == 'started')

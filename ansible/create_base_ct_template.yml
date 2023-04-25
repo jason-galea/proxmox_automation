@@ -29,7 +29,7 @@
           ansible.builtin.include_role:
             name: "{{ item }}"
 
-    - name: "Show VZdump backup dir contents"
-      ansible.builtin.include_role:
-        name: backup_lxc
-        tasks_from: show_vzdump_backups.yml
+    # - name: "DEBUG: Show VZdump backup dir contents"
+    #   ansible.builtin.include_role:
+    #     name: backup_lxc
+    #     tasks_from: show_vzdump_backups.yml
