@@ -1,0 +1,27 @@
+---
+- name: "Destroy Portainer VM"
+  hosts: portainer
+  gather_facts: false
+  tasks:
+
+    - name: "Stop Portainer"
+      delegate_to: localhost
+      community.general.proxmox_kvm:
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ hostvars['prox'].password }}"
+
+        vmid: "{{ id }}"
+        state: stopped
+        force: true
+      failed_when: false
+
+    - name: "Remove Portainer VM"
+      delegate_to: localhost
+      community.general.proxmox_kvm:
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ hostvars['prox'].password }}"
+
+        vmid: "{{ id }}"
+        state: absent

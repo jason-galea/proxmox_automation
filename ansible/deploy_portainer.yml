@@ -9,4 +9,4 @@
 
     # - name: "Check if Portainer is already installed"
 
-    - name: "Install Portainer"
+    # - name: "Install Portainer"
