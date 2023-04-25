@@ -79,8 +79,8 @@
 #       set -o pipefail
 #       echo '{{ item }}' >> /etc/pve/lxc/{{ id }}.conf
 #     executable: /bin/bash
-#   register: add_custom_lxc_configs_result
-#   changed_when: add_custom_lxc_configs_result.rc != 0
+#   register: add_custom_ct_configs_result
+#   changed_when: add_custom_ct_configs_result.rc != 0
 #   when: ct_custom_configs is defined
 
 

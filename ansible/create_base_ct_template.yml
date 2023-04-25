@@ -20,16 +20,16 @@
       block:
         - name: "Create base container"
           ansible.builtin.include_role:
-            name: create_lxc
+            name: create_ct
 
         - name: "Backup base container"
           loop:
-            - backup_lxc
-            - destroy_lxc
+            - backup_ct
+            - destroy_ct
           ansible.builtin.include_role:
             name: "{{ item }}"
 
     # - name: "DEBUG: Show VZdump backup dir contents"
     #   ansible.builtin.include_role:
-    #     name: backup_lxc
+    #     name: backup_ct
     #     tasks_from: show_vzdump_backups.yml

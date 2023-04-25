@@ -1,0 +1,12 @@
+---
+- name: "Create Portainer VM"
+  hosts: portainer
+  gather_facts: false
+  tasks:
+    # - name: "Check if Portainer VM already exists"
+
+    - name: "Create VM"
+
+    - name: "Check if Portainer is already installed"
+
+    # - name: "Install Portainer"

@@ -9,13 +9,12 @@
 
     - name: "Create pihole container"
       ansible.builtin.include_role:
-        name: create_lxc
+        name: create_ct
 
     - name: "Install pihole"
       loop:
         - end_play_if_installed
         - install
-      vars:
       ansible.builtin.include_role:
         name: pihole
         tasks_from: "{{ item }}"
@@ -43,13 +42,13 @@
         dest: "{{ a_records_file }}"
         line: "{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}"
 
-    - name: "DEBUG: Fetch A records"
-      ansible.builtin.command: "cat {{ a_records_file }}"
-      register: fetch_a_records
+    # - name: "DEBUG: Fetch A records"
+    #   ansible.builtin.command: "cat {{ a_records_file }}"
+    #   register: fetch_a_records
 
-    - name: "DEBUG: Show A records"
-      ansible.builtin.debug:
-        var: fetch_a_records.stdout_lines
+    # - name: "DEBUG: Show A records"
+    #   ansible.builtin.debug:
+    #     var: fetch_a_records.stdout_lines
 
 
     ### CNAME records
@@ -66,13 +65,13 @@
         dest: "{{ cname_records_file }}"
         line: "cname={{ hostvars[item].cname }},{{ hostvars[item].fqdn }}"
 
-    - name: "DEBUG: Fetch CNAME records"
-      ansible.builtin.command: "cat {{ cname_records_file }}"
-      register: fetch_cname_records
+    # - name: "DEBUG: Fetch CNAME records"
+    #   ansible.builtin.command: "cat {{ cname_records_file }}"
+    #   register: fetch_cname_records
 
-    - name: "DEBUG: Show CNAME records"
-      ansible.builtin.debug:
-        var: fetch_cname_records.stdout_lines
+    # - name: "DEBUG: Show CNAME records"
+    #   ansible.builtin.debug:
+    #     var: fetch_cname_records.stdout_lines
 
 
     ### Restart
