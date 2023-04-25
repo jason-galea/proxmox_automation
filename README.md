@@ -41,5 +41,11 @@ It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM
 6. Run initial Proxmox configuration with Ansible:
     - `ansible-playbook -i ansible/inv.yml ansible/prox_initial_config.yml`
 
-7. Create the Pihole container, for DNS
+7. Deploy Pihole
     - `ansible-playbook -i ansible/inv.yml ansible/deploy_pihole.yml`
+
+8. Copy Ubuntu Server ISO to local dir
+    - `cp my_local_iso_dir/ubuntu-22.04-live-server-amd64.iso isos/`
+
+9. Deploy the Portainer VM
+    - `ansible-playbook -i ansible/inv.yml ansible/deploy_portainer.yml`

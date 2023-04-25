@@ -16,6 +16,7 @@ all:
 
     ### Misc. constants
     template_dir: "/var/lib/vz/template/cache"
+    repo_dir: "{{ inventory_dir | dirname }}"
 
     ### Ansible vars
     ansible_ssh_host: "{{ ip }}"
@@ -52,7 +53,7 @@ all:
       hosts:
         portainer:
           id: 250
-          chosen_iso: "asd"
+          chosen_iso: "ubuntu-22.04-live-server-amd64.iso"
 
     # docker_containers:
     #   hosts:

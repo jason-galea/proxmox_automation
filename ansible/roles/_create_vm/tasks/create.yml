@@ -1,6 +1,21 @@
-# - name: "DEBUG: Show Chosen ISO"
-#   ansible.builtin.debug:
-#     var: chosen_iso
+- name: "DEBUG: Show Chosen ISO"
+  ansible.builtin.debug:
+    var: chosen_iso
+
+- name: "Check if chosen ISO exists locally"
+  delegate_to: localhost
+  ansible.builtin.stat:
+    path: "{{ repo_dir }}/isos/{{ chosen_iso }}"
+  register: check_local_iso
+  failed_when: not check_local_iso.stat.exists
+
+- name: "Upload ISO to Proxmox"
+  ansible.builtin.copy:
+    src: "isos/{{ chosen_iso }}"
+    dest: "/var/lib/vz/template/iso/{{ chosen_iso }}"
+    owner: root
+    group: root
+    mode: "644"
 
 
 ### Create VM
