@@ -6,9 +6,6 @@
   hosts: pihole
   gather_facts: false
   tasks:
-    - name: "Ignore strict host key checking"
-      ansible.builtin.set_fact:
-        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
     - name: "Create pihole container"
       ansible.builtin.include_role:

@@ -3,9 +3,6 @@
   hosts: base
   gather_facts: false
   tasks:
-    - name: "Ignore strict host key checking"
-      ansible.builtin.set_fact:
-        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
     - name: "Check if base template exists"
       delegate_to: prox

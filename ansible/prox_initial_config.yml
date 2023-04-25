@@ -1,33 +1,31 @@
 ---
-- name: "Prepare Proxmox for SSH"
+- name: "Configure Proxmox"
   hosts: prox
   gather_facts: false
   tasks:
-    - name: "Check if ansible can connect to Proxmox already"
-      ansible.builtin.ping:
-      register: ansible_ping_result
 
-    # - name: "DEBUG: ansible_ping_result"
-    #   ansible.builtin.debug:
-    #     var: ansible_ping_result.ping
-
+    ### SSH
     - name: "Configure SSH access to Proxmox"
       delegate_to: localhost
       vars:
         prox_user: "{{ hostvars['prox'].ansible_user }}"
         prox_ip: "{{ hostvars['prox'].ansible_ssh_host }}"
-      when: ansible_ping_result.ping != "pong"
       block:
         - name: "Remove any existing SSH keys belonging to Proxmox from localhost"
           ansible.builtin.command: "ssh-keygen -R {{ prox_ip }}"
           register: remove_old_prox_key_result
           changed_when: remove_old_prox_key_result != 0
 
-        - name: "Ignore strict host key checking"
-          ansible.builtin.set_fact:
-            ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+        - name: "Add Proxmox SSH key to known hosts"
+          ansible.builtin.shell:
+            cmd: |
+              set -o pipefail
+              ssh-keyscan -H {{ ansible_ssh_host }} >> ~/.ssh/known_hosts
+            executable: /bin/bash
+          register: add_to_known_hosts
+          changed_when: add_to_known_hosts.rc != 0
 
-        - name: "Exchange SSH keys with Proxmox"
+        - name: "Install localhost SSH key on Proxmox"
           ansible.builtin.command: |
             sshpass -f ./../password.txt \
               ssh-copy-id {{ prox_user }}@{{ prox_ip }}
@@ -35,19 +33,17 @@
           changed_when: ssh_copy_id_result != 0
 
 
-- name: "Configure Proxmox"
-  hosts: prox
-  gather_facts: false
-  tasks:
-  #   - name: "DEBUG: Run 'id' command on Proxmox"
-  #     ansible.builtin.command: "id"
-  #     register: id_command_result
-  #     changed_when: id_command_result != 0
+    ### DEBUG
+    # - name: "DEBUG: Run 'id' command on Proxmox"
+    #   ansible.builtin.command: "id"
+    #   register: id_command_result
+    #   changed_when: id_command_result != 0
 
-  #   - name: "DEBUG: Show 'id' command output"
-  #     ansible.builtin.debug:
-  #       var: id_command_result.stdout
+    # - name: "DEBUG: Show 'id' command output"
+    #   ansible.builtin.debug:
+    #     var: id_command_result.stdout
 
+    ### Check internet
     - name: "Verify DNS & internet via ping"
       ansible.builtin.command: "ping -c 3 example.com"
       register: ping_result
@@ -57,16 +53,20 @@
       ansible.builtin.debug:
         var: ping_result.stdout_lines
 
+
+    ### Non-subscription repo
     - name: "Detect debian version nickname"
-      ansible.builtin.shell: |
-        set pipefail
-        cat /etc/apt/sources.list | head -n1 | awk '{print $3}'
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          cat /etc/apt/sources.list | head -n1 | awk '{print $3}'
+        executable: /bin/bash
       register: debian_version_nickname_result
       changed_when: debian_version_nickname_result != 0
 
-    - name: "DEBUG: Show debian version nickname"
-      ansible.builtin.debug:
-        var: debian_version_nickname_result.stdout
+    # - name: "DEBUG: Show debian version nickname"
+    #   ansible.builtin.debug:
+    #     var: debian_version_nickname_result.stdout
 
     - name: "Disable enterprise repo list"
       vars:
@@ -94,12 +94,13 @@
         update_cache: true
       register: apt_upgrade_result
 
-    - name: "DEBUG: Show apt upgrade output"
-      ansible.builtin.debug:
-        var: apt_upgrade_result.stdout_lines
-      # when: apt_upgrade_result.stdout_lines is defined
+    # - name: "DEBUG: Show apt upgrade output"
+    #   ansible.builtin.debug:
+    #     var: apt_upgrade_result.stdout_lines
+    #   # when: apt_upgrade_result.stdout_lines is defined
 
-      ### Download most recent ubuntu CT template
+
+    ### Download most recent ubuntu CT template
     - name: "Update PVEAM"
       ansible.builtin.command: "pveam update"
       register: pveam_update
@@ -111,9 +112,11 @@
       when: pveam_update.stdout_lines is defined
 
     - name: "Find most recent ubuntu CT template"
-      ansible.builtin.shell: |
-        set pipefail
-        pveam available | grep ubuntu | awk '{print $2}' | sort | tail -n 1
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          pveam available | grep ubuntu | awk '{print $2}' | sort | tail -n 1
+        executable: /bin/bash
       register: find_most_recent_ct
       changed_when: find_most_recent_ct != 0
 
@@ -136,6 +139,40 @@
       ansible.builtin.debug:
         msg: "https://{{ ansible_host }}:{{ port }}"
 
+
+    ### MISC
+    - name: "MISC: Reduce grub boot delay to 2 seconds"
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: '^GRUB_TIMEOUT=5'
+        line: 'GRUB_TIMEOUT=2'
+
+    - name: "MISC: Regenerate grub config"
+      ansible.builtin.command: "update-grub"
+      register: update_grub
+      changed_when: update_grub.rc != 0
+
+    - name: "MISC: Disable lid-close actions"
+      loop:
+        - { regexp: '^#HandleLidSwitch=suspend', line: 'HandleLidSwitch=ignore' }
+        - { regexp: '^#HandleLidSwitchExternalPower=suspend', line: 'HandleLidSwitchExternalPower=ignore' }
+        - { regexp: '^#HandleLidSwitchDocked=ignore', line: 'HandleLidSwitchDocked=ignore' }
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/logind.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+
+    - name: "MISC: Disable terminal beep"
+      ansible.builtin.lineinfile:
+        path: /etc/inputrc
+        regexp: "^# set bell-style none"
+        line: "set bell-style none"
+
+    - name: "MISC: Restart Proxmox to apply changes"
+      ansible.builtin.reboot:
+
+
+    ### END
     - name: "Verify Proxmox webserver is active"
       ansible.builtin.wait_for:
         port: "{{ port }}"

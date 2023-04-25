@@ -12,6 +12,7 @@ all:
 
     ansible_ssh_host: "{{ subnet }}.{{ id }}"
     ansible_user: root
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
   hosts:
     prox:
