@@ -18,13 +18,13 @@ It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM
 ## Instructions
 
 1. Manually install Proxmox on your chosen device:
-    - Download the installer ISO from "https://www.proxmox.com/en/downloads/category/iso-images-pve"
-    - Boot the ISO from a USB (E.G: Ventoy, Rufus, etc.)
+    - Download the installer ISO from [proxmox.com](https://www.proxmox.com/en/downloads/category/iso-images-pve)
+    - Boot the ISO from a USB with Ventoy, Rufus, etc.
     - Accept default options for everything
     - Set a static IP
-    - *Remember the password & IP!*
+    - **Remember the password & IP!**
     - Restart
-    - Login and verify you have internet access (E.G: $ ping example.com)
+    - Login and verify internet access
 
 2. Clone this repo:
     - `git clone https://github.com/jason-galea/proxmox_automation.git`
@@ -42,4 +42,4 @@ It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM
     - `ansible-playbook -i ansible/inv.yml ansible/prox_initial_config.yml`
 
 7. Create the Pihole container, for DNS
-    - `ansible-playbook -i ansible/inv.yml ansible/pihole.yml`
+    - `ansible-playbook -i ansible/inv.yml ansible/deploy_pihole.yml`
