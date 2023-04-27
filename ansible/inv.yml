@@ -54,8 +54,8 @@ all:
 
     vms:
       hosts:
-        cloud-ubuntu:
-          id: 250
+        # cloud-ubuntu:
+        #   id: 250
 
         portainer:
           id: 251

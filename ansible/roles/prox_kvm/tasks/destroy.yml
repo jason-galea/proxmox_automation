@@ -1,16 +1,3 @@
-- name: "Stop VMs"
-  delegate_to: localhost
-  community.general.proxmox_kvm:
-    node: prox
-    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-    api_user: root@pam
-    api_password: "{{ lookup('file', password_file) }}"
-
-    vmid: "{{ id }}"
-    state: stopped
-    force: true
-  failed_when: false ### Don't care if CT doesn't exist
-
 - name: "Destroy VMs"
   delegate_to: localhost
   community.general.proxmox_kvm:
@@ -27,11 +14,6 @@
   ansible.builtin.pause:
     seconds: 2
 
-# - name: "Remove orphaned SSH keys"
-#   delegate_to: localhost
-#   ansible.builtin.command: "ssh-keygen -R {{ ansible_host }}"
-#   register: remove_orphaned_keys
-#   changed_when: remove_orphaned_keys.rc != 0
 - name: "Include role 'ssh' with tasks from 'remove'"
   ansible.builtin.include_role:
     name: ssh

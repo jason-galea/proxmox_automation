@@ -50,10 +50,17 @@
         vmid: "{{ id }}"
         state: present
 
+        bios: ovmf
+        efidisk0:
+          efitype: 4m
+          format: raw
+          pre_enrolled_keys: false
+          storage: local-lvm
         citype: nocloud
-        ide:
-          ide2: 'local-lvm:cloudinit'
-        cpu: 2
+        scsihw: virtio-scsi-pci
+        scsi:
+          scsi2: 'local-lvm:cloudinit'
+        cores: 2
         memory: 2048
         sshkeys: "{{ lookup('file', ansible_ssh_public_key_file) }}"
         net:
@@ -61,7 +68,6 @@
         ipconfig:
           ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
         searchdomains: "{{ domain }}"
-        bios: ovmf
         machine: q35
 
     #     # scsihw: virtio-scsi-pci
