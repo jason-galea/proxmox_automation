@@ -1,21 +1,23 @@
 # - name: "Check if password file exists"
 #   delegate_to: localhost
 #   ansible.builtin.stat:
-#     path: "{{ password_file_path }}"
-#   register: stat_password_file_path
-#   failed_when: not stat_password_file_path.stat.exists
+#     path: "{{ password_file }}"
+#   register: stat_password_file
+#   failed_when: not stat_password_file.stat.exists
 
 # - name: "Install localhost SSH key on {{ inventory_hostname }}"
 #   delegate_to: localhost
 #   ansible.builtin.command: |
-#     sshpass -f {{ password_file_path }} ssh-copy-id {{ ansible_user }}@{{ ansible_ssh_host }}
+#     sshpass -f {{ password_file }} ssh-copy-id {{ ansible_user }}@{{ ansible_ssh_host }}
 #   register: ssh_copy_id_result
 #   changed_when: ssh_copy_id_result != 0
 
 - name: "Install localhost SSH key on {{ inventory_hostname }}"
+  vars:
+    ansible_ssh_pass: "{{ lookup('file', password_file) }}"
   ansible.posix.authorized_key:
     user: root
-    key: "{{ lookup('file', ssh_key_path) }}"
+    key: "{{ lookup('file', ansible_ssh_public_key_file) }}"
     state: present
 
 - name: "DEBUG: Verify SSH connection to host with 'id' command"
@@ -25,7 +27,7 @@
 
 - name: "DEBUG: Show 'id' command output"
   ansible.builtin.debug:
-    command_id.stdout
+    var: command_id.stdout
 
 # - name: "Delete password file"
 #   delegate_to: localhost

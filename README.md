@@ -35,13 +35,14 @@ It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM
 4. Set your subnet & host IPs in `inv.yml`
     - `vi ansible/inv.yml`
 
-5. Set your Proxmox password (Temporarily!):
+5. Set your Proxmox password:
     - `vi password.txt`
 
 6. Run initial Proxmox configuration with Ansible:
     - `ansible-playbook -i ansible/inv.yml ansible/prox_initial_config.yml`
 
-7. (Note that password.txt has been deleted, from now on all )
+<!-- DAMN IT! The 'community.general.proxmox' module REQUIRES a password :( -->
+<!-- 7. (Note that password.txt has been deleted) -->
 
 7. Deploy Pihole
     - `ansible-playbook -i ansible/inv.yml ansible/deploy_pihole.yml`

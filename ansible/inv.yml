@@ -17,23 +17,20 @@ all:
     ### Ansible vars
     ansible_ssh_host: "{{ ip }}"
     ansible_user: root
+    ansible_ssh_private_key_file: ~/.ssh/id_rsa_proxmox_automation_{{ inventory_hostname }}
+    ansible_ssh_public_key_file: "{{ ansible_ssh_private_key_file }}.pub"
     ansible_ssh_common_args: -o StrictHostKeyChecking=no
 
     ### Misc. vars
-    # repo_dir: "{{ inventory_dir | dirname }}"
+    repo_dir: "{{ inventory_dir | dirname }}"
     prox_ct_template_dir: /var/lib/vz/template/cache
     prox_iso_dir: /var/lib/vz/template/iso
-    ssh_key_path: ~/.ssh/proxmox_automation_{{ inventory_hostname }}
-    # ssh_key: "{{ lookup('file', ssh_key_path) }}"
-    password_file_path: "{{ repo_dir }}/password.txt"
+    password_file: "{{ repo_dir }}/password.txt"
 
   hosts:
     prox:
       # id: "YOUR_HOST_IP_AFFIX_HERE"
       id: 240
-      # ansible_ssh_host: "{{ subnet }}.{{ id }}"
-      # ansible_user: root
-      # password: "{{ lookup('file', './../password.txt') }}"
       port: 8006
 
   children:
@@ -41,15 +38,10 @@ all:
       hosts:
         base:
           id: 241
-          # ansible_ssh_host: "{{ subnet }}.{{ id }}"
-          # ansible_user: root
           base_packages: [git, curl, unzip, idn2, htop, tree]
 
         pihole:
           id: 242
-          # ansible_ssh_host: "{{ subnet }}.{{ id }}"
-          # ansible_user: root
-          # ansible_ssh_private_key_file: "TODO"
           port: 80
           cname: "{{ domain }}"
 
@@ -58,7 +50,6 @@ all:
         portainer:
           id: 250
           ### 22.04 LTS
-          # chosen_iso: ubuntu-22.04-live-server-amd64.iso
           cloud_init_img_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
           cloud_init_img: "ubuntu-{{ cloud_init_img_url | basename }}"
 

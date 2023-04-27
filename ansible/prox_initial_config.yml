@@ -5,42 +5,6 @@
   tasks:
 
     ### SSH
-    # - name: "Configure SSH access to Proxmox"
-    #   # delegate_to: localhost
-    #   # vars:
-    #   #   prox_user: "{{ hostvars['prox'].ansible_user }}"
-    #   #   prox_ip: "{{ hostvars['prox'].ansible_ssh_host }}"
-    #   block:
-    #     # - name: "Remove any existing SSH keys belonging to Proxmox from localhost"
-    #     #   delegate_to: localhost
-    #     #   ansible.builtin.command: "ssh-keygen -R {{ prox_ip }}"
-    #     #   register: remove_existing_key
-    #     #   changed_when: remove_existing_key != 0
-
-    #     - name: "Add Proxmox SSH key to known hosts"
-    #       delegate_to: localhost
-    #       ansible.builtin.shell:
-    #         cmd: |
-    #           set -o pipefail
-    #           ssh-keyscan -H {{ ansible_ssh_host }} >> ~/.ssh/known_hosts
-    #         executable: /bin/bash
-    #       register: add_to_known_hosts
-    #       changed_when: add_to_known_hosts.rc != 0
-
-    #     # - name: "Install localhost SSH key on Proxmox"
-    #     #   delegate_to: localhost
-    #     #   ansible.builtin.command: |
-    #     #     sshpass -f ./../password.txt \
-    #     #       ssh-copy-id {{ ansible_user }}@{{ prox_ip }}
-    #     #   register: ssh_copy_id_result
-    #     #   changed_when: ssh_copy_id_result != 0
-
-    #     # - name: "Install localhost SSH key on Proxmox"
-    #     #   delegate_to: localhost
-    #     #   ansible.posix.authorized_key:
-    #     #     user: root
-    #     #     key: "{{ lookup('file', ssh_key_path) }}"
-    #     #     state: present
     - name: "Configure SSH access to Proxmox"
       loop:
         - remove
@@ -48,7 +12,7 @@
         - create
         - install
       ansible.builtin.include_role:
-        name: ssh
+        name: manage_ssh_keys
         tasks_from: "{{ item }}"
 
 
