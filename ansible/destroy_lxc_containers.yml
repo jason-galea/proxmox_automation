@@ -2,5 +2,8 @@
 - name: "Destroy LXC containers"
   hosts: cts
   gather_facts: false
-  roles:
-    - destroy_ct
+  tasks:
+    - name: "Import role 'prox_lxc' with tasks from 'destroy'"
+      ansible.builtin.include_role:
+        name: prox_lxc
+        tasks_from: destroy

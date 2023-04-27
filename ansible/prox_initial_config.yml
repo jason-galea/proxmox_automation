@@ -5,11 +5,11 @@
   tasks:
 
     ### SSH
-    - name: "Configure SSH access to Proxmox"
+    - name: "Include role 'ssh' with tasks to remove/create/scan/install an SSH key"
       loop:
         - remove
-        - scan
         - create
+        - scan
         - install
       ansible.builtin.include_role:
         name: ssh

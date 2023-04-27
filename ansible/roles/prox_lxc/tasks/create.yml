@@ -46,7 +46,7 @@
 
 
 ### SSH
-- name: "Create SSH key for new container"
+- name: "Include role 'ssh' with tasks from 'remove' & 'create'"
   loop:
     - remove
     - create
@@ -131,7 +131,7 @@
 # #     executable: /bin/bash
 # #   register: add_to_known_hosts
 # #   changed_when: add_to_known_hosts.rc != 0
-# - name: "Add new SSH key to known_hosts file"
+# - name: "Include role 'ssh' with tasks from 'scan'"
 #   ansible.builtin.include_role:
 #     name: ssh
 #     tasks_from: scan

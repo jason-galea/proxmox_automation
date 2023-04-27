@@ -11,9 +11,9 @@
   changed_when: check_if_ct_exists.rc != 0
   failed_when: false ### Ignore failures, we just want the stdout
 
-- name: "Create container"
+- name: "Include role 'prox_lxc' with tasks from 'create' & 'install_packages'"
   loop:
-    - check_before_create
+    - create
     - install_packages
   ansible.builtin.include_role:
     name: prox_lxc

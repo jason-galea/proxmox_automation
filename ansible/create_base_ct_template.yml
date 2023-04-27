@@ -17,7 +17,7 @@
     #   changed_when: check_base_template_result.rc != 0
     #   failed_when: false ### Ignore fails, just want stdout
 
-    - name: "Create/Backup/Destroy base container"
+    - name: "Include role 'prox_lxc' to create/backup/destroy base container"
       loop:
         - check_before_create
         - install_packages
@@ -28,7 +28,7 @@
         tasks_from: "{{ item }}"
       # when: check_base_template_result.stdout == ""
 
-    - name: "DEBUG: Show VZdump backup dir contents"
+    - name: "DEBUG: Include role 'prox_lxc' with tasks from 'show_vzdump_backups'"
       ansible.builtin.include_role:
         name: prox_lxc
         tasks_from: show_vzdump_backups

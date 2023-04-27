@@ -19,7 +19,7 @@
         path: "{{ item }}"
         state: absent
 
-    # - name: "DEBUG: Show VZdump backup dir contents"
+    # - name: "DEBUG: Include role 'prox_lxc' with tasks from 'show_vzdump_backups'"
     #   ansible.builtin.include_role:
     #     name: prox_lxc
     #     tasks_from: show_vzdump_backups

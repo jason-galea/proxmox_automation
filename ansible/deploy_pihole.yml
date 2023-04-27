@@ -7,7 +7,8 @@
   gather_facts: false
   tasks:
 
-    - name: "Create pihole container"
+    # - name: "Create pihole container"
+    - name: "Include role 'prox_lxc' to create container {{ inventory_hostname }}"
       loop:
         - check_before_create
         - install_packages
@@ -17,7 +18,7 @@
 
     - name: "Install pihole"
       loop:
-        - end_play_if_installed
+        - check_before_install
         - install
       ansible.builtin.include_role:
         name: pihole

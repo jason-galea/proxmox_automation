@@ -9,7 +9,7 @@
   changed_when: check_if_vm_exists.rc != 0
   failed_when: false ### Ignore failures, we just want the stdout
 
-- name: "Creating VM"
+- name: "Include role 'prox_kvm' with tasks from 'create'"
   loop:
     - create
     # - install_packages

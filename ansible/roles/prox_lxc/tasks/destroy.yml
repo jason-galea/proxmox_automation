@@ -28,7 +28,7 @@
 #   ansible.builtin.command: "ssh-keygen -R {{ ansible_host }}"
 #   register: remove_orphaned_keys
 #   changed_when: remove_orphaned_keys.rc != 0
-- name: "Remove orphaned SSH keys"
+- name: "Include role 'ssh' with tasks from 'remove'"
   ansible.builtin.include_role:
     name: ssh
     tasks_from: remove
