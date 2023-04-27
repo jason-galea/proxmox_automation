@@ -1,8 +1,8 @@
 ---
-- name: "Create base CT template"
+- name: Import playbook 'create_base_ct_template.yml'
   ansible.builtin.import_playbook: create_base_ct_template.yml
 
-- name: "Create pihole CT"
+- name: Create pihole CT
   hosts: pihole
   gather_facts: false
   tasks:
@@ -26,7 +26,7 @@
 
 
 ### Populate records
-- name: "Add DNS records to Pihole"
+- name: Add DNS records to Pihole
   hosts: pihole
   gather_facts: false
   vars:
@@ -35,13 +35,13 @@
   tasks:
 
     ### A records
-    - name: "Create/wipe A records file"
+    - name: Create/wipe A records file
       ansible.builtin.copy:
         content: ""
         dest: "{{ a_records_file }}"
         force: true
 
-    - name: "Populate A records file" ### E.G: "1.2.3.4 a.test.lan"
+    - name: Populate A records file ### E.G: "1.2.3.4 a.test.lan"
       loop: "{{ groups['all']  }}"
       ansible.builtin.lineinfile:
         dest: "{{ a_records_file }}"
@@ -57,7 +57,7 @@
 
 
     ### CNAME records
-    - name: "Create/wipe CNAME records file"
+    - name: Create/wipe CNAME records file
       ansible.builtin.copy:
         content: ""
         dest: "{{ cname_records_file }}"
@@ -80,12 +80,12 @@
 
 
     ### Restart
-    - name: "Restart DNS"
+    - name: Restart DNS
       ansible.builtin.command: "pihole restartdns"
 
 
     ### Verify
-    - name: "Verify A records from localhost"
+    - name: Verify A records from localhost
       delegate_to: localhost
       loop: "{{ groups['all']  }}"
       ansible.builtin.shell:
@@ -96,7 +96,7 @@
       register: verify_a_records
       failed_when: "verify_a_records.stdout == ''"
 
-    - name: "Verify CNAME records from localhost"
+    - name: Verify CNAME records from localhost
       delegate_to: localhost
       loop: "{{ groups['all'] }}"
       when: hostvars[item].cname is defined

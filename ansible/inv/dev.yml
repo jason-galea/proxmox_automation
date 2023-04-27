@@ -26,7 +26,7 @@ all:
     prox_iso_dir: /var/lib/vz/template/iso
 
     ### Misc. vars
-    repo_dir: "{{ inventory_dir | dirname }}"
+    repo_dir: "{{ inventory_dir | dirname | dirname }}"
     password_file: "{{ repo_dir }}/password.txt"
 
   hosts:
@@ -38,7 +38,7 @@ all:
   children:
     cts:
       hosts:
-        base:
+        base-ct:
           id: 241
           # base_template: ubuntu-20.04-standard_20.04-1_amd64.tar.gz
           # base_template: ubuntu-21.10-standard_21.10-1_amd64.tar.zst
@@ -54,14 +54,14 @@ all:
 
     vms:
       hosts:
-        # cloud-ubuntu:
-        #   id: 250
-
-        portainer:
+        base-vm:
           id: 251
           ### 22.04 LTS
           cloud_init_img_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
           cloud_init_img: "ubuntu-{{ cloud_init_img_url | basename }}"
+
+        portainer:
+          id: 252
 
     # docker_containers:
     #   hosts:

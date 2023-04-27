@@ -1,44 +1,14 @@
 ---
-- name: "Create Portainer VM"
+- name: Import playbook 'create_base_vm_template.yml'
+  ansible.builtin.import_playbook: create_base_vm_template.yml
+
+- name: Create Portainer VM
   hosts: portainer
   gather_facts: false
   tasks:
 
-
-    ### Download image
-    - name: "Check if cloud-init image already exists in Proxmox"
-      delegate_to: prox
-      vars: ### NOTE: Workaround, only required when container isn't online
-        ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
-      block:
-
-        - name: "Get stats for cloud-init image on disk"
-          ansible.builtin.stat:
-            path: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
-          register: stat_cloud_init_image
-
-        - name: "Download cloud-init image to Proxmox"
-          ansible.builtin.get_url:
-            url: "{{ cloud_init_img_url }}"
-            dest: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
-            owner: root
-            group: root
-            mode: "644"
-          when: not stat_cloud_init_image.stat.exists
-
-
-    ### SSH
-    - name: "Include role 'ssh' with tasks to remove/create an new SSH key"
-      loop:
-        - remove
-        - create
-      ansible.builtin.include_role:
-        name: ssh
-        tasks_from: "{{ item }}"
-
-
-    ### Create VM
-    - name: Create VM using Cloud-Init
+    ### Clone
+    - name: Create linked clone of base VM
       delegate_to: localhost
       community.general.proxmox_kvm:
         node: prox
@@ -47,34 +17,16 @@
         api_password: "{{ lookup('file', password_file) }}"
 
         name: "{{ inventory_hostname }}"
-        vmid: "{{ id }}"
-        state: present
-
-        bios: ovmf
-        efidisk0:
-          efitype: 4m
-          format: raw
-          pre_enrolled_keys: false
-          storage: local-lvm
-        citype: nocloud
-        ciuser: root
-        scsihw: virtio-scsi-pci
-        scsi:
-          scsi0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
-          scsi1: local-lvm:cloudinit
-        cores: 2
-        memory: 2048
-        sshkeys: "{{ lookup('file', ansible_ssh_public_key_file) }}"
-        net:
-          net0: virtio,bridge=vmbr0
-        ipconfig:
-          ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
-        searchdomains: "{{ domain }}"
-        machine: q35
+        clone: base-vm
+        vmid: "{{ hostvars['base-vm'].id }}"
+        newid: "{{ id }}"
+        full: false
+        # storage: local-lvm
+        # format: unspecified
 
 
     ### Start
-    - name: "Start Portainer VM"
+    - name: Start Portainer VM
       delegate_to: localhost
       community.general.proxmox_kvm:
         api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
@@ -84,24 +36,11 @@
         vmid: "{{ id }}"
         state: started
 
-    # - name: "Wait 5 seconds to VM to start"
-    #   ansible.builtin.pause:
-    #     seconds: 5
     - name: Wait for VM to respond
       ansible.builtin.wait_for_connection:
 
 
-    ### SSH
-    # - name: "Add new SSH key to known hosts"
-    #   delegate_to: localhost
-    #   ansible.builtin.shell:
-    #     cmd: |
-    #       set -o pipefail
-    #       ssh-keyscan -H {{ ansible_ssh_host }} >> ~/.ssh/known_hosts
-    #     executable: /bin/bash
-    #   register: add_to_known_hosts
-    #   changed_when: add_to_known_hosts.rc != 0
-
+    ### DEBUG
     - name: "DEBUG: Run 'id' command on new Portainer VM"
       ansible.builtin.command: "id"
       register: id_command_result
@@ -110,3 +49,31 @@
     - name: "DEBUG: Show 'id' command output"
       ansible.builtin.debug:
         var: id_command_result.stdout
+
+
+    ### Install
+    # - name: Check if Portainer is already installed
+
+    # - name: Install docker
+    #   ansible.builtin.apt:
+    #     name: docker.io
+    #     update_cache: true
+
+    # - name: Create docker volume for Portainer
+    #   community.docker.docker_volume:
+    #     name: portainer_data
+    #     state: present
+
+    # - name: Launch Portainer via docker
+    #   community.docker.docker_container:
+    #     detach: true
+    #     ports:
+    #       - 8000:8000
+    #       - 9443:9443
+    #     name: portainer
+    #     restart_policy: always
+    #     volumes:
+    #       - /var/run/docker.sock:/var/run/docker.sock
+    #       - portainer_data:/data
+    #     image: portainer/portainer-ce:latest
+    #     state: started

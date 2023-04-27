@@ -1,6 +1,6 @@
 ---
 - name: "Create base CT template"
-  hosts: base
+  hosts: base-ct
   gather_facts: false
   tasks:
 
