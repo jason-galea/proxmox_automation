@@ -1,0 +1,14 @@
+- name: "Remove SSH key from known hosts, belonging to {{ inventory_hostname }}"
+  delegate_to: localhost
+  ansible.builtin.command: "ssh-keygen -R {{ ansible_ssh_host }}"
+  register: remove_old_prox_key_result
+  changed_when: remove_old_prox_key_result != 0
+
+- name: "Remove SSH key files from localhost"
+  delegate_to: localhost
+  loop:
+    - "{{ ssh_key_path }}"
+    - "{{ ssh_key_path }}.pub"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent

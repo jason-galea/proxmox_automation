@@ -17,12 +17,14 @@ all:
     ### Ansible vars
     ansible_ssh_host: "{{ ip }}"
     ansible_user: root
-    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    ansible_ssh_common_args: -o StrictHostKeyChecking=no
 
     ### Misc. vars
     # repo_dir: "{{ inventory_dir | dirname }}"
     prox_ct_template_dir: /var/lib/vz/template/cache
     prox_iso_dir: /var/lib/vz/template/iso
+    ssh_key_path: ~/.ssh/proxmox_automation_{{ inventory_hostname }}
+    # ssh_key: "{{ lookup('file', ssh_key_path) }}"
 
   hosts:
     prox:

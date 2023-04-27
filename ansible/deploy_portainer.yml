@@ -1,15 +1,11 @@
 ---
-- name: "Download cloud-init image to Proxmox"
+- name: "Create Portainer VM"
   hosts: portainer
   gather_facts: false
   tasks:
-    - name: "DEBUG: Show cloud-init image for {{ inventory_hostname }}"
-      loop:
-        - "{{ cloud_init_img }}"
-        - "{{ cloud_init_img_url }}"
-      ansible.builtin.debug:
-        msg: "{{ item }}"
 
+
+    ### Download image
     - name: "Check if cloud-init image already exists in Proxmox"
       delegate_to: prox
       ansible.builtin.stat:
@@ -27,83 +23,96 @@
         mode: "644"
       when: not stat_cloud_init_image.stat.exists
 
-    - name: "DEBUG: Get contents of dir {{ prox_iso_dir }}"
-      delegate_to: prox
-      ansible.builtin.command: ls -lh {{ prox_iso_dir }}
-      register: ls_prox_iso_dir
-      changed_when: ls_prox_iso_dir.rc != 0
 
-    - name: "DEBUG: Show contents of dir {{ prox_iso_dir }}"
+    ### SSH
+    - name: Create new SSH key for {{ inventory_hostname }}
+      delegate_to: localhost
+      community.crypto.openssh_keypair:
+        path: "{{ ssh_key_path }}"
+        type: rsa
+        size: 4096
+        state: present
+        force: false
+
+
+    ### Create VM
+    - name: Create VM
+      delegate_to: localhost
+      community.general.proxmox_kvm:
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ hostvars['prox'].password }}"
+
+        name: "{{ inventory_hostname }}"
+        vmid: "{{ id }}"
+
+        node: prox
+        state: present
+        sshkeys: "{{ lookup('file', ssh_key_path) }}"
+        scsihw: virtio-scsi-pci
+        scsi:
+          sata0: local-lvm:{{ cloud_init_img }},format=qcow2
+        memory: 2048
+        net:
+          net0: virtio,bridge=vmbr0
+        ipconfig:
+          ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
+        searchdomains: "{{ domain }}"
+
+
+        # node: prox
+        # state: present
+        # net:
+        #   net0: virtio,bridge=vmbr0
+        # sockets: 1
+        # cores: 2
+        # memory: 512
+        # scsihw: virtio-scsi-single
+        # scsi:
+        #   sata0: local-lvm:32,format=raw
+        # machine: q35
+        # ostype: l26
+        # bios: ovmf
+        # efidisk0:
+        #   storage: local-lvm
+        #   format: raw
+        #   efitype: 4m
+        #   pre_enrolled_keys: false
+        # onboot: true
+
+
+    ### Start
+    - name: "Start Portainer VM"
+      delegate_to: localhost
+      community.general.proxmox_kvm:
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ hostvars['prox'].password }}"
+
+        vmid: "{{ id }}"
+        state: started
+
+    - name: "Wait 5 seconds to VM to start"
+      ansible.builtin.pause:
+        seconds: 5
+
+
+    ### SSH
+    # - name: "Add new SSH key to known hosts"
+    #   delegate_to: localhost
+    #   ansible.builtin.shell:
+    #     cmd: |
+    #       set -o pipefail
+    #       ssh-keyscan -H {{ ansible_ssh_host }} >> ~/.ssh/known_hosts
+    #     executable: /bin/bash
+    #   register: add_to_known_hosts
+    #   changed_when: add_to_known_hosts.rc != 0
+
+    - name: "DEBUG: Run 'id' command on new Portainer VM"
+      ansible.builtin.command: "id"
+      register: id_command_result
+      changed_when: id_command_result != 0
+
+    - name: "DEBUG: Show 'id' command output"
       ansible.builtin.debug:
-        var: ls_prox_iso_dir.stdout_lines
-
-# - name: "Create VM"
-#   hosts: portainer
-#   gather_facts: false
-#   tasks:
-#     - name: "Create Portainer VM"
-#       delegate_to: localhost
-#       community.general.proxmox_kvm:
-#         api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-#         api_user: root@pam
-#         api_password: "{{ hostvars['prox'].password }}"
-
-#         name: "{{ inventory_hostname }}"
-#         vmid: "{{ id }}"
-
-#         node: prox
-#         state: present
-#         net:
-#           net0: "virtio,bridge=vmbr0"
-#         sockets: 1
-#         cores: 2
-#         memory: 512
-#         scsihw: virtio-scsi-single
-#         scsi:
-#           sata0: "local-lvm:32,format=raw"
-#         machine: q35
-#         ostype: l26
-#         bios: ovmf
-#         efidisk0:
-#           storage: local-lvm
-#           format: raw
-#           efitype: 4m
-#           pre_enrolled_keys: false
-#         onboot: true
-
-
-#     ### Start
-#     - name: "Start Portainer VM"
-#       delegate_to: localhost
-#       community.general.proxmox_kvm:
-#         api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-#         api_user: root@pam
-#         api_password: "{{ hostvars['prox'].password }}"
-
-#         vmid: "{{ id }}"
-#         state: started
-
-#     - name: "Wait 5 seconds to VM to start"
-#       ansible.builtin.pause:
-#         seconds: 5
-
-
-#     ### SSH
-#     - name: "Add new SSH key to known hosts"
-#       delegate_to: localhost
-#       ansible.builtin.shell:
-#         cmd: |
-#           set -o pipefail
-#           ssh-keyscan -H {{ ansible_ssh_host }} >> ~/.ssh/known_hosts
-#         executable: /bin/bash
-#       register: add_to_known_hosts
-#       changed_when: add_to_known_hosts.rc != 0
-
-#     - name: "DEBUG: Run 'id' command on new Portainer VM"
-#       ansible.builtin.command: "id"
-#       register: id_command_result
-#       changed_when: id_command_result != 0
-
-#     - name: "DEBUG: Show 'id' command output"
-#       ansible.builtin.debug:
-#         var: id_command_result.stdout
+        var: id_command_result.stdout

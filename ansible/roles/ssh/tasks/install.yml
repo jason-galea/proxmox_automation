@@ -1,0 +1,13 @@
+# - name: "Install localhost SSH key on {{ inventory_hostname }}"
+#   delegate_to: localhost
+#   ansible.builtin.command: |
+#     sshpass -f ./../password.txt \
+#       ssh-copy-id {{ ansible_user }}@{{ prox_ip }}
+#   register: ssh_copy_id_result
+#   changed_when: ssh_copy_id_result != 0
+
+- name: "Install localhost SSH key on {{ inventory_hostname }}"
+  ansible.posix.authorized_key:
+    user: root
+    key: "{{ lookup('file', ssh_key_path) }}"
+    state: present
