@@ -1,0 +1,9 @@
+---
+- name: "Destroy VMs"
+  hosts: vms
+  gather_facts: false
+  tasks:
+    - name: "Import role 'prox_kvm' with tasks from 'destroy'"
+      ansible.builtin.include_role:
+        name: prox_kvm
+        tasks_from: destroy

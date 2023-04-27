@@ -8,78 +8,69 @@
     ### Download image
     - name: "Check if cloud-init image already exists in Proxmox"
       delegate_to: prox
-      ansible.builtin.stat:
-        path: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
-      register: stat_cloud_init_image
-      # failed_when: not stat_cloud_init_image.stat.exists
+      vars: ### NOTE: Workaround, only required when container isn't online
+        ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
+      block:
 
-    - name: "Download cloud-init image to Proxmox"
-      delegate_to: prox
-      ansible.builtin.get_url:
-        url: "{{ cloud_init_img_url }}"
-        dest: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
-        owner: root
-        group: root
-        mode: "644"
-      when: not stat_cloud_init_image.stat.exists
+        - name: "Get stats for cloud-init image on disk"
+          ansible.builtin.stat:
+            path: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
+          register: stat_cloud_init_image
+
+        - name: "Download cloud-init image to Proxmox"
+          ansible.builtin.get_url:
+            url: "{{ cloud_init_img_url }}"
+            dest: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
+            owner: root
+            group: root
+            mode: "644"
+          when: not stat_cloud_init_image.stat.exists
 
 
     ### SSH
-    # - name: Create new SSH key for {{ inventory_hostname }}
-    #   delegate_to: localhost
-    #   community.crypto.openssh_keypair:
-    #     path: "{{ ansible_ssh_private_key_file }}"
-    #     type: rsa
-    #     size: 4096
-    #     state: present
-    #     force: false
-    - name: "Import"
+    - name: "Include role 'ssh' with tasks to remove/create an new SSH key"
+      loop:
+        - remove
+        - create
+      ansible.builtin.include_role:
+        name: ssh
+        tasks_from: "{{ item }}"
 
 
     ### Create VM
-    - name: Create VM
+    - name: Create VM using Cloud-Init
       delegate_to: localhost
       community.general.proxmox_kvm:
+        node: prox
         api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
         api_user: root@pam
         api_password: "{{ lookup('file', password_file) }}"
 
         name: "{{ inventory_hostname }}"
         vmid: "{{ id }}"
-
-        node: prox
         state: present
-        sshkeys: "{{ lookup('file', ansible_ssh_private_key_file) }}"
-        scsihw: virtio-scsi-pci
-        scsi:
-          sata0: local-lvm:{{ cloud_init_img }},format=qcow2
+
+        citype: nocloud
+        ide:
+          ide2: 'local-lvm:cloudinit'
+        cpu: 2
         memory: 2048
+        sshkeys: "{{ lookup('file', ansible_ssh_public_key_file) }}"
         net:
-          net0: virtio,bridge=vmbr0
+          net0: 'virtio,bridge=vmbr0,tag=77'
         ipconfig:
           ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
         searchdomains: "{{ domain }}"
+        bios: ovmf
+        machine: q35
 
-
-        # node: prox
-        # state: present
-        # net:
-        #   net0: virtio,bridge=vmbr0
-        # sockets: 1
-        # cores: 2
-        # memory: 512
-        # scsihw: virtio-scsi-single
-        # scsi:
-        #   sata0: local-lvm:32,format=raw
-        # machine: q35
-        # ostype: l26
-        # bios: ovmf
-        # efidisk0:
-        #   storage: local-lvm
-        #   format: raw
-        #   efitype: 4m
-        #   pre_enrolled_keys: false
-        # onboot: true
+    #     # scsihw: virtio-scsi-pci
+    #     ide:
+    #       ide2: local-lvm:cloudinit,format=qcow2
+    #     net:
+    #       net0: virtio,bridge=vmbr0
+    #     ipconfig:
+    #       ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
 
 
     ### Start

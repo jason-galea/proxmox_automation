@@ -1,6 +1,6 @@
-- name: "Stop containers"
+- name: "Stop VMs"
   delegate_to: localhost
-  community.general.proxmox:
+  community.general.proxmox_kvm:
     node: prox
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
@@ -11,9 +11,9 @@
     force: true
   failed_when: false ### Don't care if CT doesn't exist
 
-- name: "Destroy containers"
+- name: "Destroy VMs"
   delegate_to: localhost
-  community.general.proxmox:
+  community.general.proxmox_kvm:
     node: prox
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
@@ -23,7 +23,7 @@
     state: absent
     force: true
 
-- name: "Wait for container to finish being destroyed"
+- name: "Wait for VMs to finish being destroyed"
   ansible.builtin.pause:
     seconds: 2
 
