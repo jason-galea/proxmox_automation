@@ -57,26 +57,20 @@
           pre_enrolled_keys: false
           storage: local-lvm
         citype: nocloud
+        ciuser: root
         scsihw: virtio-scsi-pci
         scsi:
-          scsi2: 'local-lvm:cloudinit'
+          scsi0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
+          scsi1: local-lvm:cloudinit
         cores: 2
         memory: 2048
         sshkeys: "{{ lookup('file', ansible_ssh_public_key_file) }}"
         net:
-          net0: 'virtio,bridge=vmbr0,tag=77'
+          net0: virtio,bridge=vmbr0
         ipconfig:
           ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
         searchdomains: "{{ domain }}"
         machine: q35
-
-    #     # scsihw: virtio-scsi-pci
-    #     ide:
-    #       ide2: local-lvm:cloudinit,format=qcow2
-    #     net:
-    #       net0: virtio,bridge=vmbr0
-    #     ipconfig:
-    #       ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
 
 
     ### Start
@@ -90,9 +84,11 @@
         vmid: "{{ id }}"
         state: started
 
-    - name: "Wait 5 seconds to VM to start"
-      ansible.builtin.pause:
-        seconds: 5
+    # - name: "Wait 5 seconds to VM to start"
+    #   ansible.builtin.pause:
+    #     seconds: 5
+    - name: Wait for VM to respond
+      ansible.builtin.wait_for_connection:
 
 
     ### SSH
