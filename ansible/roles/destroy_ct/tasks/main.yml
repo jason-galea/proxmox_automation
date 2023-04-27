@@ -3,7 +3,7 @@
   community.general.proxmox:
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
-    api_password: "{{ hostvars['prox'].password }}"
+    api_password: "{{ lookup('file', password_file) }}"
 
     vmid: "{{ id }}"
     state: stopped
@@ -14,7 +14,7 @@
   community.general.proxmox:
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
-    api_password: "{{ hostvars['prox'].password }}"
+    api_password: "{{ lookup('file', password_file) }}"
 
     vmid: "{{ id }}"
     state: absent
@@ -23,8 +23,12 @@
   ansible.builtin.pause:
     seconds: 2
 
+# - name: "Remove orphaned SSH keys"
+#   delegate_to: localhost
+#   ansible.builtin.command: "ssh-keygen -R {{ ansible_host }}"
+#   register: remove_orphaned_keys
+#   changed_when: remove_orphaned_keys.rc != 0
 - name: "Remove orphaned SSH keys"
-  delegate_to: localhost
-  ansible.builtin.command: "ssh-keygen -R {{ ansible_host }}"
-  register: remove_orphaned_keys
-  changed_when: remove_orphaned_keys.rc != 0
+  ansible.builtin.include_role:
+    name: manage_ssh_keys
+    tasks_from: remove

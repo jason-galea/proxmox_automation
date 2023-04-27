@@ -4,32 +4,29 @@
   gather_facts: false
   tasks:
 
-    - name: "Check if base template exists"
-      delegate_to: prox
-      ansible.builtin.shell:
-        cmd: |
-          set -o pipefail
-          ls {{ prox_ct_template_dir }}/vzdump-lxc-{{ id }}*tar.zst | head -n1
-        executable: /bin/bash
-      register: check_base_template_result
-      changed_when: check_base_template_result.rc != 0
-      failed_when: false ### Ignore fails, just want stdout
+    # - name: "Check if base template exists"
+    #   vars: ### NOTE: Workaround, only required when container isn't online
+    #     ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
+    #   delegate_to: prox
+    #   ansible.builtin.shell:
+    #     cmd: |
+    #       set -o pipefail
+    #       ls {{ prox_ct_template_dir }}/vzdump-lxc-{{ id }}*tar.zst | head -n1
+    #     executable: /bin/bash
+    #   register: check_base_template_result
+    #   changed_when: check_base_template_result.rc != 0
+    #   failed_when: false ### Ignore fails, just want stdout
 
-    - name: "Create base container"
-      when: check_base_template_result.stdout == ""
-      block:
-        - name: "Create base container"
-          ansible.builtin.include_role:
-            name: create_ct
+    - name: "Create/Backup/Destroy base container"
+      loop:
+        - create_ct
+        - backup_ct
+        - destroy_ct
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+      # when: check_base_template_result.stdout == ""
 
-        - name: "Backup base container"
-          loop:
-            - backup_ct
-            - destroy_ct
-          ansible.builtin.include_role:
-            name: "{{ item }}"
-
-    # - name: "DEBUG: Show VZdump backup dir contents"
-    #   ansible.builtin.include_role:
-    #     name: backup_ct
-    #     tasks_from: show_vzdump_backups.yml
+    - name: "DEBUG: Show VZdump backup dir contents"
+      ansible.builtin.include_role:
+        name: backup_ct
+        tasks_from: show_vzdump_backups.yml

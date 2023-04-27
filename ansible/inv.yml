@@ -17,14 +17,16 @@ all:
     ### Ansible vars
     ansible_ssh_host: "{{ ip }}"
     ansible_user: root
-    ansible_ssh_private_key_file: ~/.ssh/id_rsa_proxmox_automation_{{ inventory_hostname }}
+    ansible_ssh_private_key_file: ~/.ssh/prox_automation_{{ inventory_hostname }}
     ansible_ssh_public_key_file: "{{ ansible_ssh_private_key_file }}.pub"
     ansible_ssh_common_args: -o StrictHostKeyChecking=no
 
-    ### Misc. vars
-    repo_dir: "{{ inventory_dir | dirname }}"
+    ### Proxmox vars
     prox_ct_template_dir: /var/lib/vz/template/cache
     prox_iso_dir: /var/lib/vz/template/iso
+
+    ### Misc. vars
+    repo_dir: "{{ inventory_dir | dirname }}"
     password_file: "{{ repo_dir }}/password.txt"
 
   hosts:
@@ -38,6 +40,11 @@ all:
       hosts:
         base:
           id: 241
+          # base_template: ubuntu-20.04-standard_20.04-1_amd64.tar.gz
+          # base_template: ubuntu-21.10-standard_21.10-1_amd64.tar.zst
+          # base_template: ubuntu-22.04-standard_22.04-1_amd64.tar.zst
+          base_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
+          # base_template: alpine-3.15-default_20211202_amd64.tar.xz
           base_packages: [git, curl, unzip, idn2, htop, tree]
 
         pihole:

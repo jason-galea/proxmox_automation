@@ -24,7 +24,7 @@
       when: not stat_cloud_init_image.stat.exists
 
 
-    # ### SSH
+    ### SSH
     # - name: Create new SSH key for {{ inventory_hostname }}
     #   delegate_to: localhost
     #   community.crypto.openssh_keypair:
@@ -33,6 +33,7 @@
     #     size: 4096
     #     state: present
     #     force: false
+    - name: "Import"
 
 
     ### Create VM
@@ -41,7 +42,7 @@
       community.general.proxmox_kvm:
         api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
         api_user: root@pam
-        api_password: "{{ hostvars['prox'].password }}"
+        api_password: "{{ lookup('file', password_file) }}"
 
         name: "{{ inventory_hostname }}"
         vmid: "{{ id }}"
@@ -87,7 +88,7 @@
       community.general.proxmox_kvm:
         api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
         api_user: root@pam
-        api_password: "{{ hostvars['prox'].password }}"
+        api_password: "{{ lookup('file', password_file) }}"
 
         vmid: "{{ id }}"
         state: started

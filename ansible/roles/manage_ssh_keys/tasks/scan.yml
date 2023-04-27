@@ -1,4 +1,4 @@
-- name: "Scan SSH key from {{ inventory_hostname }}"
+- name: "Scan SSH key from: {{ inventory_hostname }}"
   delegate_to: localhost
   ansible.builtin.shell:
     cmd: |
@@ -7,3 +7,10 @@
     executable: /bin/bash
   register: add_to_known_hosts
   changed_when: add_to_known_hosts.rc != 0
+
+# - name: "Scan SSH key from: {{ inventory_hostname }}"
+#   # delegate_to: localhost
+#   ansible.builtin.known_hosts:
+#     name: "{{ ansible_ssh_host }}"
+#     key: "{{ lookup('file', ansible_ssh_public_key_file) }}"
+#     state: present

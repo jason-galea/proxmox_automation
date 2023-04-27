@@ -1,5 +1,5 @@
 ### Chose CT template
-- name: "Chose CT template"
+- name: "Discover base CT VZdump backup"
   when: inventory_hostname != "base"
   block:
     - name: "Discover base CT VZdump name"
@@ -14,20 +14,45 @@
 
     - name: "Save base CT VZdump name as fact"
       ansible.builtin.set_fact:
-        chosen_ct_template: "local:vztmpl/{{ discover_base_ct_vzdump_name.stdout }}"
+        base_template: "{{ discover_base_ct_vzdump_name.stdout }}"
 
-- name: "(base) Statically set Proxmox CT template to create base CT from"
-  ansible.builtin.set_fact:
-    # chosen_ct_template: "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
-    # chosen_ct_template: "local:vztmpl/ubuntu-21.10-standard_21.10-1_amd64.tar.zst"
-    # chosen_ct_template: "local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
-    chosen_ct_template: "local:vztmpl/ubuntu-22.10-standard_22.10-1_amd64.tar.zst"
-    # chosen_ct_template: "local:vztmpl/alpine-3.15-default_20211202_amd64.tar.xz"
+
+- name: (base) Verify base CT template has been downloaded to Proxmox
+  delegate_to: prox
   when: inventory_hostname == "base"
+  block:
 
-- name: "DEBUG: Show chosen CT template"
+    ### NOTE: "base_template" is statically defined for host "base"
+    - name: "(base) Get stats of CT template file already on Proxmox"
+      ansible.builtin.stat:
+        path: "{{ prox_ct_template_dir }}/{{ base_template }}"
+      register: stat_base_template
+
+    - name: "(base) Download CT template"
+      ansible.builtin.command: "pveam download local {{ base_template }}"
+      when: not stat_base_template.stat.exists
+      register: download_ct_template
+      changed_when: download_ct_template.rc != 0
+
+    # - name: "(base) DEBUG: Show download output"
+    #   ansible.builtin.debug:
+    #     var: download_ct_template.stdout_lines
+    #   when: download_ct_template.stdout_lines is defined
+
+
+- name: "DEBUG: Show base_template"
   ansible.builtin.debug:
-    var: chosen_ct_template
+    var: base_template
+
+
+### SSH
+- name: "Create SSH key for new container"
+  loop:
+    - remove
+    - create
+  ansible.builtin.include_role:
+    name: manage_ssh_keys
+    tasks_from: "{{ item }}"
 
 
 ### Create container
@@ -36,37 +61,35 @@
   community.general.proxmox:
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
-    api_password: "{{ hostvars['prox'].password }}"
+    api_password: "{{ lookup('file', password_file) }}"
 
     hostname: "{{ inventory_hostname }}"
     vmid: "{{ id }}"
 
     node: prox
     state: present
-    # netif: "{{ ct_netif }}"
-    netif: '{"net0":"name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}"}'
-    ostemplate: "{{ chosen_ct_template }}"
-    # password: "{{ hostvars['prox'].password }}"
-    pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    netif: "{'net0':'name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}'}"
+    ostemplate: local:vztmpl/{{ base_template }}
+    pubkey: "{{ lookup('file', ansible_ssh_public_key_file) }}"
     cores: 2
     memory: 512 # MB
     swap: 100 # MB
     disk: 8 # GB
     storage: local-lvm
-    # unprivileged: true
+    # unprivileged: true ### Deprecation warning, NFC how to silence it cleanly
     onboot: true
-    features:
-      - nesting=1
+    # features:
+    #   - nesting=1
 
 
 ### Custom configs
 - name: "Add custom LXC configs"
   delegate_to: prox
   loop: "{{ ct_custom_configs }}"
-  when: ct_custom_configs is defined
   ansible.builtin.lineinfile:
     dest: "/etc/pve/lxc/{{ id }}.conf"
     line: "{{ item }}"
+  when: ct_custom_configs is defined
 
 
 ### Start
@@ -75,12 +98,12 @@
   community.general.proxmox:
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
-    api_password: "{{ hostvars['prox'].password }}"
+    api_password: "{{ lookup('file', password_file) }}"
 
     vmid: "{{ id }}"
     state: started
 
-- name: "Wait 5 seconds to container to start"
+- name: "Wait 5 seconds for container to start"
   ansible.builtin.pause:
     seconds: 5
 
@@ -99,12 +122,16 @@
 #   timeout: 5
 #   retries: 5
 
-- name: "Add new SSH key to known hosts"
-  delegate_to: localhost
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      ssh-keyscan -H {{ ansible_ssh_host }} >> ~/.ssh/known_hosts
-    executable: /bin/bash
-  register: add_to_known_hosts
-  changed_when: add_to_known_hosts.rc != 0
+# # - name: "Add new SSH key to known hosts"
+# #   delegate_to: localhost
+# #   ansible.builtin.shell:
+# #     cmd: |
+# #       set -o pipefail
+# #       ssh-keyscan -H {{ ansible_ssh_host }} >> ~/.ssh/known_hosts
+# #     executable: /bin/bash
+# #   register: add_to_known_hosts
+# #   changed_when: add_to_known_hosts.rc != 0
+# - name: "Add new SSH key to known_hosts file"
+#   ansible.builtin.include_role:
+#     name: manage_ssh_keys
+#     tasks_from: scan

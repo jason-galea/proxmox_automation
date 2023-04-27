@@ -4,19 +4,23 @@
   community.general.proxmox:
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
-    api_password: "{{ hostvars['prox'].password }}"
+    api_password: "{{ lookup('file', password_file) }}"
 
     vmid: "{{ id }}"
     state: stopped
 
-- name: "Remove network config"
-  delegate_to: prox
-  ansible.builtin.command: "pct set {{ id }} --delete net0"
-  register: remove_network_config
-  changed_when: remove_network_config.rc != 0
+    netif: "{}" ### Delete network adapter
+
+# - name: "Remove network config"
+#   delegate_to: prox
+#   ansible.builtin.command: "pct set {{ id }} --delete net0"
+#   register: remove_network_config
+#   changed_when: remove_network_config.rc != 0
 
 - name: "Backup container with vzdump"
   delegate_to: prox
+  vars: ### NOTE: Workaround for when the container isn't responding
+    ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
   ansible.builtin.command: "vzdump {{ id }} --mode stop --dumpdir {{ prox_ct_template_dir }}/ --compress zstd"
   register: vzdump_container
   changed_when: vzdump_container.rc != 0
