@@ -5,8 +5,8 @@
   tasks:
     - name: "DEBUG: Show cloud-init image for {{ inventory_hostname }}"
       loop:
-        - cloud_init_img
-        - cloud_init_img_url
+        - "{{ cloud_init_img }}"
+        - "{{ cloud_init_img_url }}"
       ansible.builtin.debug:
         msg: "{{ item }}"
 
