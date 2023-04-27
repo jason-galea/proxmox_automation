@@ -63,11 +63,14 @@
           format: raw
           pre_enrolled_keys: false
           storage: local-lvm
+        ide:
+          ide0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
         scsihw: virtio-scsi-pci
         scsi:
-          scsi0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
+          # scsi0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
           scsi1: local-lvm:cloudinit
-        bootdisk: scsi0
+        # bootdisk: scsi0
+        bootdisk: ide0
         net:
           net0: virtio,bridge=vmbr0
         ipconfig:
