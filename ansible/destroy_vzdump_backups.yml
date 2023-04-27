@@ -7,7 +7,7 @@
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
-          find {{ template_dir }}/ | grep vzdump
+          find {{ prox_ct_template_dir }}/ | grep vzdump
         executable: /bin/bash
       register: vzdumps_to_destroy
       changed_when: vzdumps_to_destroy.rc != 0

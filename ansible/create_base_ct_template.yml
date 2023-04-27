@@ -9,7 +9,7 @@
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
-          ls {{ template_dir }}/vzdump-lxc-{{ id }}*tar.zst | head -n1
+          ls {{ prox_ct_template_dir }}/vzdump-lxc-{{ id }}*tar.zst | head -n1
         executable: /bin/bash
       register: check_base_template_result
       changed_when: check_base_template_result.rc != 0

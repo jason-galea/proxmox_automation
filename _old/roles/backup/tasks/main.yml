@@ -17,7 +17,7 @@
 ### Backup
 - name: "Backup container"
   delegate_to: prox
-  command: "vzdump {{ id }} --mode stop --dumpdir {{ template_dir }} --compress zstd"
+  command: "vzdump {{ id }} --mode stop --dumpdir {{ prox_ct_template_dir }} --compress zstd"
   register: convert
 - debug:
     var: convert.stdout

@@ -6,7 +6,7 @@ all:
     dns: "{{ hostvars['pihole'].ip }}" # This not used during creation
     inventory_dir: "{{ ansible_inventory_sources[0] | dirname }}" # SUPER useful
     password: "{{ lookup('file', inventory_dir + '/../password.txt') }}"
-    template_dir: "/var/lib/vz/template/cache/"
+    prox_ct_template_dir: "/var/lib/vz/template/cache/"
     resolv: "/etc/resolv.conf"
     # distro: "ubuntu"
     distro: "alpine"
@@ -200,7 +200,7 @@ all:
         ct_state: present
         ct_bridge: vmbr0
         ct_netif: '{"net0":"name=eth0,bridge={{ ct_bridge }},firewall=1,type=veth,ip={{ ip }}/24,gw={{ gateway }}"}'
-        # ct_ostemplate: "{{ template_dir }}" # DISCOVERED AT RUN TIME
+        # ct_ostemplate: "{{ prox_ct_template_dir }}" # DISCOVERED AT RUN TIME
         ct_hostname: "{{ inventory_hostname }}"
         ct_password: "{{ password }}"
         ct_pubkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"

@@ -10,7 +10,7 @@
   - block:
     - name: "Discover base template name"
       delegate_to: prox
-      shell: "ls {{ template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar' | cat"
+      shell: "ls {{ prox_ct_template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar' | cat"
       register: name
 
     - set_fact:

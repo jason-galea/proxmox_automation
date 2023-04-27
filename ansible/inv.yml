@@ -10,18 +10,19 @@ all:
     gateway: "{{ subnet }}.1"
 
     ### DNS settings
-    domain: "test.lan"
+    domain: test.lan
     fqdn: "{{ inventory_hostname }}.{{ domain }}"
     dns: "{{ hostvars['pihole'].ip }}"
-
-    ### Misc. constants
-    template_dir: "/var/lib/vz/template/cache"
-    repo_dir: "{{ inventory_dir | dirname }}"
 
     ### Ansible vars
     ansible_ssh_host: "{{ ip }}"
     ansible_user: root
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+
+    ### Misc. vars
+    # repo_dir: "{{ inventory_dir | dirname }}"
+    prox_ct_template_dir: /var/lib/vz/template/cache
+    prox_iso_dir: /var/lib/vz/template/iso
 
   hosts:
     prox:
@@ -53,7 +54,10 @@ all:
       hosts:
         portainer:
           id: 250
-          chosen_iso: "ubuntu-22.04-live-server-amd64.iso"
+          ### 22.04 LTS
+          # chosen_iso: ubuntu-22.04-live-server-amd64.iso
+          cloud_init_img_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+          cloud_init_img: "{{ cloud_init_img_url | basename }}"
 
     # docker_containers:
     #   hosts:

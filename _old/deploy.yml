@@ -21,7 +21,7 @@
   tasks:
   - name: "Check if base template exists"
     delegate_to: prox
-    shell: "find {{ template_dir }} | grep 'vzdump.*{{ id }}.*tar' | cat"
+    shell: "find {{ prox_ct_template_dir }} | grep 'vzdump.*{{ id }}.*tar' | cat"
     register: check
 
   - name: "Creating base template"
