@@ -19,14 +19,16 @@
 
     - name: "Create/Backup/Destroy base container"
       loop:
-        - create_ct
-        - backup_ct
-        - destroy_ct
+        - check_before_create
+        - install_packages
+        - backup
+        - destroy
       ansible.builtin.include_role:
-        name: "{{ item }}"
+        name: prox_lxc
+        tasks_from: "{{ item }}"
       # when: check_base_template_result.stdout == ""
 
     - name: "DEBUG: Show VZdump backup dir contents"
       ansible.builtin.include_role:
-        name: backup_ct
-        tasks_from: show_vzdump_backups.yml
+        name: prox_lxc
+        tasks_from: show_vzdump_backups

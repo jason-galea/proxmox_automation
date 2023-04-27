@@ -12,7 +12,7 @@
         - create
         - install
       ansible.builtin.include_role:
-        name: manage_ssh_keys
+        name: ssh
         tasks_from: "{{ item }}"
 
 

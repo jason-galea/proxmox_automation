@@ -51,7 +51,7 @@
     - remove
     - create
   ansible.builtin.include_role:
-    name: manage_ssh_keys
+    name: ssh
     tasks_from: "{{ item }}"
 
 
@@ -133,5 +133,5 @@
 # #   changed_when: add_to_known_hosts.rc != 0
 # - name: "Add new SSH key to known_hosts file"
 #   ansible.builtin.include_role:
-#     name: manage_ssh_keys
+#     name: ssh
 #     tasks_from: scan

@@ -14,6 +14,6 @@
     - create
     # - install_packages
   ansible.builtin.include_role:
-    name: create_vm
+    name: prox_kvm
     tasks_from: "{{ item }}"
   when: check_if_vm_exists.stdout == ""

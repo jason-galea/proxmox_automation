@@ -30,5 +30,5 @@
 #   changed_when: remove_orphaned_keys.rc != 0
 - name: "Remove orphaned SSH keys"
   ansible.builtin.include_role:
-    name: manage_ssh_keys
+    name: ssh
     tasks_from: remove

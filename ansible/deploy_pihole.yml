@@ -8,8 +8,12 @@
   tasks:
 
     - name: "Create pihole container"
+      loop:
+        - check_before_create
+        - install_packages
       ansible.builtin.include_role:
-        name: create_ct
+        name: prox_lxc
+        tasks_from: "{{ item }}"
 
     - name: "Install pihole"
       loop:
