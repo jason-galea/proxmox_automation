@@ -25,6 +25,7 @@ all:
     prox_iso_dir: /var/lib/vz/template/iso
     ssh_key_path: ~/.ssh/proxmox_automation_{{ inventory_hostname }}
     # ssh_key: "{{ lookup('file', ssh_key_path) }}"
+    password_file_path: "{{ repo_dir }}/password.txt"
 
   hosts:
     prox:
@@ -32,7 +33,7 @@ all:
       id: 240
       # ansible_ssh_host: "{{ subnet }}.{{ id }}"
       # ansible_user: root
-      password: "{{ lookup('file', './../password.txt') }}"
+      # password: "{{ lookup('file', './../password.txt') }}"
       port: 8006
 
   children:

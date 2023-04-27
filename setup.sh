@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo -e "\n==> Updating package list"
+echo -e "\n==> Update package list"
 sudo apt update -y
 
 echo -e "\n==> Install 'sshpass'"
