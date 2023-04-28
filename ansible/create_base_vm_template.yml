@@ -1,66 +1,27 @@
 ---
-- name: Create base VM
+- name: Create base VM template
   hosts: base-vm
   gather_facts: false
   tasks:
 
-    - name: Check if cloud-init image already exists in Proxmox
-      delegate_to: prox
+    - name: Check if base VM template already exists
       vars: ### NOTE: Workaround, only required when container isn't online
         ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
-      block:
-
-        - name: "Get stats for cloud-init image on disk"
-          ansible.builtin.stat:
-            path: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
-          register: stat_cloud_init_image
-
-        - name: "Download cloud-init image to Proxmox"
-          ansible.builtin.get_url:
-            url: "{{ cloud_init_img_url }}"
-            dest: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
-            owner: root
-            group: root
-            mode: "644"
-          when: not stat_cloud_init_image.stat.exists
-
-
-    ### TODO: Check if base VM template already exists
-
-
-    - name: Create base VM template using Cloud-Init
-      delegate_to: localhost
-      community.general.proxmox_kvm:
-        node: prox
-        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-        api_user: root@pam
-        api_password: "{{ lookup('file', password_file) }}"
-
-        name: "{{ inventory_hostname }}"
-        vmid: "{{ id }}"
-
-        citype: nocloud
-        cores: 2
-        memory: 2048
-        machine: q35
-        bios: ovmf
-        efidisk0:
-          efitype: 4m
-          format: raw
-          pre_enrolled_keys: false
-          storage: local-lvm
-        scsihw: virtio-scsi-pci
-        scsi:
-          scsi0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
-          scsi2: local-lvm:cloudinit
-        bootdisk: scsi0
-        net:
-          net0: virtio,bridge=vmbr0
-
-
-    - name: Convert base VM to template
       delegate_to: prox
-      ansible.builtin.command: "qm template {{ id }}"
-      register: convert_base_vm_to_template
-      changed_when: convert_base_vm_to_template.rc != 0
-      failed_when: convert_base_vm_to_template.rc not in [0, 255]
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          qm list | grep {{ id }}
+        executable: /bin/bash
+      register: check_if_base_vm_exists
+      changed_when: check_if_base_vm_exists.rc != 0
+      failed_when: false ### Ignore failures, we just want the stdout
+
+    - name: "Include role 'prox_kvm' with tasks from 'check_create_install_packages'"
+      loop:
+        - check_create_install_packages
+        - template
+      ansible.builtin.include_role:
+        name: prox_kvm
+        tasks_from: check_create_install_packages
+      when: check_if_base_vm_exists.stdout == ""

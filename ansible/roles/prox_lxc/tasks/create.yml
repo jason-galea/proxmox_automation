@@ -29,7 +29,9 @@
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
-          ls {{ prox_ct_template_dir }} | grep 'vzdump.*{{ hostvars['base'].id }}.*tar.zst' | head -n1
+          ls {{ prox_ct_template_dir }} \
+            | grep 'vzdump.*{{ hostvars['base-ct'].id }}.*tar.zst' \
+            | head -n1
         executable: /bin/bash
       register: discover_base_ct_vzdump_name
       changed_when: discover_base_ct_vzdump_name.rc != 0

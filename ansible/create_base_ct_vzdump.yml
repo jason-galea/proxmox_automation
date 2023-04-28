@@ -1,10 +1,10 @@
 ---
-- name: "Create base CT template"
+- name: Create base CT template
   hosts: base-ct
   gather_facts: false
   tasks:
 
-    - name: "Check if base template exists"
+    - name: Check if base template exists
       delegate_to: prox
       vars: ### NOTE: Workaround, only required when container isn't online
         ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
@@ -20,14 +20,14 @@
     - name: "Include role 'prox_lxc' to create/backup/destroy base container"
       loop:
         - check_create_install_packages
-        - backup
+        - vzdump
         - destroy
       ansible.builtin.include_role:
         name: prox_lxc
         tasks_from: "{{ item }}"
       when: check_base_template_result.stdout == ""
 
-    - name: "DEBUG: Include role 'prox_lxc' with tasks from 'show_vzdump_backups'"
-      ansible.builtin.include_role:
-        name: prox_lxc
-        tasks_from: show_vzdump_backups
+    # - name: "DEBUG: Include role 'prox_lxc' with tasks from 'show_vzdump_backups'"
+    #   ansible.builtin.include_role:
+    #     name: prox_lxc
+    #     tasks_from: show_vzdump_backups

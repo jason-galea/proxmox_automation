@@ -1,4 +1,17 @@
-- name: "Destroy containers"
+- name: Stop containers
+  delegate_to: localhost
+  community.general.proxmox:
+    node: prox
+    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+    api_user: root@pam
+    api_password: "{{ lookup('file', password_file) }}"
+
+    vmid: "{{ id }}"
+    state: stopped
+    force: true
+  failed_when: false ### :^)
+
+- name: Destroy containers
   delegate_to: localhost
   community.general.proxmox:
     node: prox
@@ -9,6 +22,17 @@
     vmid: "{{ id }}"
     state: absent
     force: true
+  failed_when: false
+
+# - name: "Destroy containers"
+#   delegate_to: prox
+#   vars: ### NOTE: Workaround for when the container isn't responding
+#     ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
+#   ansible.builtin.command: pct destroy {{ id }}
+#   register: destroy_cts
+#   changed_when: destroy_cts.rc != 0
+#   failed_when: false ### Ignore failures, we just want the stdout
+
 
 # - name: "Wait for container to finish being destroyed"
 #   ansible.builtin.pause:

@@ -1,0 +1,6 @@
+- name: Convert base VM to template
+  delegate_to: prox
+  ansible.builtin.command: "qm template {{ id }}"
+  register: convert_base_vm_to_template
+  changed_when: convert_base_vm_to_template.rc != 0
+  failed_when: convert_base_vm_to_template.rc not in [0, 255]

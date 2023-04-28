@@ -1,6 +1,6 @@
 ---
-- name: Import playbook 'create_base_ct_template.yml'
-  ansible.builtin.import_playbook: create_base_ct_template.yml
+- name: Import playbook 'create_base_ct_vzdump.yml'
+  ansible.builtin.import_playbook: create_base_ct_vzdump.yml
 
 - name: Create pihole CT
   hosts: pihole

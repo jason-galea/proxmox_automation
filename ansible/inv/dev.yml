@@ -55,7 +55,7 @@ all:
     vms:
       hosts:
         base-vm:
-          id: 9000
+          id: 253
           ### 22.04 LTS
           cloud_init_img_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
           cloud_init_img: "ubuntu-{{ cloud_init_img_url | basename }}"
