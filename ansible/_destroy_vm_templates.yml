@@ -1,0 +1,14 @@
+---
+- name: Destroy all VM templates
+  hosts: vms
+  gather_facts: false
+  tasks:
+
+    - name: Destroy all VM templates
+      vars:
+        ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
+      delegate_to: prox
+      ansible.builtin.command: "qm destroy {{ id }}"
+      register: qm_destroy_vms
+      changed_when: qm_destroy_vms.rc != 0
+      failed_when: qm_destroy_vms.rc not in [0, 2]

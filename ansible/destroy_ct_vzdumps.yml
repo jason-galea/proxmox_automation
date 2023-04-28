@@ -1,9 +1,9 @@
 ---
-- name: "Destroy all VZdump CT backups"
+- name: Destroy all CT VZdump backups
   hosts: prox
   gather_facts: false
   tasks:
-    - name: "Get list of VZdump files"
+    - name: Get list of VZdump files
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
@@ -13,7 +13,7 @@
       changed_when: vzdumps_to_destroy.rc != 0
       failed_when: false
 
-    - name: "Destroy VZdump CT backups"
+    - name: Destroy all CT VZdump backups
       loop: "{{ vzdumps_to_destroy.stdout_lines }}"
       ansible.builtin.file:
         path: "{{ item }}"

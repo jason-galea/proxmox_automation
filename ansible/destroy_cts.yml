@@ -1,5 +1,5 @@
 ---
-- name: "Destroy LXC containers"
+- name: "Destroy all CTs"
   hosts: cts
   gather_facts: false
   tasks:

@@ -4,8 +4,6 @@
   gather_facts: false
   tasks:
 
-
-    ### Download image
     - name: Check if cloud-init image already exists in Proxmox
       delegate_to: prox
       vars: ### NOTE: Workaround, only required when container isn't online
@@ -27,20 +25,9 @@
           when: not stat_cloud_init_image.stat.exists
 
 
-    ### TODO: Check if VM already exists
+    ### TODO: Check if base VM template already exists
 
 
-    ### SSH
-    - name: "Include role 'ssh' with tasks to remove/create an new SSH key"
-      loop:
-        - remove
-        - create
-      ansible.builtin.include_role:
-        name: ssh
-        tasks_from: "{{ item }}"
-
-
-    ### Create
     - name: Create base VM template using Cloud-Init
       delegate_to: localhost
       community.general.proxmox_kvm:
@@ -53,32 +40,27 @@
         vmid: "{{ id }}"
 
         citype: nocloud
-        ciuser: root
-        sshkeys: "{{ lookup('file', ansible_ssh_public_key_file) }}"
         cores: 2
         memory: 2048
-        # bios: ovmf
-        # efidisk0:
-        #   efitype: 4m
-        #   format: raw
-        #   pre_enrolled_keys: false
-        #   storage: local-lvm
-        # scsihw: virtio-scsi-pci
-        # scsi:
-        #   scsi0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
-        #   scsi2: local-lvm:cloudinit
-        # bootdisk: scsi0
-        ide:
-          ide0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
-          ide2: local-lvm:cloudinit
-        bootdisk: ide0
+        machine: q35
+        bios: ovmf
+        efidisk0:
+          efitype: 4m
+          format: raw
+          pre_enrolled_keys: false
+          storage: local-lvm
+        scsihw: virtio-scsi-pci
+        scsi:
+          scsi0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
+          scsi2: local-lvm:cloudinit
+        bootdisk: scsi0
         net:
           net0: virtio,bridge=vmbr0
-        ipconfig:
-          ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
-        searchdomains: "{{ domain }}"
-        machine: q35
-        serial:
-          serial0: socket
-        vga: serial0
-        template: true
+
+
+    - name: Convert base VM to template
+      delegate_to: prox
+      ansible.builtin.command: "qm template {{ id }}"
+      register: convert_base_vm_to_template
+      changed_when: convert_base_vm_to_template.rc != 0
+      failed_when: convert_base_vm_to_template.rc not in [0, 255]

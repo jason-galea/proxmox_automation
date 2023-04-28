@@ -10,9 +10,9 @@
     state: absent
     force: true
 
-- name: "Wait for container to finish being destroyed"
-  ansible.builtin.pause:
-    seconds: 2
+# - name: "Wait for container to finish being destroyed"
+#   ansible.builtin.pause:
+#     seconds: 2
 
 - name: "Include role 'ssh' with tasks from 'remove'"
   ansible.builtin.include_role:

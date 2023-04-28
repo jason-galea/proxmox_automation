@@ -55,13 +55,15 @@ all:
     vms:
       hosts:
         base-vm:
-          id: 251
+          id: 9000
           ### 22.04 LTS
           cloud_init_img_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
           cloud_init_img: "ubuntu-{{ cloud_init_img_url | basename }}"
+          base_packages: [git, curl, unzip, idn2, htop, tree]
 
         portainer:
           id: 252
+          port: 9443
 
     # docker_containers:
     #   hosts:

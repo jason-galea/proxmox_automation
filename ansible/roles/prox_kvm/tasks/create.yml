@@ -1,87 +1,176 @@
-- name: "DEBUG: Show Chosen ISO"
-  ansible.builtin.debug:
-    var: chosen_iso
+- name: Create base VM
+  when: inventory_hostname == "base-vm"
+  block:
 
-- name: "Check if chosen ISO exists locally"
-  delegate_to: localhost
-  ansible.builtin.stat:
-    path: "{{ repo_dir }}/isos/{{ chosen_iso }}"
-  register: check_local_iso
-  failed_when: not check_local_iso.stat.exists
+    - name: Check if cloud-init image already exists in Proxmox
+      delegate_to: prox
+      vars: ### NOTE: Workaround, only required when container isn't online
+        ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
+      block:
 
-- name: "Upload ISO to Proxmox"
-  ansible.builtin.copy:
-    src: "isos/{{ chosen_iso }}"
-    dest: "/var/lib/vz/template/iso/{{ chosen_iso }}"
-    owner: root
-    group: root
-    mode: "644"
+        - name: "Get stats for cloud-init image on disk"
+          ansible.builtin.stat:
+            path: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
+          register: stat_cloud_init_image
 
-
-### Create VM
-- name: "Create VM"
-  delegate_to: localhost
-  community.general.proxmox_kvm:
-    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-    api_user: root@pam
-    api_password: "{{ lookup('file', password_file) }}"
-
-    name: "{{ inventory_hostname }}"
-    vmid: "{{ id }}"
-
-    node: prox
-    state: present
-    net:
-      net0: "virtio,bridge=vmbr0"
-    sockets: 1
-    cores: 2
-    memory: 512
-    scsihw: virtio-scsi-single
-    scsi:
-      sata0: "local-lvm:32,format=raw"
-    machine: q35
-    ostype: l26
-    bios: ovmf
-    efidisk0:
-      storage: local-lvm
-      format: raw
-      efitype: 4m
-      pre_enrolled_keys: false
-    onboot: true
+        - name: "Download cloud-init image to Proxmox"
+          ansible.builtin.get_url:
+            url: "{{ cloud_init_img_url }}"
+            dest: "{{ prox_iso_dir }}/{{ cloud_init_img }}"
+            owner: root
+            group: root
+            mode: "644"
+          when: not stat_cloud_init_image.stat.exists
 
 
-### Start
-- name: "Start VM"
-  delegate_to: localhost
-  community.general.proxmox_kvm:
-    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-    api_user: root@pam
-    api_password: "{{ lookup('file', password_file) }}"
-
-    vmid: "{{ id }}"
-    state: started
-
-- name: "Wait 5 seconds to VM to start"
-  ansible.builtin.pause:
-    seconds: 5
+    ### TODO: Check if base VM template already exists
 
 
-### SSH
-- name: "Add new SSH key to known hosts"
-  delegate_to: localhost
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      ssh-keyscan -H {{ ansible_ssh_host }} >> ~/.ssh/known_hosts
-    executable: /bin/bash
-  register: add_to_known_hosts
-  changed_when: add_to_known_hosts.rc != 0
+    - name: Create base VM template using Cloud-Init
+      delegate_to: localhost
+      community.general.proxmox_kvm:
+        node: prox
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ lookup('file', password_file) }}"
 
-- name: "DEBUG: Run 'id' command on new VM"
-  ansible.builtin.command: "id"
-  register: id_command_result
-  changed_when: id_command_result != 0
+        name: "{{ inventory_hostname }}"
+        vmid: "{{ id }}"
 
-- name: "DEBUG: Show 'id' command output"
-  ansible.builtin.debug:
-    var: id_command_result.stdout
+        citype: nocloud
+        cores: 2
+        memory: 2048
+        machine: q35
+        bios: ovmf
+        efidisk0:
+          efitype: 4m
+          format: raw
+          pre_enrolled_keys: false
+          storage: local-lvm
+        scsihw: virtio-scsi-pci
+        scsi:
+          scsi0: local-lvm:0,import-from={{ prox_iso_dir }}/{{ cloud_init_img }}
+          scsi2: local-lvm:cloudinit
+        bootdisk: scsi0
+        net:
+          net0: virtio,bridge=vmbr0
+
+
+    - name: Convert base VM to template
+      delegate_to: prox
+      ansible.builtin.command: "qm template {{ id }}"
+      register: convert_base_vm_to_template
+      changed_when: convert_base_vm_to_template.rc != 0
+      failed_when: convert_base_vm_to_template.rc not in [0, 255]
+
+
+- name: Create linked clone VM
+  when: inventory_hostname != "base-vm"
+  block:
+
+    - name: Create new linked clone VM
+      delegate_to: localhost
+      community.general.proxmox_kvm:
+        node: prox
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ lookup('file', password_file) }}"
+
+        name: "{{ inventory_hostname }}"
+        clone: base-vm
+        full: false
+        vmid: "{{ hostvars['base-vm'].id }}"
+        newid: "{{ id }}"
+
+    - name: Wait for VMs to finish being created
+      ansible.builtin.pause:
+        seconds: 2
+
+
+    - name: Create new SSH key
+      loop:
+        - remove
+        - create
+      ansible.builtin.include_role:
+        name: ssh
+        tasks_from: "{{ item }}"
+
+    - name: Add SSH key to VM
+      delegate_to: localhost
+      community.general.proxmox_kvm:
+        node: prox
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ lookup('file', password_file) }}"
+
+        vmid: "{{ id }}"
+
+        ciuser: root
+        sshkeys: "{{ lookup('file', ansible_ssh_public_key_file) }}"
+
+        update: true
+
+
+    - name: Add network details to VM
+      delegate_to: localhost
+      community.general.proxmox_kvm:
+        node: prox
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ lookup('file', password_file) }}"
+
+        vmid: "{{ id }}"
+
+        ipconfig:
+          ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
+        searchdomains: "{{ domain }}"
+
+        update: true
+
+
+    ### Disk
+    - name: Increase root disk size
+      delegate_to: localhost
+      community.general.proxmox_disk:
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ lookup('file', password_file) }}"
+
+        vmid: "{{ id }}"
+
+        disk: scsi0
+        size: +14G
+        state: resized
+
+
+    ### TODO: Actually boot the base VM to install updates & base packages, same as CTs
+    ### Currently the base VM is not booted before getting converted to a template
+
+
+    - name: Start VM
+      delegate_to: localhost
+      community.general.proxmox_kvm:
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ lookup('file', password_file) }}"
+
+        vmid: "{{ id }}"
+        state: started
+
+    - name: "Wait 5 seconds for container to start"
+      ansible.builtin.pause:
+        seconds: 5
+
+
+    ### DEBUG
+    - name: "DEBUG: Wait for VM to respond"
+      ansible.builtin.wait_for_connection:
+
+    - name: "DEBUG: Run 'id' command on new Portainer VM"
+      ansible.builtin.command: "id"
+      register: id_command_result
+      changed_when: id_command_result != 0
+
+    - name: "DEBUG: Show 'id' command output"
+      ansible.builtin.debug:
+        var: id_command_result.stdout

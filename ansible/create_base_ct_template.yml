@@ -19,8 +19,7 @@
 
     - name: "Include role 'prox_lxc' to create/backup/destroy base container"
       loop:
-        - check_before_create
-        - install_packages
+        - check_create_install_packages
         - backup
         - destroy
       ansible.builtin.include_role:

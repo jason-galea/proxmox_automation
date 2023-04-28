@@ -1,0 +1,27 @@
+- name: Check if container is already running
+  delegate_to: prox
+  vars: ### NOTE: Workaround for when the container isn't responding
+    ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      pct list | grep -E '{{ id }}\ *running'
+    executable: /bin/bash
+  register: check_if_ct_running
+  changed_when: check_if_ct_running.rc != 0
+  failed_when: false ### Ignore failures, we just want the stdout
+
+- name: Create CT and install packages
+  when: check_if_ct_running.stdout == ""
+  block:
+
+    ### Just making sure, in case CT exists but isn't running
+    - name: Ensure container is destroyed
+      ansible.builtin.include_tasks: destroy.yml
+
+    - name: Create new container
+      ansible.builtin.include_tasks: create.yml
+
+    - name: "Include role 'install_packages'"
+      ansible.builtin.include_role:
+        name: install_packages

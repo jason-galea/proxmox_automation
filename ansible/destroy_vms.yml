@@ -1,9 +1,15 @@
 ---
-- name: "Destroy VMs"
+- name: Destroy all VMs
   hosts: vms
   gather_facts: false
   tasks:
-    - name: "Import role 'prox_kvm' with tasks from 'destroy'"
+
+    - name: Destroy all VMs
       ansible.builtin.include_role:
         name: prox_kvm
         tasks_from: destroy
+
+    - name: Delete old SSH keys
+      ansible.builtin.include_role:
+        name: ssh
+        tasks_from: remove

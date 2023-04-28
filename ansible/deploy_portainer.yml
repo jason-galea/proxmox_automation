@@ -7,73 +7,55 @@
   gather_facts: false
   tasks:
 
-    ### Clone
-    - name: Create linked clone of base VM
-      delegate_to: localhost
-      community.general.proxmox_kvm:
-        node: prox
-        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-        api_user: root@pam
-        api_password: "{{ lookup('file', password_file) }}"
+    - name: "Include role 'prox_kvm' with tasks from 'check_create_install_packages'"
+      ansible.builtin.include_role:
+        name: prox_kvm
+        tasks_from: check_create_install_packages
 
-        name: "{{ inventory_hostname }}"
-        clone: base-vm
-        vmid: "{{ hostvars['base-vm'].id }}"
-        newid: "{{ id }}"
-        full: false
-        # storage: local-lvm
-        # format: unspecified
+    # - name: "Install Portainer"
+    #   loop:
+    #     - check_before_install
+    #     - install
+    #   ansible.builtin.include_role:
+    #     name: portainer
+    #     tasks_from: "{{ item }}"
 
 
-    ### Start
-    - name: Start Portainer VM
-      delegate_to: localhost
-      community.general.proxmox_kvm:
-        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-        api_user: root@pam
-        api_password: "{{ lookup('file', password_file) }}"
-
-        vmid: "{{ id }}"
-        state: started
-
-    - name: Wait for VM to respond
-      ansible.builtin.wait_for_connection:
+###################################################################################################
 
 
-    ### DEBUG
-    - name: "DEBUG: Run 'id' command on new Portainer VM"
-      ansible.builtin.command: "id"
-      register: id_command_result
-      changed_when: id_command_result != 0
-
-    - name: "DEBUG: Show 'id' command output"
-      ansible.builtin.debug:
-        var: id_command_result.stdout
-
-
-    ### Install
+    ### Install Portainer!
     # - name: Check if Portainer is already installed
 
-    # - name: Install docker
-    #   ansible.builtin.apt:
-    #     name: docker.io
-    #     update_cache: true
+    - name: Install docker
+      ansible.builtin.apt:
+        name: docker.io
+        update_cache: true
 
-    # - name: Create docker volume for Portainer
-    #   community.docker.docker_volume:
-    #     name: portainer_data
-    #     state: present
+    - name: Create docker volume for Portainer
+      community.docker.docker_volume:
+        name: portainer_data
+        state: present
 
-    # - name: Launch Portainer via docker
-    #   community.docker.docker_container:
-    #     detach: true
-    #     ports:
-    #       - 8000:8000
-    #       - 9443:9443
-    #     name: portainer
-    #     restart_policy: always
-    #     volumes:
-    #       - /var/run/docker.sock:/var/run/docker.sock
-    #       - portainer_data:/data
-    #     image: portainer/portainer-ce:latest
-    #     state: started
+    - name: Launch Portainer via docker
+      community.docker.docker_container:
+        detach: true
+        ports:
+          - 8000:8000
+          - 9443:9443
+        name: portainer
+        restart_policy: always
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - portainer_data:/data
+        image: portainer/portainer-ce:latest
+        state: started
+
+    - name: "Show new Portainer URL"
+      ansible.builtin.debug:
+        msg: "https://{{ ansible_ssh_host }}:{{ port }}/"
+
+    - name: "Verify webserver"
+      ansible.builtin.wait_for:
+        port: "{{ port }}"
+        timeout: 5

@@ -1,0 +1,25 @@
+- name: Check if VM is already running
+  delegate_to: prox
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      qm list | grep -E '{{ id }}\ *running'
+    executable: /bin/bash
+  register: check_if_vm_running
+  changed_when: check_if_vm_running.rc != 0
+  failed_when: false ### Ignore failures, we just want the stdout
+
+- name: Create VM and install packages
+  when: check_if_vm_running.stdout == ""
+  block:
+
+    ### Just making sure, in case VM exists but isn't running
+    - name: Ensure VM is destroyed
+      ansible.builtin.include_tasks: destroy.yml
+
+    - name: Create new VM
+      ansible.builtin.include_tasks: create.yml
+
+    - name: "Include role 'install_packages'"
+      ansible.builtin.include_role:
+        name: install_packages

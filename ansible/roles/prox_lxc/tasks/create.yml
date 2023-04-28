@@ -1,6 +1,28 @@
 ### Chose CT template
+- name: Verify base CT template has been downloaded to Proxmox
+  delegate_to: prox
+  when: inventory_hostname == "base-ct"
+  block:
+
+    ### NOTE: "base_template" is only statically defined for host "base"
+    - name: "Get stats of CT template file already on Proxmox"
+      ansible.builtin.stat:
+        path: "{{ prox_ct_template_dir }}/{{ base_template }}"
+      register: stat_base_template
+
+    - name: "Download CT template"
+      ansible.builtin.command: "pveam download local {{ base_template }}"
+      when: not stat_base_template.stat.exists
+      register: download_ct_template
+      changed_when: download_ct_template.rc != 0
+
+    # - name: "DEBUG: Show download output"
+    #   ansible.builtin.debug:
+    #     var: download_ct_template.stdout_lines
+    #   when: download_ct_template.stdout_lines is defined
+
 - name: "Discover base CT VZdump backup"
-  when: inventory_hostname != "base"
+  when: inventory_hostname != "base-ct"
   block:
     - name: "Discover base CT VZdump name"
       delegate_to: prox
@@ -15,29 +37,6 @@
     - name: "Save base CT VZdump name as fact"
       ansible.builtin.set_fact:
         base_template: "{{ discover_base_ct_vzdump_name.stdout }}"
-
-
-- name: (base) Verify base CT template has been downloaded to Proxmox
-  delegate_to: prox
-  when: inventory_hostname == "base"
-  block:
-
-    ### NOTE: "base_template" is statically defined for host "base"
-    - name: "(base) Get stats of CT template file already on Proxmox"
-      ansible.builtin.stat:
-        path: "{{ prox_ct_template_dir }}/{{ base_template }}"
-      register: stat_base_template
-
-    - name: "(base) Download CT template"
-      ansible.builtin.command: "pveam download local {{ base_template }}"
-      when: not stat_base_template.stat.exists
-      register: download_ct_template
-      changed_when: download_ct_template.rc != 0
-
-    # - name: "(base) DEBUG: Show download output"
-    #   ansible.builtin.debug:
-    #     var: download_ct_template.stdout_lines
-    #   when: download_ct_template.stdout_lines is defined
 
 
 - name: "DEBUG: Show base_template"
