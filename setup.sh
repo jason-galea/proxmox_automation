@@ -3,8 +3,8 @@
 echo -e "\n==> Update package list"
 sudo apt update -y
 
-echo -e "\n==> Install 'sshpass'"
-sudo apt install -y sshpass
+echo -e "\n==> Install apt packages"
+sudo apt install -y sshpass graphviz
 
 echo -e "\n==> Upgrade pip"
 python3 -m pip install -U pip setuptools wheel

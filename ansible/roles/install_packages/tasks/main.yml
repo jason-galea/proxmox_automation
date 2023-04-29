@@ -1,40 +1,9 @@
-- name: "Verify DNS & internet access with ping"
-  ansible.builtin.command: "ping -c 2 example.com"
-  register: verify_dns_internet
-  changed_when: verify_dns_internet != 0
-
-- name: "Install base packages and upgrade apt"
-  when: "'base' in inventory_hostname"
-  block:
-
-    # - name: "Install base packages"
-    #   ansible.builtin.apt:
-    #     pkg: "{{ base_packages }}"
-    #     update_cache: true
-
-    # - name: "Upgrade apt packages"
-    #   ansible.builtin.apt:
-    #     upgrade: true
-
-    - name: "Install base packages & upgrade"
-      ansible.builtin.apt:
-        pkg: "{{ base_packages }}"
-        update_cache: true
-        upgrade: true
-
-    # - name: "Install apk updates"
-    #   community.general.apk:
-    #     upgrade: true
-    #   register: update
-    #   when: distro == "alpine"
-
-  # rescue:
-
-  #   - name: Recover from (assumed) /var/lib/dpkg/lock-frontend error
+# - name: "Verify DNS & internet access with ping"
+#   ansible.builtin.command: "ping -c 2 example.com"
+#   register: verify_dns_internet
+#   changed_when: verify_dns_internet != 0
 
 
-
-### Install packages
 - name: "Install apt packages"
   ansible.builtin.apt:
     pkg: "{{ required_packages }}"
@@ -47,3 +16,15 @@
 #     name: "{{ item }}"
 #     update_cache: true
 #   when: required_packages is defined
+
+
+### NOTE: Apparently the Ubuntu cloud image isn't happy with multiple "apt" commands
+### E.G: "Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 2382"
+
+# - name: "Upgrade apt packages"
+#   ansible.builtin.apt:
+#     upgrade: true
+- name: "Upgrade apt packages"
+  ansible.builtin.command: apt upgrade -y
+  register: apt_upgrade
+  changed_when: apt_upgrade.rc != 0

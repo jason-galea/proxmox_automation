@@ -23,5 +23,5 @@
         - template
       ansible.builtin.include_role:
         name: prox_kvm
-        tasks_from: check_create_install_packages
+        tasks_from: "{{ item }}"
       when: check_if_base_vm_exists.stdout == ""

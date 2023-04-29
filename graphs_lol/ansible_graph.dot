@@ -1,0 +1,119 @@
+digraph G {
+
+    forcelabels=true;
+
+    create_base_ct_vzdump   [label=< create_base_ct_vzdump <BR /> <FONT POINT-SIZE="10">Playbook</FONT> >];
+    create_base_vm_template [label=< create_base_vm_template <BR /> <FONT POINT-SIZE="10">Playbook</FONT> >];
+    deploy_pihole           [label=< deploy_pihole <BR /> <FONT POINT-SIZE="10">Playbook</FONT> >];
+    deploy_portainer        [label=< deploy_portainer <BR /> <FONT POINT-SIZE="10">Playbook</FONT> >];
+    destroy_ct_vzdumps      [label=< destroy_ct_vzdumps <BR /> <FONT POINT-SIZE="10">Playbook</FONT> >];
+    destroy_cts             [label=< destroy_cts <BR /> <FONT POINT-SIZE="10">Playbook</FONT> >];
+    destroy_vms             [label=< destroy_vms <BR /> <FONT POINT-SIZE="10">Playbook</FONT> >];
+    prox_initial_config     [label=< prox_initial_config <BR /> <FONT POINT-SIZE="10">Playbook</FONT> >];
+
+    subgraph cluster_install_packages {
+        label=<install_packages
+        <BR /><FONT POINT-SIZE="10">Role</FONT>
+        >
+
+        install_packages_main               [label="main"]
+    }
+
+    subgraph cluster_pihole {
+        label=<pihole
+        <BR /><FONT POINT-SIZE="10">Role</FONT>
+        >
+
+        pihole_check_before_install          [label="check_before_install"]
+        pihole_install                       [label="install"]
+    }
+
+    subgraph cluster_prox_kvm {
+        label=<prox_kvm
+        <BR /><FONT POINT-SIZE="10">Role</FONT>
+        >
+        
+        prox_kvm_check_create_install_packages [label="check_create_install_packages"]
+        prox_kvm_create                        [label="create"]
+        prox_kvm_destroy                       [label="destroy"]
+        prox_kvm_template                      [label="template"]
+    }
+
+    subgraph cluster_prox_lxc {
+        label=<prox_lxc
+        <BR /><FONT POINT-SIZE="10">Role</FONT>
+        >
+
+        prox_lxc_check_create_install_packages [label="check_create_install_packages"]
+        prox_lxc_create                        [label="create"]
+        prox_lxc_destroy                       [label="destroy"]
+        prox_lxc_show_vzdump_backups           [label="show_vzdump_backups"]
+        prox_lxc_vzdump                        [label="vzdump"]
+    }
+
+    subgraph cluster_ssh {
+        label=<ssh
+        <BR /><FONT POINT-SIZE="10">Role</FONT>
+        >
+
+        ssh_create                        [label="create"]
+        ssh_install                       [label="install"]
+        ssh_remove                        [label="remove"]
+        ssh_scan                          [label="scan"]
+    }
+
+
+    // PLAYBOOKS
+    create_base_ct_vzdump -> prox_lxc_check_create_install_packages
+    create_base_ct_vzdump -> prox_lxc_vzdump
+    create_base_ct_vzdump -> prox_lxc_destroy
+
+    create_base_vm_template -> prox_kvm_check_create_install_packages
+    create_base_vm_template -> prox_kvm_template
+
+    deploy_pihole -> prox_lxc_check_create_install_packages
+    deploy_pihole -> pihole_check_before_install
+    deploy_pihole -> pihole_install
+    deploy_portainer -> prox_kvm_check_create_install_packages
+
+    // destroy_ct_vzdumps
+    destroy_cts -> prox_lxc_destroy
+    destroy_vms -> prox_kvm_destroy
+    destroy_vms -> ssh_remove
+    
+    prox_initial_config -> ssh_remove
+    prox_initial_config -> ssh_create
+    prox_initial_config -> ssh_scan
+    prox_initial_config -> ssh_install
+
+
+    // ROLES
+    // install_packages_main
+
+    // pihole_check_before_install
+    // pihole_install
+
+    prox_kvm_check_create_install_packages -> prox_kvm_destroy
+    prox_kvm_check_create_install_packages -> prox_kvm_create
+    prox_kvm_check_create_install_packages -> install_packages_main
+    prox_kvm_create -> ssh_remove
+    prox_kvm_create -> ssh_create
+    prox_kvm_destroy -> ssh_remove
+    // prox_kvm_template
+
+    prox_lxc_check_create_install_packages -> prox_lxc_destroy
+    prox_lxc_check_create_install_packages -> prox_lxc_create
+    prox_lxc_check_create_install_packages -> install_packages_main
+    prox_lxc_create -> ssh_remove
+    prox_lxc_create -> ssh_create
+    prox_lxc_create -> ssh_scan
+    prox_lxc_destroy -> ssh_remove
+    // prox_lxc_show_vzdump_backups
+    // prox_lxc_vzdump
+
+    // ssh_create
+    // ssh_install
+    // ssh_remove
+    // ssh_scan
+
+}

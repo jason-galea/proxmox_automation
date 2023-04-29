@@ -45,7 +45,7 @@ all:
           # base_template: ubuntu-22.04-standard_22.04-1_amd64.tar.zst
           base_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
           # base_template: alpine-3.15-default_20211202_amd64.tar.xz
-          base_packages: [git, curl, unzip, idn2, htop, tree]
+          required_packages: [git, curl, unzip, idn2, htop, tree]
 
         pihole:
           id: 242
@@ -59,7 +59,7 @@ all:
           ### 22.04 LTS
           cloud_init_img_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
           cloud_init_img: "ubuntu-{{ cloud_init_img_url | basename }}"
-          base_packages: [git, curl, unzip, idn2, htop, tree]
+          required_packages: [git, curl, unzip, idn2, htop, tree]
 
         portainer:
           id: 252

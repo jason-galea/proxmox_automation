@@ -107,6 +107,7 @@
       ansible.builtin.pause:
         seconds: 2
 
+
 ### SSH
 - name: Create new SSH key
   loop:
@@ -174,12 +175,12 @@
   ansible.builtin.wait_for_connection:
 
 
-### DEBUG
-- name: "DEBUG: Run 'id' command on new Portainer VM"
-  ansible.builtin.command: "id"
-  register: id_command_result
-  changed_when: id_command_result != 0
+# ### DEBUG
+# - name: "DEBUG: Run 'id' command on new Portainer VM"
+#   ansible.builtin.command: "id"
+#   register: id_command_result
+#   changed_when: id_command_result != 0
 
-- name: "DEBUG: Show 'id' command output"
-  ansible.builtin.debug:
-    var: id_command_result.stdout
+# - name: "DEBUG: Show 'id' command output"
+#   ansible.builtin.debug:
+#     var: id_command_result.stdout
