@@ -1,53 +1,53 @@
-### Chose CT template
-- name: Verify base CT template has been downloaded to Proxmox
-  delegate_to: prox
-  when: inventory_hostname == "base-ct"
-  block:
+# ### Chose CT template
+# - name: Verify base CT template has been downloaded to Proxmox
+#   delegate_to: prox
+#   when: inventory_hostname == "base-ct"
+#   block:
 
-    ### NOTE: "base_template" is only statically defined for host "base"
-    - name: "Get stats of CT template file already on Proxmox"
-      ansible.builtin.stat:
-        path: "{{ prox_ct_template_dir }}/{{ base_template }}"
-      register: stat_base_template
+#     ### NOTE: "base_template" is only statically defined for host "base"
+#     - name: "Get stats of CT template file already on Proxmox"
+#       ansible.builtin.stat:
+#         path: "{{ prox_base_template_dir }}/{{ base_template }}"
+#       register: stat_base_template
 
-    - name: "Download CT template"
-      ansible.builtin.command: "pveam download local {{ base_template }}"
-      when: not stat_base_template.stat.exists
-      register: download_ct_template
-      changed_when: download_ct_template.rc != 0
+#     - name: "Download CT template"
+#       ansible.builtin.command: "pveam download local {{ base_template }}"
+#       when: not stat_base_template.stat.exists
+#       register: download_base_template
+#       changed_when: download_base_template.rc != 0
 
-    # - name: "DEBUG: Show download output"
-    #   ansible.builtin.debug:
-    #     var: download_ct_template.stdout_lines
-    #   when: download_ct_template.stdout_lines is defined
+#     # - name: "DEBUG: Show download output"
+#     #   ansible.builtin.debug:
+#     #     var: download_base_template.stdout_lines
+#     #   when: download_base_template.stdout_lines is defined
 
-- name: "Discover base CT VZdump backup"
-  when: inventory_hostname != "base-ct"
-  block:
-    - name: "Discover base CT VZdump name"
-      delegate_to: prox
-      ansible.builtin.shell:
-        cmd: |
-          set -o pipefail
-          ls {{ prox_ct_template_dir }} \
-            | grep 'vzdump.*{{ hostvars['base-ct'].id }}.*tar.zst' \
-            | head -n1
-        executable: /bin/bash
-      register: discover_base_ct_vzdump_name
-      changed_when: discover_base_ct_vzdump_name.rc != 0
+# - name: "Discover base CT VZdump backup"
+#   when: inventory_hostname != "base-ct"
+#   block:
+#     - name: "Discover base CT VZdump name"
+#       delegate_to: prox
+#       ansible.builtin.shell:
+#         cmd: |
+#           set -o pipefail
+#           ls {{ prox_base_template_dir }} \
+#             | grep 'vzdump.*{{ hostvars['base-ct'].id }}.*tar.zst' \
+#             | head -n1
+#         executable: /bin/bash
+#       register: discover_base_ct_vzdump_name
+#       changed_when: discover_base_ct_vzdump_name.rc != 0
 
-    - name: "Save base CT VZdump name as fact"
-      ansible.builtin.set_fact:
-        base_template: "{{ discover_base_ct_vzdump_name.stdout }}"
+#     - name: "Save base CT VZdump name as fact"
+#       ansible.builtin.set_fact:
+#         base_template: "{{ discover_base_ct_vzdump_name.stdout }}"
 
 
-- name: "DEBUG: Show base_template"
-  ansible.builtin.debug:
-    var: base_template
+# # - name: "DEBUG: Show base_template"
+# #   ansible.builtin.debug:
+# #     var: base_template
 
 
 ### SSH
-- name: "Include role 'ssh' with tasks from 'remove' & 'create'"
+- name: Create new SSH key
   loop:
     - remove
     - create
@@ -56,31 +56,124 @@
     tasks_from: "{{ item }}"
 
 
-### Create container
-- name: "Create container"
-  delegate_to: localhost
-  community.general.proxmox:
-    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-    api_user: root@pam
-    api_password: "{{ lookup('file', password_file) }}"
+### Base
+- name: Create base container
+  when: inventory_hostname == "base-ct"
+  block:
 
-    hostname: "{{ inventory_hostname }}"
-    vmid: "{{ id }}"
+    ### CT Template
+    - name: Get stats of existing base CT template file
+      delegate_to: prox
+      ansible.builtin.stat:
+        path: "{{ prox_base_template_dir }}/{{ base_template }}"
+      register: stat_base_template
 
-    node: prox
-    state: present
-    netif: "{'net0':'name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}'}"
-    ostemplate: local:vztmpl/{{ base_template }}
-    pubkey: "{{ lookup('file', ansible_ssh_public_key_file) }}"
-    cores: 2
-    memory: 512 # MB
-    swap: 100 # MB
-    disk: 8 # GB
-    storage: local-lvm
-    # unprivileged: true ### Deprecation warning, NFC how to silence it cleanly
-    onboot: true
-    # features:
-    #   - nesting=1
+    - name: Download base CT template
+      delegate_to: prox
+      ansible.builtin.command: "pveam download local {{ base_template }}"
+      when: not stat_base_template.stat.exists
+      register: download_base_template
+      changed_when: download_base_template.rc != 0
+
+    # - name: "DEBUG: Show download output"
+    #   ansible.builtin.debug:
+    #     var: download_base_template.stdout_lines
+    #   when: download_base_template.stdout_lines is defined
+
+
+    ### Create Base
+    - name: Create base container
+      delegate_to: localhost
+      community.general.proxmox:
+        node: prox
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ lookup('file', password_file) }}"
+
+        hostname: "{{ inventory_hostname }}"
+        vmid: "{{ id }}"
+
+        ostemplate: local:vztmpl/{{ base_template }}
+        storage: local-lvm
+
+        netif: "{'net0':'name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}'}"
+        pubkey: "{{ lookup('file', ansible_ssh_public_key_file) }}"
+        cores: 2
+        memory: 512 # MB
+        swap: 100 # MB
+        disk: 8 # GB
+        onboot: true
+
+
+### Clone
+- name: Clone base container
+  when: inventory_hostname != "base-ct"
+  block:
+
+    - name: Create linked clone container
+      when: inventory_hostname != "base-ct"
+      delegate_to: localhost
+      community.general.proxmox:
+        node: prox
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ lookup('file', password_file) }}"
+
+        hostname: "{{ inventory_hostname }}"
+        vmid: "{{ id }}"
+
+        clone: "{{ hostvars['base-ct'].id }}"
+        clone_type: linked
+
+
+    # - name: Add host details
+    #   when: inventory_hostname != "base-ct"
+    #   delegate_to: localhost
+    #   community.general.proxmox:
+    #     node: prox
+    #     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+    #     api_user: root@pam
+    #     api_password: "{{ lookup('file', password_file) }}"
+
+    #     vmid: "{{ id }}"
+
+    #     netif: "{'net0':'name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}'}"
+    #     pubkey: "{{ lookup('file', ansible_ssh_public_key_file) }}"
+
+    #     state: stopped
+
+
+    # ### You straight up cannot update cloned CT details with the proxmox module???
+    # - name: Really fucking annoying workaround
+    #   delegate_to: prox
+    #   vars: ### NOTE: Workaround, only required when container isn't online
+    #     ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
+    #   block:
+
+    #     - name: Add network details
+    #       ansible.builtin.command: |
+    #         pct set 241 \
+    #           --net0 name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}
+
+    #     - name: Add SSH key
+
+
+# - name: Wait for container to finish being created
+#   ansible.builtin.pause:
+#     seconds: 2
+
+
+# ### Details
+# - name: Add host details to container
+#   delegate_to: localhost
+#   community.general.proxmox:
+#     node: prox
+#     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+#     api_user: root@pam
+#     api_password: "{{ lookup('file', password_file) }}"
+
+#     # hostname: "{{ inventory_hostname }}"
+#     vmid: "{{ id }}"
 
 
 ### Custom configs
@@ -104,35 +197,16 @@
     vmid: "{{ id }}"
     state: started
 
-- name: "Wait 5 seconds for container to start"
-  ansible.builtin.pause:
-    seconds: 5
+- name: Wait for container to respond
+  ansible.builtin.wait_for_connection:
 
 
-### SSH
-# - name: "Install SSH in Alpine"
-#   delegate_to: prox
-#   loop:
-#   - 'apk update'
-#   - 'apk add openssh'
-#   - 'rc-update add sshd'
-#   - 'rc-status'
-#   - '/etc/init.d/sshd start'
-#   ansible.builtin.command: "pct exec {{ id }} {{ item }}"
-#   when: (id == 200) and (distro == "alpine")
-#   timeout: 5
-#   retries: 5
+# ### DEBUG
+# - name: "DEBUG: Run 'id' command on new Portainer VM"
+#   ansible.builtin.command: "id"
+#   register: id_command_result
+#   changed_when: id_command_result != 0
 
-# # - name: "Add new SSH key to known hosts"
-# #   delegate_to: localhost
-# #   ansible.builtin.shell:
-# #     cmd: |
-# #       set -o pipefail
-# #       ssh-keyscan -H {{ ansible_ssh_host }} >> ~/.ssh/known_hosts
-# #     executable: /bin/bash
-# #   register: add_to_known_hosts
-# #   changed_when: add_to_known_hosts.rc != 0
-# - name: "Include role 'ssh' with tasks from 'scan'"
-#   ansible.builtin.include_role:
-#     name: ssh
-#     tasks_from: scan
+# - name: "DEBUG: Show 'id' command output"
+#   ansible.builtin.debug:
+#     var: id_command_result.stdout

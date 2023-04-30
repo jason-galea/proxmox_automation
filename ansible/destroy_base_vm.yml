@@ -1,10 +1,10 @@
 ---
-- name: Destroy all VMs
-  hosts: vms, !base-vm
+- name: Destroy VM template
+  hosts: base-vm
   gather_facts: false
   tasks:
 
-    - name: Destroy all VMs
+    - name: Destroy VM template
       ansible.builtin.include_role:
         name: prox_kvm
         tasks_from: destroy

@@ -11,23 +11,70 @@
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
-          ls {{ prox_ct_template_dir }}/vzdump-lxc-{{ id }}*tar.zst | head -n1
+          ls {{ prox_case_template_dir }}/vzdump-lxc-{{ id }}*tar.zst | head -n1
         executable: /bin/bash
-      register: check_base_template_result
-      changed_when: check_base_template_result.rc != 0
+      register: check_if_base_ct_vzdump_exists
+      changed_when: check_if_base_ct_vzdump_exists.rc != 0
       failed_when: false ### Ignore fails, just want stdout
 
-    - name: "Include role 'prox_lxc' to create/backup/destroy base container"
-      loop:
-        - check_create_install_packages
-        - vzdump
-        - destroy
+
+    ### Create --> Start --> Install packages
+    # - name: "Include role 'prox_lxc' to create/backup/destroy base container"
+    #   loop:
+    #     - check_create_install_packages
+    #     - vzdump
+    #     - destroy
+    #   ansible.builtin.include_role:
+    #     name: prox_lxc
+    #     tasks_from: "{{ item }}"
+    #   when: check_if_base_ct_vzdump_exists.stdout == ""
+
+    - name: Include role 'prox_lxc'
       ansible.builtin.include_role:
         name: prox_lxc
-        tasks_from: "{{ item }}"
-      when: check_base_template_result.stdout == ""
+      when: check_if_base_ct_vzdump_exists.stdout == ""
+
+
+    ### VZdump/convert to template
+    - name: Stop container
+      delegate_to: localhost
+      community.general.proxmox:
+        api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+        api_user: root@pam
+        api_password: "{{ lookup('file', password_file) }}"
+
+        vmid: "{{ id }}"
+        state: stopped
+
+        netif: "{}" ### Delete network adapter
+
+    - name: Remove network config
+      delegate_to: prox
+      ansible.builtin.command: "pct set {{ id }} --delete net0"
+      register: remove_network_config
+      changed_when: remove_network_config.rc != 0
+
+    - name: "Backup container with vzdump"
+      delegate_to: prox
+      vars: ### NOTE: Workaround for when the container isn't responding
+        ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
+      ansible.builtin.command: "vzdump {{ id }} --mode stop --dumpdir {{ prox_ct_template_dir }}/ --compress zstd"
+      register: vzdump_container
+      changed_when: vzdump_container.rc != 0
+
+    # - name: "DEBUG: Show output of container backup"
+    #   ansible.builtin.debug:
+    #     var: vzdump_container.stdout_lines
+
 
     # - name: "DEBUG: Include role 'prox_lxc' with tasks from 'show_vzdump_backups'"
     #   ansible.builtin.include_role:
     #     name: prox_lxc
     #     tasks_from: show_vzdump_backups
+
+
+    - name: Include role 'prox_lxc' with tasks from 'destroy'
+      ansible.builtin.include_role:
+        name: prox_lxc
+        tasks_from: destroy
+      when: check_if_base_ct_vzdump_exists.stdout == ""

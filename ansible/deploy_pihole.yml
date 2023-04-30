@@ -1,18 +1,25 @@
----
-- name: Import playbook 'create_base_ct_vzdump.yml'
-  ansible.builtin.import_playbook: create_base_ct_vzdump.yml
+### NOTE: The reason this is split into multiple plays with the same host
+### is to allow for shortcuts like "end_play" to block out loooooads to skipped tasks.
+### Otherwise, on subsequent runs the console would be super messy.
 
-- name: Create pihole CT
+---
+- name: Import playbook 'create_base_ct.yml'
+  ansible.builtin.import_playbook: create_base_ct.yml
+
+
+- name: Create Pihole CT
+  hosts: pihole
+  gather_facts: false
+  roles:
+    - prox_lxc
+
+
+- name: Install Pihole
   hosts: pihole
   gather_facts: false
   tasks:
 
-    - name: "Include role 'prox_lxc' with tasks from 'check_create_install_packages'"
-      ansible.builtin.include_role:
-        name: prox_lxc
-        tasks_from: check_create_install_packages
-
-    - name: "Install pihole"
+    - name: Install pihole
       loop:
         - check_before_install
         - install
@@ -21,8 +28,7 @@
         tasks_from: "{{ item }}"
 
 
-### Populate records
-- name: Add DNS records to Pihole
+- name: Populate DNS records
   hosts: pihole
   gather_facts: false
   vars:

@@ -1,12 +1,12 @@
 ---
-- name: Destroy all VMs
-  hosts: vms, !base-vm
+- name: Destroy base CT
+  hosts: base-ct
   gather_facts: false
   tasks:
 
-    - name: Destroy all VMs
+    - name: Destroy base CT
       ansible.builtin.include_role:
-        name: prox_kvm
+        name: prox_lxc
         tasks_from: destroy
 
     - name: Delete old SSH keys

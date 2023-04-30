@@ -1,3 +1,4 @@
+### Base
 - name: Create base VM
   when: inventory_hostname == "base-vm"
   block:
@@ -35,10 +36,6 @@
         vmid: "{{ id }}"
 
         citype: nocloud
-        # ciuser: root
-        # sshkeys: "{{ lookup('file', ansible_ssh_public_key_file) }}"
-        cores: 2
-        memory: 2048
         machine: q35
         bios: ovmf
         efidisk0:
@@ -53,9 +50,6 @@
         bootdisk: scsi0
         net:
           net0: virtio,bridge=vmbr0
-        # ipconfig:
-        #   ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
-        # searchdomains: "{{ domain }}"
 
     - name: Wait for VM to finish being created
       ansible.builtin.pause:
@@ -85,11 +79,12 @@
     #   failed_when: convert_base_vm_to_template.rc not in [0, 255]
 
 
-- name: Create linked clone VM
+### Clone
+- name: Clone base VM
   when: inventory_hostname != "base-vm"
   block:
 
-    - name: Create new linked clone VM
+    - name: Create linked clone VM
       delegate_to: localhost
       community.general.proxmox_kvm:
         node: prox
@@ -117,7 +112,9 @@
     name: ssh
     tasks_from: "{{ item }}"
 
-- name: Add SSH key and network details to VM
+
+### Details
+- name: Add host details to VM
   delegate_to: localhost
   community.general.proxmox_kvm:
     node: prox
@@ -128,12 +125,16 @@
     vmid: "{{ id }}"
 
     ciuser: root
+    cores: 2
+    memory: 2048
     sshkeys: "{{ lookup('file', ansible_ssh_public_key_file) }}"
     ipconfig:
       ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
     searchdomains: "{{ domain }}"
+    onboot: true
 
     update: true
+
 
 # ### Network
 # - name: Add network details to VM
@@ -166,10 +167,6 @@
 
     vmid: "{{ id }}"
     state: started
-
-# - name: Wait 5 seconds for container to start
-#   ansible.builtin.pause:
-#     seconds: 5
 
 - name: Wait for VM to respond
   ansible.builtin.wait_for_connection:

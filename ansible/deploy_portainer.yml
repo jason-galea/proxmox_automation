@@ -1,6 +1,7 @@
 ---
-- name: Import playbook 'create_base_vm_template.yml'
-  ansible.builtin.import_playbook: create_base_vm_template.yml
+- name: Import playbook 'destroy_base_vm.yml'
+  ansible.builtin.import_playbook: destroy_base_vm.yml
+
 
 - name: Create Portainer VM
   hosts: portainer

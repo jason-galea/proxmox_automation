@@ -15,9 +15,9 @@
   when: check_if_vm_running.stdout == ""
   block:
 
-    ### Just making sure, in case VM exists but isn't running
-    - name: Include task file 'destroy.yml'
-      ansible.builtin.include_tasks: destroy.yml
+    # ### Just making sure, in case VM exists but isn't running
+    # - name: Include task file 'destroy.yml'
+    #   ansible.builtin.include_tasks: destroy.yml
 
     - name: Include task file 'create.yml'
       ansible.builtin.include_tasks: create.yml
