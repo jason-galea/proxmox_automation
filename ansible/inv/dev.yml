@@ -68,9 +68,9 @@ all:
           ct_memory: 4096
           ct_swap: 512
           ct_disk: 16
-          # apt_packages: [docker.io, python3-pip]
-          # pip_packages: [requests]
-          apt_packages: [podman, podman-docker]
+          apt_packages: [docker.io, python3-pip]
+          # apt_packages: [podman, podman-docker]
+          pip_packages: [requests]
           ct_features:
             - nesting=1
           port: 9443

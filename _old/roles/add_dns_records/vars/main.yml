@@ -1,2 +1,0 @@
-a_records_file: /etc/pihole/custom.list
-cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
