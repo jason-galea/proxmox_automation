@@ -61,7 +61,7 @@
             #     tasks_from: show_vzdump_backups
 
 
-        - name: Include role 'prox_lxc' with tasks from 'destroy'
-          ansible.builtin.include_role:
-            name: prox_lxc
-            tasks_from: destroy
+        # - name: Include role 'prox_lxc' with tasks from 'destroy'
+        #   ansible.builtin.include_role:
+        #     name: prox_lxc
+        #     tasks_from: destroy

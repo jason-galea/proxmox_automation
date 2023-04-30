@@ -1,34 +1,56 @@
-# - name: "Verify DNS & internet access with ping"
-#   ansible.builtin.command: "ping -c 2 example.com"
-#   register: verify_dns_internet
-#   changed_when: verify_dns_internet != 0
+### APT
+- name: Install apt packages
+  when: apt_packages is defined
+  block:
+
+    - name: Update apt mirrors
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: http://archive.ubuntu.com
+        replace: http://au.archive.ubuntu.com
+
+    # - name: Reconfigure DPKG
+    #   ansible.builtin.command: dpkg --configure -a
+    #   register: dpkg_configure
+    #   changed_when: dpkg_configure.rc != 0
+
+    - name: Update apt package list
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install apt packages
+      ansible.builtin.apt:
+        pkg: "{{ apt_packages }}"
+
+    # - name: "Upgrade apt packages"
+    #   ansible.builtin.apt:
+    #     upgrade: true
 
 
-- name: Reconfigure DPKG
-  ansible.builtin.command: dpkg --configure -a
-  register: dpkg_configure
-  changed_when: dpkg_configure.rc != 0
+### Pip
+- name: Install pip packages
+  when: pip_packages is defined
+  block:
 
-- name: "Install apt packages"
-  ansible.builtin.apt:
-    pkg: "{{ required_packages }}"
-    update_cache: true
-  when: required_packages is defined
+    - name: Find local python3 version
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          ls /usr/bin/python3.* | head -n1
+        executable: /bin/bash
+      register: local_python3_bin
+      changed_when: local_python3_bin.rc != 0
 
-# - name: "Install apk packages"
-#   loop: "{{ required_packages }}"
-#   community.general.apk:
-#     name: "{{ item }}"
-#     update_cache: true
-#   when: required_packages is defined
+    # - name: Set local python3 version as fact
+    #   ansible.builtin.set_fact:
+    #     local_python3_bin: "{{ local_python3_bin.stdout }}"
 
+    - name: Upgrade pip
+      ansible.builtin.command:
+        "{{ local_python3_bin.stdout }} -m pip install -U pip setuptools wheel"
+      register: upgrade_pip
+      changed_when: upgrade_pip.rc != 0
 
-### NOTE: Apparently the Ubuntu cloud image isn't happy with multiple "apt" commands
-### E.G: "Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 2382"
-- name: "Upgrade apt packages"
-  ansible.builtin.apt:
-    upgrade: true
-# - name: "Upgrade apt packages"
-#   ansible.builtin.command: apt upgrade -y
-#   register: apt_upgrade
-#   changed_when: apt_upgrade.rc != 0
+    - name: Install pip packages
+      ansible.builtin.pip:
+        name: "{{ pip_packages }}"

@@ -22,8 +22,8 @@ all:
     ansible_ssh_common_args: -o StrictHostKeyChecking=no
 
     ### Proxmox vars
-    prox_base_template_dir: /var/lib/vz/template/cache
-    prox_iso_dir: /var/lib/vz/template/iso
+    prox_ct_template_dir: /var/lib/vz/template/cache
+    # prox_iso_dir: /var/lib/vz/template/iso
 
     ### Misc. vars
     repo_dir: "{{ inventory_dir | dirname | dirname }}"
@@ -37,34 +37,58 @@ all:
 
   children:
     cts:
+      vars:
+        # ct_template: ubuntu-22.04-standard_22.04-1_amd64.tar.zst
+        ct_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
+
       hosts:
-        base-ct:
-          id: 245
-          # base_template: ubuntu-20.04-standard_20.04-1_amd64.tar.gz
-          # base_template: ubuntu-21.10-standard_21.10-1_amd64.tar.zst
-          # base_template: ubuntu-22.04-standard_22.04-1_amd64.tar.zst
-          base_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
-          # base_template: alpine-3.15-default_20211202_amd64.tar.xz
-          # required_packages: [git, curl, unzip, idn2, htop, tree]
-          required_packages: [htop, tree]
+        # base-ct:
+        #   id: 245
+        #   # base_template: ubuntu-22.04-standard_22.04-1_amd64.tar.zst
+        #   base_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
+        #   # base_template: alpine-3.15-default_20211202_amd64.tar.xz
+        #   # apt_packages: [git, curl, unzip, idn2, htop, tree]
+        #   apt_packages: [htop, tree]
+
         pihole:
           id: 241
+          apt_packages: [git]
           port: 80
           cname: "{{ domain }}"
-          required_packages: [git]
 
-    vms:
-      hosts:
-        base-vm:
-          id: 250
-          ubuntu_version: jammy ### 22.04 LTS
-          cloud_init_img_url: https://cloud-images.ubuntu.com/{{ ubuntu_version }}/current/{{ ubuntu_version }}-server-cloudimg-amd64.img
-          cloud_init_img: ubuntu-{{ cloud_init_img_url | basename }}
-          # required_packages: [git, curl, unzip, idn2, htop, tree]
-          required_packages: [htop, tree]
+        squid-deb-proxy:
+          id: 242
+          apt_packages: [squid-deb-proxy]
+          port: 8000
+
         portainer:
-          id: 246
+          id: 243
+          # ct_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
+          ct_cores: 4
+          ct_memory: 4096
+          ct_swap: 512
+          ct_disk: 16
+          # apt_packages: [docker.io, python3-pip]
+          # pip_packages: [requests]
+          apt_packages: [podman, podman-docker]
+          ct_features:
+            - nesting=1
           port: 9443
+
+    # vms:
+    #   hosts:
+    #     base-vm:
+    #       id: 250
+    #       ubuntu_version: jammy ### 22.04 LTS
+    #       cloud_init_img_url: https://cloud-images.ubuntu.com/{{ ubuntu_version }}/current/{{ ubuntu_version }}-server-cloudimg-amd64.img
+    #       cloud_init_img: ubuntu-{{ cloud_init_img_url | basename }}
+    #       # apt_packages: [git, curl, unzip, idn2, htop, tree]
+    #       apt_packages: [htop, tree]
+    #     portainer:
+    #       id: 246
+    #       # apt_packages: []
+    #       port: 9443
+
 
     # docker_containers:
     #   vars:

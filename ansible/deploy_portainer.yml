@@ -1,6 +1,6 @@
 ---
-- name: Import playbook 'create_base_vm.yml'
-  ansible.builtin.import_playbook: create_base_vm.yml
+# - name: Import playbook 'create_base_vm.yml'
+#   ansible.builtin.import_playbook: create_base_vm.yml
 
 
 - name: Create Portainer VM
@@ -8,9 +8,13 @@
   gather_facts: false
   tasks:
 
-    - name: Include role 'prox_kvm'
+    # - name: Include role 'prox_kvm'
+    #   ansible.builtin.include_role:
+    #     name: prox_kvm
+
+    - name: Include role 'prox_lxc'
       ansible.builtin.include_role:
-        name: prox_kvm
+        name: prox_lxc
 
     # - name: "Install Portainer"
     #   loop:
@@ -26,18 +30,15 @@
     ### Install Portainer!
     # - name: Check if Portainer is already installed
 
-    - name: Install docker
-      ansible.builtin.apt:
-        name: docker.io
-        update_cache: true
-
-    - name: Create docker volume for Portainer
-      community.docker.docker_volume:
+    - name: Create 'portainer_data' volume
+      # community.docker.docker_volume:
+      containers.podman.podman_volume:
         name: portainer_data
         state: present
 
-    - name: Launch Portainer via docker
-      community.docker.docker_container:
+    - name: Launch Portainer
+      # community.docker.docker_container:
+      containers.podman.podman_container:
         detach: true
         ports:
           - 8000:8000
@@ -47,7 +48,7 @@
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
           - portainer_data:/data
-        image: portainer/portainer-ce:latest
+        image: docker.io/portainer/portainer-ce:latest
         state: started
 
     - name: "Show new Portainer URL"

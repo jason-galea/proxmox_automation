@@ -1,44 +1,44 @@
 ### Chose CT template
 - name: Verify base CT template has been downloaded to Proxmox
   delegate_to: prox
-  when: inventory_hostname == "base-ct"
+  # when: inventory_hostname == "base-ct"
   block:
 
     - name: "Get stats of CT template file already on Proxmox"
       ansible.builtin.stat:
-        path: "{{ prox_base_template_dir }}/{{ base_template }}"
-      register: stat_base_template
+        path: "{{ prox_ct_template_dir }}/{{ ct_template }}"
+      register: stat_ct_template
 
     - name: "Download CT template"
-      ansible.builtin.command: "pveam download local {{ base_template }}"
-      when: not stat_base_template.stat.exists
-      register: download_base_template
-      changed_when: download_base_template.rc != 0
+      ansible.builtin.command: "pveam download local {{ ct_template }}"
+      when: not stat_ct_template.stat.exists
+      register: download_ct_template
+      changed_when: download_ct_template.rc != 0
 
 
-- name: Discover base CT VZdump backup
-  when: inventory_hostname != "base-ct"
-  block:
-    - name: Discover base CT VZdump name
-      delegate_to: prox
-      ansible.builtin.shell:
-        cmd: |
-          set -o pipefail
-          ls {{ prox_base_template_dir }} \
-            | grep 'vzdump.*{{ hostvars['base-ct'].id }}.*tar.zst' \
-            | head -n1
-        executable: /bin/bash
-      register: discover_base_ct_vzdump_name
-      changed_when: discover_base_ct_vzdump_name.rc != 0
+# - name: Discover base CT VZdump backup
+#   when: inventory_hostname != "base-ct"
+#   block:
+#     - name: Discover base CT VZdump name
+#       delegate_to: prox
+#       ansible.builtin.shell:
+#         cmd: |
+#           set -o pipefail
+#           ls {{ prox_ct_template_dir }} \
+#             | grep 'vzdump.*{{ hostvars['base-ct'].id }}.*tar.zst' \
+#             | head -n1
+#         executable: /bin/bash
+#       register: discover_base_ct_vzdump_name
+#       changed_when: discover_base_ct_vzdump_name.rc != 0
 
-    - name: "Save base CT VZdump name as fact"
-      ansible.builtin.set_fact:
-        base_template: "{{ discover_base_ct_vzdump_name.stdout }}"
+#     - name: "Save base CT VZdump name as fact"
+#       ansible.builtin.set_fact:
+#         ct_template: "{{ discover_base_ct_vzdump_name.stdout }}"
 
 
-# - name: "DEBUG: Show base_template"
-#   ansible.builtin.debug:
-#     var: base_template
+# # - name: "DEBUG: Show ct_template"
+# #   ansible.builtin.debug:
+# #     var: ct_template
 
 
 ### SSH
@@ -65,26 +65,26 @@
     node: prox
     state: present
     netif: "{'net0':'name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}'}"
-    ostemplate: local:vztmpl/{{ base_template }}
+    ostemplate: local:vztmpl/{{ ct_template }}
     storage: local-lvm
     pubkey: "{{ lookup('file', ansible_ssh_public_key_file) }}"
-    cores: 2
-    memory: 512 # MB
-    swap: 100 # MB
-    disk: 8 # GB
+    cores: "{{ ct_cores | default(2) }}"
+    memory: "{{ ct_memory | default(512) }}" # MB
+    swap: "{{ ct_swap | default(100) }}" # MB
+    disk: "{{ ct_disk | default(8) }}" # GB
+    unprivileged: "{{ ct_unprivileged | default(true) }}"
     onboot: true
-    features:
-      - nesting=1
+    features: "{{ ct_features | default(omit) }}"
 
 
-### Custom configs
-- name: "Add custom LXC configs"
-  delegate_to: prox
-  loop: "{{ ct_custom_configs }}"
-  ansible.builtin.lineinfile:
-    dest: "/etc/pve/lxc/{{ id }}.conf"
-    line: "{{ item }}"
-  when: ct_custom_configs is defined
+# ### Custom configs
+# - name: "Add custom LXC configs"
+#   delegate_to: prox
+#   loop: "{{ ct_custom_configs }}"
+#   ansible.builtin.lineinfile:
+#     dest: "/etc/pve/lxc/{{ id }}.conf"
+#     line: "{{ item }}"
+#   when: ct_custom_configs is defined
 
 
 ### Start
