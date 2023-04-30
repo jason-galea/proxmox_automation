@@ -3,6 +3,27 @@
   when: apt_packages is defined
   block:
 
+    - name: Check if squid apt cache is online
+      delegate_to: prox
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          pct list | grep -E '{{ hostvars['squid'].id }}\ *running'
+        executable: /bin/bash
+      register: check_if_apt_cache_online
+      changed_when: check_if_apt_cache_online.rc != 0
+      failed_when: false ### Ignore failures, we just want the stdout
+
+
+    - name: Enable squid apt caching
+      ansible.builtin.copy:
+        content: Acquire::http::Proxy "http://10.1.1.242:8000";
+        dest: /etc/apt/apt.conf.d/00proxy
+        owner: root
+        group: root
+        mode: "644"
+      when: check_if_apt_cache_online.stdout != "" ### When there IS a result
+
     - name: Update apt mirrors
       ansible.builtin.replace:
         path: /etc/apt/sources.list

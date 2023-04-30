@@ -16,31 +16,6 @@
       changed_when: download_ct_template.rc != 0
 
 
-# - name: Discover base CT VZdump backup
-#   when: inventory_hostname != "base-ct"
-#   block:
-#     - name: Discover base CT VZdump name
-#       delegate_to: prox
-#       ansible.builtin.shell:
-#         cmd: |
-#           set -o pipefail
-#           ls {{ prox_ct_template_dir }} \
-#             | grep 'vzdump.*{{ hostvars['base-ct'].id }}.*tar.zst' \
-#             | head -n1
-#         executable: /bin/bash
-#       register: discover_base_ct_vzdump_name
-#       changed_when: discover_base_ct_vzdump_name.rc != 0
-
-#     - name: "Save base CT VZdump name as fact"
-#       ansible.builtin.set_fact:
-#         ct_template: "{{ discover_base_ct_vzdump_name.stdout }}"
-
-
-# # - name: "DEBUG: Show ct_template"
-# #   ansible.builtin.debug:
-# #     var: ct_template
-
-
 ### SSH
 - name: Create new SSH key
   loop:

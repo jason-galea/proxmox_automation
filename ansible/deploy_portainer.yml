@@ -1,35 +1,18 @@
 ---
-# - name: Import playbook 'create_base_vm.yml'
-#   ansible.builtin.import_playbook: create_base_vm.yml
-
-
-- name: Create Portainer VM
+- name: Create Portainer CT
   hosts: portainer
   gather_facts: false
   tasks:
 
-    # - name: Include role 'prox_kvm'
-    #   ansible.builtin.include_role:
-    #     name: prox_kvm
-
+    ### Create
     - name: Include role 'prox_lxc'
       ansible.builtin.include_role:
         name: prox_lxc
 
-    # - name: "Install Portainer"
-    #   loop:
-    #     - check_before_install
-    #     - install
-    #   ansible.builtin.include_role:
-    #     name: portainer
-    #     tasks_from: "{{ item }}"
 
+    ### TODO: Check if Portainer is already installed
 
-###################################################################################################
-
-    ### Install Portainer!
-    # - name: Check if Portainer is already installed
-
+    ### Install
     - name: Create 'portainer_data' volume
       community.docker.docker_volume:
       # containers.podman.podman_volume:
