@@ -1,6 +1,6 @@
 ---
-- name: Import playbook 'destroy_base_vm.yml'
-  ansible.builtin.import_playbook: destroy_base_vm.yml
+- name: Import playbook 'create_base_vm.yml'
+  ansible.builtin.import_playbook: create_base_vm.yml
 
 
 - name: Create Portainer VM
@@ -8,10 +8,9 @@
   gather_facts: false
   tasks:
 
-    - name: "Include role 'prox_kvm' with tasks from 'check_create_install_packages'"
+    - name: Include role 'prox_kvm'
       ansible.builtin.include_role:
         name: prox_kvm
-        tasks_from: check_create_install_packages
 
     # - name: "Install Portainer"
     #   loop:

@@ -4,6 +4,11 @@
 #   changed_when: verify_dns_internet != 0
 
 
+- name: Reconfigure DPKG
+  ansible.builtin.command: dpkg --configure -a
+  register: dpkg_configure
+  changed_when: dpkg_configure.rc != 0
+
 - name: "Install apt packages"
   ansible.builtin.apt:
     pkg: "{{ required_packages }}"
@@ -20,11 +25,10 @@
 
 ### NOTE: Apparently the Ubuntu cloud image isn't happy with multiple "apt" commands
 ### E.G: "Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 2382"
-
-# - name: "Upgrade apt packages"
-#   ansible.builtin.apt:
-#     upgrade: true
 - name: "Upgrade apt packages"
-  ansible.builtin.command: apt upgrade -y
-  register: apt_upgrade
-  changed_when: apt_upgrade.rc != 0
+  ansible.builtin.apt:
+    upgrade: true
+# - name: "Upgrade apt packages"
+#   ansible.builtin.command: apt upgrade -y
+#   register: apt_upgrade
+#   changed_when: apt_upgrade.rc != 0
