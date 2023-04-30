@@ -1,6 +1,6 @@
 ---
 - name: Destroy all CTs
-  hosts: cts, !base-ct
+  hosts: cts
   gather_facts: false
   tasks:
 

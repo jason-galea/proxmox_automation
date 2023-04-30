@@ -73,24 +73,24 @@
         #     tasks_from: show_vzdump_backups
 
 
-        # ### Template
-        # - name: Convert CT to template
-        #   vars: ### NOTE: Workaround, only required when container isn't online
-        #     ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
-        #   delegate_to: prox
-        #   block:
+        ### Template
+        - name: Convert CT to template
+          vars: ### NOTE: Workaround, only required when container isn't online
+            ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
+          delegate_to: prox
+          block:
 
-        #     - name: Stop CT
-        #       ansible.builtin.command: "pct stop {{ id }}"
-        #       register: convert_base_vm_to_template
-        #       changed_when: convert_base_vm_to_template.rc != 0
+            - name: Stop CT
+              ansible.builtin.command: "pct stop {{ id }}"
+              register: convert_base_vm_to_template
+              changed_when: convert_base_vm_to_template.rc != 0
 
-        #     - name: Remove network config
-        #       ansible.builtin.command: "pct set {{ id }} --delete net0"
-        #       register: remove_network_config
-        #       changed_when: remove_network_config.rc != 0
+            - name: Remove network config
+              ansible.builtin.command: "pct set {{ id }} --delete net0"
+              register: remove_network_config
+              changed_when: remove_network_config.rc != 0
 
-        #     - name: Convert base CT to template
-        #       ansible.builtin.command: "pct template {{ id }}"
-        #       register: convert_base_vm_to_template
-        #       changed_when: convert_base_vm_to_template.rc != 0
+            - name: Convert base CT to template
+              ansible.builtin.command: "pct template {{ id }}"
+              register: convert_base_vm_to_template
+              changed_when: convert_base_vm_to_template.rc != 0

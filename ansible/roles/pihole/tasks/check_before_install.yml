@@ -1,4 +1,4 @@
-- name: "Check if pihole is already installed in container"
+- name: "Check if pihole is already installed"
   ansible.builtin.stat:
     path: /usr/local/bin/pihole
   register: stat_pihole_bin
