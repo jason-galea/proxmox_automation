@@ -71,14 +71,6 @@
         state: resized
 
 
-    # - name: Convert base VM to template
-    #   delegate_to: prox
-    #   ansible.builtin.command: "qm template {{ id }}"
-    #   register: convert_base_vm_to_template
-    #   changed_when: convert_base_vm_to_template.rc != 0
-    #   failed_when: convert_base_vm_to_template.rc not in [0, 255]
-
-
 ### Clone
 - name: Clone base VM
   when: inventory_hostname != "base-vm"
@@ -134,28 +126,6 @@
     onboot: true
 
     update: true
-
-
-# ### Network
-# - name: Add network details to VM
-#   delegate_to: localhost
-#   community.general.proxmox_kvm:
-#     node: prox
-#     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-#     api_user: root@pam
-#     api_password: "{{ lookup('file', password_file) }}"
-
-#     vmid: "{{ id }}"
-
-#     ipconfig:
-#       ipconfig0: ip={{ ip }}/24,gw={{ gateway }}
-#     searchdomains: "{{ domain }}"
-
-#     update: true
-
-
-### TODO: Actually boot the base VM to install updates & base packages, same as CTs
-### Currently the base VM is not booted before getting converted to a template
 
 
 - name: Start VM
