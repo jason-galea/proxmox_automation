@@ -1,4 +1,12 @@
 ---
+- name: Set SSH host(s)
+  hosts: prox, cts
+  gather_facts: false
+  vars:
+    use_ip_not_dns_name: true
+  roles:
+    - get_ssh_host
+
 - name: Destroy all CTs
   hosts: cts
   gather_facts: false
@@ -13,3 +21,6 @@
       ansible.builtin.include_role:
         name: ssh
         tasks_from: remove
+
+- name: Import playbook 'reset_dns.yml'
+  ansible.builtin.import_playbook: reset_dns.yml

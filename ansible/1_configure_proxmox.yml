@@ -1,8 +1,25 @@
 ---
+- name: Set SSH host
+  hosts: prox
+  gather_facts: false
+  vars:
+    use_ip_not_dns_name: true
+  roles:
+    - get_ssh_host
+
+
 - name: "Configure Proxmox"
   hosts: prox
   gather_facts: false
   tasks:
+
+    ### Get host
+    - name: Include role 'get_ssh_host'
+      vars:
+        use_ip_not_dns_name: true
+      ansible.builtin.include_role:
+        name: get_ssh_host
+
 
     ### SSH
     - name: "Include role 'ssh' with tasks to remove/create/scan/install an SSH key"
@@ -62,7 +79,6 @@
     #   # when: apt_upgrade_result.stdout_lines is defined
 
 
-    ### Download most recent ubuntu CT template
     - name: "Update PVEAM"
       ansible.builtin.command: "pveam update"
       register: pveam_update
@@ -107,9 +123,13 @@
 
 
     ### END
-    - name: "Show Proxmox webserver URL"
+    - name: "Show Proxmox webserver URLs"
+      loop:
+        - "https://{{ ip }}:{{ port }}"
+        - "https://{{ fqdn }}:{{ port }}"
+        # - "https://{{ ansible_host }}" ## NGINX reverse proxy
       ansible.builtin.debug:
-        msg: "https://{{ ansible_host }}:{{ port }}"
+        msg: "{{ item }}"
 
     - name: "Verify Proxmox webserver is active"
       ansible.builtin.wait_for:

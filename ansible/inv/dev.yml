@@ -13,10 +13,12 @@ all:
     domain: test.lan
     fqdn: "{{ inventory_hostname }}.{{ domain }}"
     dns: "{{ hostvars['pihole'].ip }}"
+    backup_dns: "10.1.1.111"
+    backup_domain: "galea.lan"
 
     ### Ansible vars
-    ansible_ssh_host: "{{ ip }}"
     ansible_user: root
+    # ansible_ssh_host: "{{ ip }}" ### NOTE: Dynamically detecting FQDN/IP at runtime
     ansible_ssh_private_key_file: ~/.ssh/prox_automation_{{ inventory_hostname }}
     ansible_ssh_public_key_file: "{{ ansible_ssh_private_key_file }}.pub"
     ansible_ssh_common_args: -o StrictHostKeyChecking=no
@@ -41,6 +43,10 @@ all:
         ct_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
 
       hosts:
+        # ansible-runner:
+        #   id: 241
+        #   apt_packages: [git]
+
         pihole:
           id: 241
           apt_packages: [git]

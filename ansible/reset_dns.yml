@@ -1,0 +1,40 @@
+---
+- name: Set SSH host(s)
+  hosts: prox
+  gather_facts: false
+  vars:
+    use_ip_not_dns_name: true
+  roles:
+    - get_ssh_host
+
+
+- name: Revert DNS server to original settings
+  hosts: localhost, prox
+  gather_facts: false
+  # vars_prompt:
+  #   - name: ansible_become_password
+  #     prompt: Please enter your localhost sudo password
+  tasks:
+
+    - name: Overwrite /etc/resolv.conf
+      become: true
+      vars:
+        domain: "{{ backup_domain }}"
+        dns: "{{ backup_dns }}"
+        # ansible_become: true
+        # ansible_become_password: "{{ ansible_become_password }}asd" ### idk lol
+      ansible.builtin.template:
+        src: templates/resolv.conf.j2
+        dest: /etc/resolv.conf
+        owner: root
+        group: root
+        mode: "644"
+
+    - name: Get contents of /etc/resolv.conf
+      ansible.builtin.command: cat /etc/resolv.conf
+      register: cat_etc_resolv
+      changed_when: cat_etc_resolv.rc != 0
+
+    - name: Show contents of /etc/resolv.conf
+      ansible.builtin.debug:
+        var: cat_etc_resolv.stdout_lines

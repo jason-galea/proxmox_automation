@@ -1,11 +1,11 @@
-### NOTE: The reason this is split into multiple plays with the same host
-### is to allow for shortcuts like "end_play" to block out loooooads to skipped tasks.
-### Otherwise, on subsequent runs the console would be super messy.
-
 ---
-# - name: Import playbook 'create_base_ct_vzdump.yml'
-#   ansible.builtin.import_playbook: create_base_ct_vzdump.yml
-
+- name: Set SSH host(s)
+  hosts: prox, pihole
+  gather_facts: false
+  vars:
+    use_ip_not_dns_name: true
+  roles:
+    - get_ssh_host
 
 - name: Create Pihole CT
   hosts: pihole
@@ -27,138 +27,46 @@
         name: pihole
         tasks_from: "{{ item }}"
 
+    - name: Populate DNS records
+      vars:
+        a_records_file: /etc/pihole/custom.list
+        cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
+      ansible.builtin.include_role:
+        name: pihole
+        tasks_from: populate_records
 
-- name: Populate DNS records
-  hosts: pihole
+
+### Apply DNS to hosts
+- name: Migrate DNS to new Pihole container 
+  hosts: localhost, prox
   gather_facts: false
-  vars:
-    a_records_file: /etc/pihole/custom.list
-    cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
   tasks:
 
-    ### A records
-    - name: Create/wipe A records file
-      ansible.builtin.copy:
-        content: ""
-        dest: "{{ a_records_file }}"
-        force: true
+    - name: "Disable enterprise repo list"
+      vars:
+        domain: "{{ domain }}"
+        dns: "{{ dns }}"
+      ansible.builtin.template:
+        src: templates/resolv.conf.j2
+        dest: /etc/resolv.conf
         owner: root
         group: root
         mode: "644"
 
-    - name: Populate A records file ### E.G: "1.2.3.4 a.test.lan"
-      loop: "{{ groups['all'] }}"
-      ansible.builtin.lineinfile:
-        dest: "{{ a_records_file }}"
-        line: "{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}"
 
+- name: Verify DNS connection to Proxmox
+  hosts: prox
+  gather_facts: false
+  tasks:
 
-    ### CNAME records
-    - name: Create/wipe CNAME records file
-      ansible.builtin.copy:
-        content: ""
-        dest: "{{ cname_records_file }}"
-        force: true
-        owner: root
-        group: root
-        mode: "644"
+    - name: Reset SSH host to FQDN
+      ansible.builtin.include_role:
+        name: get_ssh_host
 
-    - name: "Populate CNAME records file" ### E.G: "cname=cname.test.lan,a.test.lan"
-      loop: "{{ groups['all'] }}"
-      when: hostvars[item].cname is defined
-      ansible.builtin.lineinfile:
-        dest: "{{ cname_records_file }}"
-        line: "cname={{ hostvars[item].cname }},{{ hostvars[item].fqdn }}"
+    - name: Run a command on Proxmox
+      ansible.builtin.command: id
+      register: id_result
 
-
-    ### Restart
-    - name: Restart DNS
-      ansible.builtin.command: "pihole restartdns"
-      register: pihole_restartdns
-      changed_when: pihole_restartdns.rc != 0
-
-
-    # ### DEBUG
-    # - name: "DEBUG: Show ip for groups['all']"
-    #   loop: "{{ groups['all'] }}"
-    #   ansible.builtin.debug:
-    #     var: hostvars[item].ip
-
-
-    ### TODO: FIX DNS RESOLUTION FOR DOCKER CONTAINERS
-    ### They're not registering ip: "{{ hostvars['portainer'].ip }}" from the inventory
-    ### Verify
-    - name: Verify A records from localhost
-      delegate_to: localhost
-      loop: "{{ groups['all'] }}"
-      ansible.builtin.shell:
-        cmd: |
-          set -o pipefail
-          nslookup {{ hostvars[item].fqdn }} {{ dns }} | grep '{{ hostvars[item].ip }}'
-        executable: /bin/bash
-      register: verify_a_records
-      changed_when: verify_a_records.rc != 0
-      failed_when: "verify_a_records.stdout == ''"
-
-    - name: Verify CNAME records from localhost
-      delegate_to: localhost
-      loop: "{{ groups['all'] }}"
-      ansible.builtin.shell:
-        cmd: |
-          set -o pipefail
-          nslookup {{ hostvars[item].cname }} {{ dns }} | grep '^{{ hostvars[item].cname }}'
-        executable: /bin/bash
-      when: hostvars[item].cname is defined
-      register: verify_cname_records
-      changed_when: verify_cname_records.rc != 0
-      failed_when: "verify_cname_records.stdout == ''"
-
-
-# ### Apply DNS to hosts
-# - name: "Apply DNS and verify"
-#   hosts: prox
-#   gather_facts: false
-#   vars:
-#     resolv: "/etc/resolv.conf"
-#   tasks:
-
-#     ### Check
-#     # - block:
-#     #   - name: "Check if DNS is already working from hosts"
-#     #     loop: "{{ groups['all']  }}"
-#     #     ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
-#     #     register: verify
-#     #     failed_when: "verify.stdout != hostvars[item].fqdn"
-#     #     no_log: true
-
-#     #   - name: "PASS: Skipping..."
-#     #     ansible.builtin.meta: end_play
-#     #   rescue:
-#     #   - name: "FAIL: Continuing to update host DNS settings"
-#     #     ansible.builtin.meta: noop
-
-#     - name: "Backup /etc/resolv.conf"
-#       ansible.builtin.copy:
-#         remote_src: true
-#         src: "{{ resolv }}"
-#         dest: "{{ resolv }}.bak"
-#         force: true
-#       # become: true
-
-#     - name: "Set DNS server to pihole"
-#       ansible.builtin.shell: |
-#         sed -i 's/.*nameserver.*/nameserver {{ hostvars['pihole'].ansible_ssh_host }}/' {{ resolv }}
-#       # become: true
-
-#     ### Verify from hosts
-#     # - ansible.builtin.command: "cat {{ resolv }}"
-#     #   register: cat_resolv
-#     # - name: "Display /etc/resolv.conf"
-#     #   ansible.builtin.debug:
-#     #     var: cat_resolv.stdout
-
-#     # - name: "Verify DNS from hosts"
-#     #   loop: "{{ groups['all']  }}"
-#     #   ansible.builtin.shell: "nslookup {{ hostvars[item].fqdn }} | grep Name | awk '{print $2}'"
-#     #   register: verify
-#     #   failed_when: "verify.stdout != hostvars[item].fqdn"
+    - name: Show command output
+      ansible.builtin.debug:
+        var: id_result

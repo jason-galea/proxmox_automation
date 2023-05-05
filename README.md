@@ -32,20 +32,33 @@ It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM
 3. Install dependencies:
     - `./setup.sh`
 
-4. Set your subnet & host IPs in `inv.yml`
-    - `vi ansible/inv.yml`
+4. Set your subnet & host IPs in the inventory file:
+    - `vi ansible/inv/dev.yml`
 
 5. Set your Proxmox password:
     - `vi password.txt`
 
-6. Run initial Proxmox configuration with Ansible:
-    - `ansible-playbook -i ansible/inv.yml ansible/prox_initial_config.yml`
+6. Run initial Proxmox configuration:
+    - `ansible-playbook -i ansible/inv/dev.yml ansible/1_configure_proxmox.yml`
 
-<!-- DAMN IT! The 'community.general.proxmox' module REQUIRES a password :( -->
-<!-- 7. (Note that password.txt has been deleted) -->
+7. Deploy infrastructure:
+    - `ansible-playbook -i ansible/inv/dev.yml ansible/2_deploy_infra.yml`
 
+<!-- 
 7. Deploy Pihole
-    - `ansible-playbook -i ansible/inv.yml ansible/deploy_pihole.yml`
+    - `ansible-playbook -i ansible/inv/dev.yml ansible/deploy_pihole.yml`
 
 8. Deploy the Portainer VM
-    - `ansible-playbook -i ansible/inv.yml ansible/deploy_portainer.yml`
+    - `ansible-playbook -i ansible/inv/dev.yml ansible/deploy_portainer.yml` -->
+
+
+<!-- 
+## Tips
+
+This repo does assume you want to use the newly created Pihole container for DNS.
+If you want to revert localhost & Proxmox's DNS back to what it was originally:
+
+1. Define `backup_dns` in `ansible/inv/dev.yml`
+
+2. Reset DNS with Ansible
+    - `ansible-playbook -i ansible/inv/dev.yml ansible/reset_dns.yml` -->

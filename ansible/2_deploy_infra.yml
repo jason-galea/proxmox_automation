@@ -1,0 +1,4 @@
+---
+- ansible.builtin.import_playbook: deploy_squid.yml
+- ansible.builtin.import_playbook: deploy_pihole.yml
+- ansible.builtin.import_playbook: deploy_portainer.yml
