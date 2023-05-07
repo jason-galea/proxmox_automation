@@ -14,6 +14,12 @@
 #   ansible.builtin.debug:
 #     var: wait_for_pihole_webserver
 
-- name: "End play if Pihole is already installed"
-  ansible.builtin.meta: end_play
-  when: (stat_pihole_bin.stat.exists) and (wait_for_pihole_webserver.state == 'started')
+- name: Include tasks to install & populate DNS records
+  when: not ( (stat_pihole_bin.stat.exists) and (wait_for_pihole_webserver.state == 'started') )
+  block:
+
+    - name: Include task file 'install.yml'
+      ansible.builtin.include_tasks: install.yml
+
+    - name: Include task file 'populate_records.yml'
+      ansible.builtin.include_tasks: populate_records.yml

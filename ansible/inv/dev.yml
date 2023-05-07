@@ -43,20 +43,17 @@ all:
         ct_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
 
       hosts:
-        # ansible-runner:
-        #   id: 241
-        #   apt_packages: [git]
+
+        squid:
+          id: 241
+          apt_packages: [squid-deb-proxy]
+          port: 8000
 
         pihole:
-          id: 241
+          id: 242
           apt_packages: [git]
           port: 80
           cname: "{{ domain }}"
-
-        squid:
-          id: 242
-          apt_packages: [squid-deb-proxy]
-          port: 8000
 
         portainer:
           id: 243

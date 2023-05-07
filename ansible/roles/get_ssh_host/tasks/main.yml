@@ -1,7 +1,7 @@
 - name: Set SSH hostname to IP address
   ansible.builtin.set_fact:
     ansible_ssh_host: "{{ ip }}"
-  when: use_ip_not_dns_name
+  when: (use_ip_not_dns_name is defined) and (use_ip_not_dns_name)
 
 - name: Set SSH hostname to DNS name
   ansible.builtin.set_fact:

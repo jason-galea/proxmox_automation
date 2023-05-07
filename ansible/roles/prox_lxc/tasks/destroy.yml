@@ -24,7 +24,7 @@
     force: true
   failed_when: false
 
-# - name: "Destroy containers"
+# - name: "'pct destroy' containers"
 #   delegate_to: prox
 #   vars: ### NOTE: Workaround for when the container isn't responding
 #     ansible_ssh_private_key_file: "{{ hostvars['prox'].ansible_ssh_private_key_file }}"
@@ -38,7 +38,7 @@
 #   ansible.builtin.pause:
 #     seconds: 2
 
-- name: "Include role 'ssh' with tasks from 'remove'"
+- name: Include role 'ssh' with tasks from 'remove'
   ansible.builtin.include_role:
     name: ssh
     tasks_from: remove

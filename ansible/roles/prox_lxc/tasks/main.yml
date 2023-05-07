@@ -5,7 +5,7 @@
   ansible.builtin.shell:
     cmd: |
       set -o pipefail
-      pct list | grep -E '{{ id }}\ *running'
+      pct status {{ id }} | grep running
     executable: /bin/bash
   register: check_if_ct_running
   changed_when: check_if_ct_running.rc != 0

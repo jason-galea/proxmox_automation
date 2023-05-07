@@ -1,4 +1,7 @@
 ---
+- ansible.builtin.import_playbook: get_localhost_sudo_password.yml
+
+
 - name: Set SSH host(s)
   hosts: prox
   gather_facts: false
@@ -11,30 +14,33 @@
 - name: Revert DNS server to original settings
   hosts: localhost, prox
   gather_facts: false
-  # vars_prompt:
-  #   - name: ansible_become_password
-  #     prompt: Please enter your localhost sudo password
   tasks:
 
-    - name: Overwrite /etc/resolv.conf
-      become: true
+    - name: Include role 'pihole' with tasks from 'update_resolv_conf'
       vars:
         domain: "{{ backup_domain }}"
         dns: "{{ backup_dns }}"
-        # ansible_become: true
-        # ansible_become_password: "{{ ansible_become_password }}asd" ### idk lol
-      ansible.builtin.template:
-        src: templates/resolv.conf.j2
-        dest: /etc/resolv.conf
-        owner: root
-        group: root
-        mode: "644"
+      ansible.builtin.include_role:
+        name: pihole
+        tasks_from: update_resolv_conf
 
-    - name: Get contents of /etc/resolv.conf
-      ansible.builtin.command: cat /etc/resolv.conf
-      register: cat_etc_resolv
-      changed_when: cat_etc_resolv.rc != 0
+    # - name: Add backup domain & dns server to {{ resolv }}
+    #   become: true
+    #   vars:
+    #     domain: "{{ backup_domain }}"
+    #     dns: "{{ backup_dns }}"
+    #   ansible.builtin.template:
+    #     src: templates/resolv.conf.j2
+    #     dest: "{{ resolv }}"
+    #     owner: root
+    #     group: root
+    #     mode: "644"
 
-    - name: Show contents of /etc/resolv.conf
-      ansible.builtin.debug:
-        var: cat_etc_resolv.stdout_lines
+    # - name: Get contents of {{ resolv }}
+    #   ansible.builtin.command: cat {{ resolv }}
+    #   register: cat_resolv
+    #   changed_when: cat_resolv.rc != 0
+
+    # - name: Show contents of {{ resolv }}
+    #   ansible.builtin.debug:
+    #     var: cat_resolv.stdout_lines

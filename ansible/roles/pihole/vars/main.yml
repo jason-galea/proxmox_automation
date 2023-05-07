@@ -1,3 +1,10 @@
 repo_dir: "/root/pi-hole"
 install_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
 answers_file: "/etc/pihole/setupVars.conf"
+
+### For 'populate_records.yml'
+a_records_file: /etc/pihole/custom.list
+cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
+
+### For 'update_resolv_conf.yml'
+resolv: /etc/resolv.conf

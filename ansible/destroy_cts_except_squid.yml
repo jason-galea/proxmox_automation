@@ -1,18 +1,22 @@
 ---
+- ansible.builtin.import_playbook: get_localhost_sudo_password.yml
+
+
 - name: Set SSH host(s)
-  hosts: prox, cts
+  hosts: prox, cts, !squid
   gather_facts: false
   vars:
     use_ip_not_dns_name: true
   roles:
     - get_ssh_host
 
-- name: Destroy all CTs
-  hosts: cts
+
+- name: Destroy containers
+  hosts: cts, !squid
   gather_facts: false
   tasks:
 
-    - name: Destroy all CTs
+    - name: Destroy containers
       ansible.builtin.include_role:
         name: prox_lxc
         tasks_from: destroy
@@ -21,6 +25,7 @@
       ansible.builtin.include_role:
         name: ssh
         tasks_from: remove
+
 
 - name: Import playbook 'reset_dns.yml'
   ansible.builtin.import_playbook: reset_dns.yml

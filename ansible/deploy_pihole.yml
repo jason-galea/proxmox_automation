@@ -1,4 +1,7 @@
 ---
+- ansible.builtin.import_playbook: get_localhost_sudo_password.yml
+
+
 - name: Set SSH host(s)
   hosts: prox, pihole
   gather_facts: false
@@ -7,66 +10,62 @@
   roles:
     - get_ssh_host
 
-- name: Create Pihole CT
-  hosts: pihole
-  gather_facts: false
-  roles:
-    - prox_lxc
 
-
-- name: Install Pihole
+- name: Create Pihole container & install
   hosts: pihole
   gather_facts: false
   tasks:
 
-    - name: Install pihole
-      loop:
-        - check_before_install
-        - install
+    - name: Include role 'prox_lxc'
+      ansible.builtin.include_role:
+        name: prox_lxc
+
+    - name: Include role 'pihole'
       ansible.builtin.include_role:
         name: pihole
-        tasks_from: "{{ item }}"
-
-    - name: Populate DNS records
-      vars:
-        a_records_file: /etc/pihole/custom.list
-        cname_records_file: /etc/dnsmasq.d/05-pihole-custom-cname.conf
-      ansible.builtin.include_role:
-        name: pihole
-        tasks_from: populate_records
 
 
-### Apply DNS to hosts
-- name: Migrate DNS to new Pihole container 
+- name: Migrate localhost & container to new DNS server
   hosts: localhost, prox
   gather_facts: false
   tasks:
 
-    - name: "Disable enterprise repo list"
-      vars:
-        domain: "{{ domain }}"
-        dns: "{{ dns }}"
-      ansible.builtin.template:
-        src: templates/resolv.conf.j2
-        dest: /etc/resolv.conf
-        owner: root
-        group: root
-        mode: "644"
+    ### NOTE: Vars 'domain' and 'dns' are set in the inventory
+    - name: Include role 'pihole' with tasks from 'update_resolv_conf'
+      ansible.builtin.include_role:
+        name: pihole
+        tasks_from: update_resolv_conf
+
+    - name: Verify A records
+      loop: "{{ groups['all'] }}"
+      ansible.builtin.command: nslookup {{ hostvars[item].fqdn }}
+      register: verify_a_records
+      changed_when: verify_a_records.rc != 0
+      failed_when: verify_a_records.rc != 0
+
+    - name: Verify CNAME records
+      loop: "{{ groups['all'] }}"
+      ansible.builtin.command: nslookup {{ hostvars[item].cname }}
+      register: verify_cname_records
+      changed_when: verify_cname_records.rc != 0
+      failed_when: verify_cname_records.rc != 0
+      when: hostvars[item].cname is defined
 
 
-- name: Verify DNS connection to Proxmox
+- name: Verify SSH connection to Proxmox with DNS name
   hosts: prox
   gather_facts: false
   tasks:
 
-    - name: Reset SSH host to FQDN
+    - name: Set Proxmox SSH host to DNS name
       ansible.builtin.include_role:
         name: get_ssh_host
 
-    - name: Run a command on Proxmox
+    - name: Run dummy command 'id'
       ansible.builtin.command: id
       register: id_result
+      changed_when: id_result.rc != 0
 
-    - name: Show command output
+    - name: Show dummy command output
       ansible.builtin.debug:
-        var: id_result
+        var: id_result.stdout
