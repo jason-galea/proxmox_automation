@@ -1,0 +1,12 @@
+- name: Delete portainer container
+  community.docker.docker_container:
+    name: portainer
+    state: absent
+
+- name: Delete 'portainer_data' volume
+  community.docker.docker_volume:
+    name: portainer_data
+    state: absent
+
+# - name: Include tasks from 'main'
+#   ansible.builtin.include_tasks: main.yml

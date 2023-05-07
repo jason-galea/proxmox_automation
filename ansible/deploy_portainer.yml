@@ -6,14 +6,10 @@
     - get_ssh_host
 
 
-- name: Create Portainer CT
+- name: Deploy portainer
   hosts: portainer
   gather_facts: false
   tasks:
-
-    - name: "DEBUG: ansible_ssh_host"
-      ansible.builtin.debug:
-        var: ansible_ssh_host
 
     ### Create
     - name: Include role 'prox_lxc'
@@ -25,30 +21,9 @@
 
 
     ### Start
-    - name: Create 'portainer_data' volume
-      community.docker.docker_volume:
-        name: portainer_data
-        state: present
-
-    - name: Launch Portainer
-      community.docker.docker_container:
-        name: portainer
-        image: docker.io/portainer/portainer-ce:latest
-        restart_policy: always
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
-          - portainer_data:/data
-        # ports:
-        #   - 8000:8000
-        #   - 9443:9443
-        ports:
-          - "{{ port }}:{{ port }}"
-        state: started
-        detach: true
-
-    - name: Include role 'verify_webserver'
+    - name: Include role 'portainer'
       ansible.builtin.include_role:
-        name: verify_webserver
+        name: portainer
 
 
 # ###################################################################################################

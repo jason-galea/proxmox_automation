@@ -1,0 +1,10 @@
+---
+- name: Portainer - Reset volume
+  hosts: portainer
+  gather_facts: false
+  tasks:
+
+    - name: Include role 'portainer' with tasks from 'reset_volume'
+      ansible.builtin.include_role:
+        name: portainer
+        tasks_from: reset_volume
