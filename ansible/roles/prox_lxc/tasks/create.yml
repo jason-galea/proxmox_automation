@@ -39,7 +39,7 @@
 
     node: prox
     state: present
-    netif: "{'net0':'name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ansible_ssh_host }}/24,gw={{ gateway }}'}"
+    netif: "{'net0':'name=eth0,bridge=vmbr0,firewall=1,type=veth,ip={{ ip }}/24,gw={{ gateway }}'}"
     ostemplate: local:vztmpl/{{ ct_template }}
     storage: local-lvm
     pubkey: "{{ lookup('file', ansible_ssh_public_key_file) }}"

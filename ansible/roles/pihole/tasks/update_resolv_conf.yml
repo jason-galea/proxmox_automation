@@ -29,8 +29,6 @@
   ansible.builtin.template:
     src: templates/resolv.conf.j2
     dest: "{{ resolv }}"
-    owner: root
-    group: root
     mode: "644"
 
 - name: Get contents of {{ resolv }}

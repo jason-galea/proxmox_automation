@@ -41,11 +41,7 @@
   ansible.builtin.debug:
     var: install_pihole.stdout_lines[-10]
 
-- name: "Show new Pihole URL"
-  ansible.builtin.debug:
-    msg: "http://{{ ansible_ssh_host }}/admin"
 
-- name: "Verify webserver"
-  ansible.builtin.wait_for:
-    port: "{{ port }}"
-    timeout: 5
+- name: Include role 'verify_webserver'
+  ansible.builtin.include_role:
+    name: verify_webserver

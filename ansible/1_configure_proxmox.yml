@@ -8,7 +8,7 @@
     - get_ssh_host
 
 
-- name: "Configure Proxmox"
+- name: Configure Proxmox
   hosts: prox
   gather_facts: false
   tasks:
@@ -22,7 +22,7 @@
 
 
     ### SSH
-    - name: "Include role 'ssh' with tasks to remove/create/scan/install an SSH key"
+    - name: Include role 'ssh' with tasks to remove/create/scan/install an SSH key
       loop:
         - remove
         - create
@@ -34,7 +34,7 @@
 
 
     ### Non-subscription repo
-    - name: "Detect debian version nickname"
+    - name: Detect debian version nickname
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
@@ -47,7 +47,7 @@
     #   ansible.builtin.debug:
     #     var: debian_version_nickname_result.stdout
 
-    - name: "Disable enterprise repo list"
+    - name: Disable enterprise repo list
       vars:
         debian_nickname: "{{ debian_version_nickname_result.stdout }}"
       ansible.builtin.template:
@@ -57,7 +57,7 @@
         group: root
         mode: "644"
 
-    - name: "Add non-subscription repo"
+    - name: Add non-subscription repo
       vars:
         debian_nickname: "{{ debian_version_nickname_result.stdout }}"
       ansible.builtin.template:
@@ -67,7 +67,7 @@
         group: root
         mode: "644"
 
-    - name: "Update & upgrade"
+    - name: Update & upgrade
       ansible.builtin.apt:
         upgrade: true
         update_cache: true
@@ -79,7 +79,7 @@
     #   # when: apt_upgrade_result.stdout_lines is defined
 
 
-    - name: "Update PVEAM"
+    - name: Update PVEAM
       ansible.builtin.command: "pveam update"
       register: pveam_update
       changed_when: pveam_update != 0
@@ -123,15 +123,6 @@
 
 
     ### END
-    - name: "Show Proxmox webserver URLs"
-      loop:
-        - "https://{{ ip }}:{{ port }}"
-        - "https://{{ fqdn }}:{{ port }}"
-        # - "https://{{ ansible_host }}" ## NGINX reverse proxy
-      ansible.builtin.debug:
-        msg: "{{ item }}"
-
-    - name: "Verify Proxmox webserver is active"
-      ansible.builtin.wait_for:
-        port: "{{ port }}"
-        timeout: 10
+    - name: Include role 'verify_webserver'
+      ansible.builtin.include_role:
+        name: verify_webserver

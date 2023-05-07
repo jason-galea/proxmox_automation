@@ -1,8 +1,19 @@
 ---
+- name: Set SSH host(s)
+  hosts: prox, portainer
+  gather_facts: false
+  roles:
+    - get_ssh_host
+
+
 - name: Create Portainer CT
   hosts: portainer
   gather_facts: false
   tasks:
+
+    - name: "DEBUG: ansible_ssh_host"
+      ansible.builtin.debug:
+        var: ansible_ssh_host
 
     ### Create
     - name: Include role 'prox_lxc'
@@ -12,39 +23,37 @@
 
     ### TODO: Check if Portainer is already installed
 
-    ### Install
+
+    ### Start
     - name: Create 'portainer_data' volume
       community.docker.docker_volume:
-      # containers.podman.podman_volume:
         name: portainer_data
         state: present
 
     - name: Launch Portainer
       community.docker.docker_container:
-      # containers.podman.podman_container:
-        detach: true
-        ports:
-          - 8000:8000
-          - 9443:9443
         name: portainer
+        image: docker.io/portainer/portainer-ce:latest
         restart_policy: always
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
           - portainer_data:/data
-        image: docker.io/portainer/portainer-ce:latest
+        # ports:
+        #   - 8000:8000
+        #   - 9443:9443
+        ports:
+          - "{{ port }}:{{ port }}"
         state: started
+        detach: true
 
-    - name: "Show new Portainer URL"
-      ansible.builtin.debug:
-        msg: "https://{{ ansible_ssh_host }}:{{ port }}/"
-
-    - name: "Verify webserver"
-      ansible.builtin.wait_for:
-        port: "{{ port }}"
-        timeout: 5
+    - name: Include role 'verify_webserver'
+      ansible.builtin.include_role:
+        name: verify_webserver
 
 
 # ###################################################################################################
 
 #     ### Configure Portainer
-#     - name: ???
+#     - name: Set password???
+
+#     - name: Add new stack via API???

@@ -62,7 +62,7 @@ all:
           ct_swap: 512
           ct_disk: 16
           apt_packages: [docker.io, python3-pip]
-          pip_packages: [requests]
+          pip_packages: [requests==2.28.1] ### https://github.com/docker/docker-py/issues/3113
           ct_features:
             - nesting=1
           port: 9443
