@@ -8,3 +8,7 @@
       ansible.builtin.include_role:
         name: portainer
         tasks_from: reset_volume
+
+    - name: Closing comments
+      ansible.builtin.debug:
+        msg: Successfully reset Portainer volume, please run 'deploy_portainer.yml'
