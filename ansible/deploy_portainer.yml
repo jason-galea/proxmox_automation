@@ -27,7 +27,7 @@
 
 
     ### Configure
-    - name: Set password???
+    - name: Set password
       ansible.builtin.command: |
         http POST \
           http://10.1.1.243:9000/api/users/admin/init \
@@ -37,12 +37,15 @@
       changed_when: set_admin_pw.rc != 0
 
     - name: Get JWT token
-      ansible.builtin.command: |
-        http POST \
-          http://10.1.1.243:9000/api/auth \
-          Username='admin' \
-          Password='abc##123abc##123' \
-        | jq -r .'jwt'
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          http POST \
+            http://10.1.1.243:9000/api/auth \
+            Username='admin' \
+            Password='abc##123abc##123' \
+          | jq -r .'jwt'
+        executable: /bin/bash
       register: portainer_jwt_token
       changed_when: portainer_jwt_token.rc != 0
 
