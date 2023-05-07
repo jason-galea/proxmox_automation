@@ -32,7 +32,7 @@
   community.general.proxmox:
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
-    api_password: "{{ lookup('file', password_file) }}"
+    api_password: "{{ lookup('file', prox_password_file) }}"
 
     hostname: "{{ inventory_hostname }}"
     vmid: "{{ id }}"
@@ -68,7 +68,7 @@
   community.general.proxmox:
     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
     api_user: root@pam
-    api_password: "{{ lookup('file', password_file) }}"
+    api_password: "{{ lookup('file', prox_password_file) }}"
 
     vmid: "{{ id }}"
     state: started

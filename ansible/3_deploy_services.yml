@@ -1,4 +1,77 @@
 ---
-- ansible.builtin.import_playbook: deploy_squid.yml
-- ansible.builtin.import_playbook: deploy_pihole.yml
-- ansible.builtin.import_playbook: deploy_portainer.yml
+- name: Set SSH host(s)
+  hosts: prox, portainer
+  gather_facts: false
+  roles:
+    - get_ssh_host
+
+
+- name: Get portainer JWT token
+  hosts: portainer
+  gather_facts: false
+  tasks:
+
+    ### TODO: Proper secret management
+    - name: Get JWT token
+      delegate_to: localhost
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          http POST \
+            http://{{ ansible_ssh_host }}:{{ port }}/api/auth \
+            Username='admin' \
+            Password='{{ lookup('file', portainer_password_file) }}' \
+          | jq -r .'jwt'
+        executable: /bin/bash
+      register: portainer_jwt_token
+      changed_when: portainer_jwt_token.rc != 0
+
+    - name: Save portainer auth header as fact
+      ansible.builtin.set_fact:
+        portainer_auth_header: "Bearer {{ portainer_jwt_token.stdout }}"
+
+    - name: Show portainer auth header
+      ansible.builtin.debug:
+        var: portainer_auth_header
+
+
+- name: Deploy services
+  hosts: docker_containers
+  gather_facts: false
+  vars:
+    portainer_auth_header: "{{ hostvars['portainer'].portainer_auth_header }}"
+  tasks:
+
+    - name: Create stack
+      delegate_to: localhost
+      ansible.builtin.command: |
+          http POST \
+            http://{{ ansible_ssh_host }}:{{ port }}/api/auth \
+            Username='admin' \
+            Password='{{ lookup('file', portainer_password_file) }}'
+      register: create_stack
+      changed_when: create_stack.rc != 0
+
+
+- name: Get list of stacks
+  hosts: portainer
+  gather_facts: false
+  tasks:
+
+    - name: Get list of stacks
+      delegate_to: localhost
+      ansible.builtin.command: |
+        http POST \
+          http://{{ ansible_ssh_host }}:{{ port }}/api/auth \
+          Username='admin' \
+          Password='{{ lookup('file', portainer_password_file) }}'
+        http GET \
+          http://10.1.1.243:9000/api/stacks \
+          -A bearer \
+          -a '{{ portainer_auth_header }}'
+      register: list_stacks
+      changed_when: list_stacks.rc != 0
+
+    - name: Show list of stacks
+      ansible.builtin.debug:
+        var: list_stacks.stdout_lines

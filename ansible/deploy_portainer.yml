@@ -18,41 +18,17 @@
 
 
     ### TODO: Check if Portainer is already installed
-
-
     ### Start
     - name: Include role 'portainer'
       ansible.builtin.include_role:
         name: portainer
 
-
     ### Configure
     - name: Set password
       ansible.builtin.command: |
         http POST \
-          http://10.1.1.243:9000/api/users/admin/init \
+          http://{{ ansible_ssh_host }}:{{ port }}/api/users/admin/init \
           Username='admin' \
-          Password='abc##123abc##123'
+          Password='{{ lookup('file', portainer_password_file) }}'
       register: set_admin_pw
       changed_when: set_admin_pw.rc != 0
-
-    - name: Get JWT token
-      ansible.builtin.shell:
-        cmd: |
-          set -o pipefail
-          http POST \
-            http://10.1.1.243:9000/api/auth \
-            Username='admin' \
-            Password='abc##123abc##123' \
-          | jq -r .'jwt'
-        executable: /bin/bash
-      register: portainer_jwt_token
-      changed_when: portainer_jwt_token.rc != 0
-
-    - name: Save portainer auth header as fact
-      ansible.builtin.set_fact:
-        portiainer_auth_header: "Bearer {{ portainer_jwt_token.stdout }}"
-
-    - name: Show portainer auth header
-      ansible.builtin.debug:
-        var: portiainer_auth_header

@@ -18,18 +18,18 @@ all:
 
     ### Ansible vars
     ansible_user: root
-    # ansible_ssh_host: "{{ ip }}" ### NOTE: Dynamically detecting FQDN/IP at runtime
     ansible_ssh_private_key_file: ~/.ssh/prox_automation_{{ inventory_hostname }}
     ansible_ssh_public_key_file: "{{ ansible_ssh_private_key_file }}.pub"
     ansible_ssh_common_args: -o StrictHostKeyChecking=no
 
     ### Proxmox vars
     prox_ct_template_dir: /var/lib/vz/template/cache
-    # prox_iso_dir: /var/lib/vz/template/iso
+    # prox_iso_dir: /var/lib/vz/template/iso ### Not using VMs at the moment
 
     ### Misc. vars
     repo_dir: "{{ inventory_dir | dirname | dirname }}"
-    password_file: "{{ repo_dir }}/password.txt"
+    prox_password_file: "{{ repo_dir }}/prox_password.txt"
+    portainer_password_file: "{{ repo_dir }}/portainer_password.txt"
 
   hosts:
     prox:
@@ -38,30 +38,27 @@ all:
       port: 8006
 
   children:
+
     cts:
       vars:
         ct_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
-
       hosts:
-
         squid:
           id: 241
           apt_packages: [squid-deb-proxy]
           port: 8000
-
         pihole:
           id: 242
           apt_packages: [git]
           port: 80
           cname: "{{ domain }}"
-
         portainer:
           id: 243
           ct_cores: 4
           ct_memory: 4096
           ct_swap: 512
           ct_disk: 16
-          apt_packages: [docker.io, python3-pip]
+          apt_packages: [docker.io, python3-pip, jq]
           pip_packages: [requests==2.28.1, httpie] ### https://github.com/docker/docker-py/issues/3113
           ct_features:
             - nesting=1
@@ -69,14 +66,12 @@ all:
           port: 9000 ### HTTP
           # port: 9443 ### HTTPS
 
+    docker_containers:
+      hosts:
+        # nginx:
+        #   repo: https://github.com/jason-galea/price_scraper.git
+        #   port: 80
 
-    # docker_containers:
-    #   vars:
-    #     # ip: "{{ hostvars['portainer'].ip }}" ### Doesn't work, hmmm
-    #     id: "{{ hostvars['portainer'].id }}"
-    #     ansible_ssh_private_key_file: "{{ hostvars['portainer'].ansible_ssh_private_key_file }}"
-    #     ansible_ssh_public_key_file: "{{ hostvars['portainer'].ansible_ssh_public_key_file }}"
-
-    #   hosts:
-    #     scraper:
-    #       port: 80
+        scraper:
+          repo: https://github.com/jason-galea/price_scraper.git
+          port: 5000

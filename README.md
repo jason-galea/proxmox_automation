@@ -36,7 +36,7 @@ It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM
     - `vi ansible/inv/dev.yml`
 
 5. Set your Proxmox password:
-    - `vi password.txt`
+    - `vi prox_password.txt`
 
 6. Run initial Proxmox configuration:
     - `ansible-playbook -i ansible/inv/dev.yml ansible/1_configure_proxmox.yml`

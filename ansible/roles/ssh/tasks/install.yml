@@ -1,6 +1,6 @@
 - name: "Install localhost SSH key on: {{ inventory_hostname }}"
   vars:
-    ansible_ssh_pass: "{{ lookup('file', password_file) }}"
+    ansible_ssh_pass: "{{ lookup('file', prox_password_file) }}"
   ansible.posix.authorized_key:
     user: root
     key: "{{ lookup('file', ansible_ssh_public_key_file) }}"
@@ -14,9 +14,3 @@
 # - name: "DEBUG: Show 'id' command output"
 #   ansible.builtin.debug:
 #     var: command_id.stdout
-
-# - name: "Delete password file"
-#   delegate_to: localhost
-#   ansible.builtin.file:
-#     path: "{{ repo_dir }}/password.txt"
-#     state: absent
