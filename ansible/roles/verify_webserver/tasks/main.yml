@@ -1,11 +1,11 @@
-- name: "Show webserver URL (IP)"
-  ansible.builtin.debug:
-    msg: "https://{{ ip }}:{{ port }}"
-  when: ip is defined
+# - name: "Show webserver URL (IP)"
+#   ansible.builtin.debug:
+#     msg: "{{ http_protocol }}://{{ ip }}:{{ port }}"
+#   when: ip is defined
 
 - name: "Show webserver URL (IP)"
   ansible.builtin.debug:
-    msg: "https://{{ fqdn }}:{{ port }}"
+    msg: "{{ http_protocol }}://{{ fqdn }}:{{ port }}"
 
 - name: "Verify webserver is active"
   ansible.builtin.wait_for:

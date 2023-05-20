@@ -31,12 +31,14 @@ all:
     repo_dir: "{{ inventory_dir | dirname | dirname }}"
     prox_password_file: "{{ repo_dir }}/prox_password.txt"
     portainer_password_file: "{{ repo_dir }}/portainer_password.txt"
+    http_protocol: http
 
   hosts:
     prox:
       # id: "YOUR_HOST_IP_AFFIX_HERE"
       id: 240
       port: 8006
+      http_protocol: https
 
   children:
 
