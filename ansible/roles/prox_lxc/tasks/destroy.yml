@@ -1,15 +1,7 @@
-- name: Stop containers
-  delegate_to: localhost
-  community.general.proxmox:
-    node: prox
-    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-    api_user: root@pam
-    api_password: "{{ lookup('file', prox_password_file) }}"
-
-    vmid: "{{ id }}"
-    state: stopped
-    force: true
-  failed_when: false ### :^)
+- name: Stop container(s)
+  ansible.builtin.include_role:
+    name: prox_lxc
+    tasks_from: stop
 
 - name: Destroy containers
   delegate_to: localhost

@@ -25,7 +25,7 @@
         name: pihole
 
 
-- name: Migrate localhost & container to new DNS server
+- name: Apply new DNS server to localhost & prox
   hosts: localhost, prox
   gather_facts: false
   tasks:
@@ -35,6 +35,46 @@
       ansible.builtin.include_role:
         name: pihole
         tasks_from: update_resolv_conf
+
+
+# - name: Verify new DNS server from localhost
+#   hosts: localhost
+#   gather_facts: false
+#   tasks:
+
+#     - name: Verify A records
+#       loop: "{{ groups['all'] }}"
+#       ansible.builtin.command: nslookup {{ hostvars[item].fqdn }}
+#       register: verify_a_records
+#       changed_when: verify_a_records.rc != 0
+#       failed_when: verify_a_records.rc != 0
+
+#     - name: Verify CNAME records
+#       loop: "{{ groups['all'] }}"
+#       ansible.builtin.command: nslookup {{ hostvars[item].cname }}
+#       register: verify_cname_records
+#       changed_when: verify_cname_records.rc != 0
+#       failed_when: verify_cname_records.rc != 0
+#       when: hostvars[item].cname is defined
+
+
+- name: Apply new dns server to CTs, by restarting Proxmox
+  hosts: prox
+  gather_facts: false
+  tasks:
+
+    - name: "Restart Proxmox"
+      ansible.builtin.reboot:
+
+    - name: Include role 'verify_webserver'
+      ansible.builtin.include_role:
+        name: verify_webserver
+
+
+- name: Verify new DNS server from pihole
+  hosts: pihole
+  gather_facts: false
+  tasks:
 
     - name: Verify A records
       loop: "{{ groups['all'] }}"
@@ -52,20 +92,24 @@
       when: hostvars[item].cname is defined
 
 
-- name: Verify SSH connection to Proxmox with DNS name
-  hosts: prox
-  gather_facts: false
-  tasks:
+# - name: Verify SSH connection to Proxmox with DNS name
+#   hosts: prox
+#   gather_facts: false
+#   tasks:
 
-    - name: Set Proxmox SSH host to DNS name
-      ansible.builtin.include_role:
-        name: get_ssh_host
+#     - name: Set Proxmox SSH host to DNS name
+#       ansible.builtin.include_role:
+#         name: get_ssh_host
 
-    - name: Run dummy command 'id'
-      ansible.builtin.command: id
-      register: id_result
-      changed_when: id_result.rc != 0
+#     # - name: Run dummy command 'id'
+#     #   ansible.builtin.command: id
+#     #   register: id_result
+#     #   changed_when: id_result.rc != 0
 
-    - name: Show dummy command output
-      ansible.builtin.debug:
-        var: id_result.stdout
+#     # - name: Show dummy command output
+#     #   ansible.builtin.debug:
+#     #     var: id_result.stdout
+
+#     - name: Include role 'verify_webserver'
+#       ansible.builtin.include_role:
+#         name: verify_webserver

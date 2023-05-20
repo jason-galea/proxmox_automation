@@ -1,0 +1,37 @@
+### TODO: Use this playbook instead of 'prox_password.txt'
+
+### If the proxmox password is required please import this playbook first.
+### This ensure that interactive user input is out of the way ASAP,
+### and the playbook can continue without interruption.
+
+---
+- name: Get Proxmox password (if not defined)
+  # hosts: prox, portainer, docker_containers, squid
+  hosts: localhost
+  gather_facts: false
+  tasks:
+
+    # - ansible.builtin.debug:
+    #     var: ip
+
+    # - ansible.builtin.debug:
+    #     var: fqdn
+
+    # - ansible.builtin.debug:
+    #     var: subnet
+
+    # - ansible.builtin.debug:
+    #     var: id
+
+    # - ansible.builtin.debug:
+    #     msg: "{{ groups['docker_containers'] }}"
+
+
+    # - name: Check if inventory_hostname is in 'docker_containers'
+    #   debug:
+    #     msg: "TRUE"
+    #   when: inventory_hostname in groups['docker_containers']
+
+    - debug:
+        msg: "{{ hostvars[item].inventory_hostname }}" 
+      loop: "{{ groups['cts'] + ['prox'] }}"

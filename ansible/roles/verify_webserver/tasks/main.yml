@@ -1,10 +1,11 @@
-- name: "Show new webserver URLs for {{ inventory_hostname }}"
-  loop:
-    - "https://{{ ip }}:{{ port }}"
-    - "https://{{ fqdn }}:{{ port }}"
-    # - "https://{{ ansible_host }}" ## NGINX reverse proxy
+- name: "Show webserver URL (IP)"
   ansible.builtin.debug:
-    msg: "{{ item }}"
+    msg: "https://{{ ip }}:{{ port }}"
+  when: ip is defined
+
+- name: "Show webserver URL (IP)"
+  ansible.builtin.debug:
+    msg: "https://{{ fqdn }}:{{ port }}"
 
 - name: "Verify webserver is active"
   ansible.builtin.wait_for:

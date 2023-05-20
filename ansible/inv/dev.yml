@@ -13,8 +13,9 @@ all:
     domain: test.lan
     fqdn: "{{ inventory_hostname }}.{{ domain }}"
     dns: "{{ hostvars['pihole'].ip }}"
-    backup_dns: "10.1.1.111"
-    backup_domain: "galea.lan"
+    backup_dns: 10.1.1.111
+    # backup_dns: 1.1.1.1
+    backup_domain: galea.lan
 
     ### Ansible vars
     ansible_user: root
@@ -68,9 +69,9 @@ all:
 
     docker_containers:
       hosts:
-        # nginx:
-        #   repo: https://github.com/jason-galea/price_scraper.git
-        #   port: 80
+        nginx:
+          repo: https://github.com/jason-galea/price_scraper.git
+          port: 80
 
         scraper:
           repo: https://github.com/jason-galea/price_scraper.git

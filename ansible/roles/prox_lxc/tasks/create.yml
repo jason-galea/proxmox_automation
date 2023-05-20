@@ -62,19 +62,10 @@
 #   when: ct_custom_configs is defined
 
 
-### Start
-- name: "Start container"
-  delegate_to: localhost
-  community.general.proxmox:
-    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-    api_user: root@pam
-    api_password: "{{ lookup('file', prox_password_file) }}"
-
-    vmid: "{{ id }}"
-    state: started
-
-- name: Wait for container to respond
-  ansible.builtin.wait_for_connection:
+- name: Start container(s)
+  ansible.builtin.include_role:
+    name: prox_lxc
+    tasks_from: start
 
 
 # ### DEBUG

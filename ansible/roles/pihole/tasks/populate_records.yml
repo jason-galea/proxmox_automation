@@ -8,25 +8,12 @@
     group: root
     mode: "644"
 
-- name: Set IP for docker containers running on Portainer
-  loop: "{{ groups['all'] }}"
-  ansible.builtin.set_fact:
-    ip: "{{ hostvars['portainer'].ip }}"
-  # when: hostvars[item].ip is not defined
-  # when: hostvars[item].inventory_hostname in docker_containers
-  when: hostvars[item].id in docker_containers
-
-
-- name: Populate A records file ### E.G: "1.2.3.4 a.test.lan"
-  loop: "{{ groups['all'] }}"
+- name: Create A records ### E.G: "1.2.3.4 a.test.lan"
+  loop: "{{ groups['cts'] + ['prox'] }}"
   ansible.builtin.lineinfile:
     dest: "{{ a_records_file }}"
     line: "{{ hostvars[item].ip }} {{ hostvars[item].fqdn }}"
 
-- command: cat {{ a_records_file }}
-  register: a_records_file_contents
-- debug:
-    var: a_records_file_contents.stdout_lines
 
 ### CNAME records
 - name: Create/wipe CNAME records file
@@ -38,17 +25,18 @@
     group: root
     mode: "644"
 
-- name: "Populate CNAME records file" ### E.G: "cname=cname.test.lan,a.test.lan"
-  loop: "{{ groups['all'] }}"
+- name: Create CNAME records ### E.G: "cname=cname.test.lan,a.test.lan"
+  loop: "{{ groups['cts'] + ['prox'] }}"
   ansible.builtin.lineinfile:
     dest: "{{ cname_records_file }}"
     line: "cname={{ hostvars[item].cname }},{{ hostvars[item].fqdn }}"
   when: hostvars[item].cname is defined
-  
-- command: cat {{ cname_records_file }}
-  register: cname_records_file_contents
-- debug:
-    var: cname_records_file_contents.stdout_lines
+
+- name: Create CNAME records for docker containers, running on Portainer ### E.G: "cname=cname.test.lan,a.test.lan"
+  loop: "{{ groups['docker_containers'] }}"
+  ansible.builtin.lineinfile:
+    dest: "{{ cname_records_file }}"
+    line: "cname={{ hostvars[item].fqdn }},{{ hostvars['portainer'].fqdn }}"
 
 
 ### Restart

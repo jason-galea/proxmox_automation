@@ -14,12 +14,11 @@
 #   ansible.builtin.debug:
 #     var: wait_for_pihole_webserver
 
-- name: Include tasks to install & populate DNS records
+- name: Include role 'pihole' with tasks from 'install' & 'populate_records'
+  loop:
+    - install
+    - populate_records
+  ansible.builtin.include_role:
+    name: pihole
+    tasks_from: "{{ item }}"
   when: not ( (stat_pihole_bin.stat.exists) and (wait_for_pihole_webserver.state == 'started') )
-  block:
-
-    - name: Include task file 'install.yml'
-      ansible.builtin.include_tasks: install.yml
-
-    - name: Include task file 'populate_records.yml'
-      ansible.builtin.include_tasks: populate_records.yml
