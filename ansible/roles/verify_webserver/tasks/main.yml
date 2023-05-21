@@ -1,9 +1,9 @@
-# - name: "Show webserver URL (IP)"
-#   ansible.builtin.debug:
-#     msg: "{{ http_protocol }}://{{ ip }}:{{ port }}"
-#   when: ip is defined
-
 - name: "Show webserver URL (IP)"
+  ansible.builtin.debug:
+    msg: "{{ http_protocol }}://{{ ip }}:{{ port }}"
+  when: ip is defined
+
+- name: "Show webserver URL"
   ansible.builtin.debug:
     msg: "{{ http_protocol }}://{{ fqdn }}:{{ port }}"
 

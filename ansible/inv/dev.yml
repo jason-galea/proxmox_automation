@@ -32,6 +32,7 @@ all:
     prox_password_file: "{{ repo_dir }}/prox_password.txt"
     portainer_password_file: "{{ repo_dir }}/portainer_password.txt"
     http_protocol: http
+    disable_squid_deb_proxy: false
 
   hosts:
     prox:
@@ -50,13 +51,24 @@ all:
           id: 241
           apt_packages: [squid-deb-proxy]
           port: 8000
+          disable_squid_deb_proxy: true
         pihole:
           id: 242
           apt_packages: [git]
           port: 80
           cname: "{{ domain }}"
-        portainer:
+        gitlab:
           id: 243
+          ct_template: ubuntu-22.04-standard_22.04-1_amd64.tar.zst
+          ct_cores: 4
+          ct_memory: 4096
+          ct_swap: 512
+          ct_disk: 16
+          disable_squid_deb_proxy: true
+          apt_packages: [curl, openssh-server, ca-certificates, tzdata, perl]
+          port: 80
+        portainer:
+          id: 244
           ct_cores: 4
           ct_memory: 4096
           ct_swap: 512

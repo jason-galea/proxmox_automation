@@ -3,19 +3,23 @@
   when: apt_packages is defined
   block:
 
+    ###
     - name: Enable squid apt caching
       vars:
-        squid_ip: "{{ hostvars['squid'].ip }}"
-        squid_port: "{{ hostvars['squid'].port }}"
+        # squid_ip: "{{ hostvars['squid'].ip }}"
+        # squid_port: "{{ hostvars['squid'].port }}"
+        squid_socket: "{{ hostvars['squid'].http_protocol }}://{{ hostvars['squid'].ip }}:{{ hostvars['squid'].port }}"
       ansible.builtin.copy:
-        content: Acquire::http::Proxy "http://{{ squid_ip }}:{{ squid_port }}";
+        # content: Acquire::http::Proxy "http://{{ squid_ip }}:{{ squid_port }}";
+        content: Acquire::http::Proxy "{{ squid_socket }}";
         dest: /etc/apt/apt.conf.d/00proxy
         owner: root
         group: root
         mode: "644"
       # when: check_if_apt_cache_online.stdout != "" ### When there IS a result
       # when: disable_apt_cache is not defined ### When explicitely set by author
-      when: inventory_hostname != 'squid' ### Squid must always be installed first
+      # when: inventory_hostname != 'squid' ### Squid must always be installed first
+      when: not disable_squid_deb_proxy
 
     - name: Update apt mirrors
       ansible.builtin.replace:
