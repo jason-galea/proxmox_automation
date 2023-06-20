@@ -4,19 +4,14 @@ all:
   vars:
     env: prod
     ### Network settings
-    # subnet: "YOUR_SUBNET_HERE"
-    subnet: "10.1.1"
+    subnet: "10.1.1" ### <-------------------------- YOUR SUBNET HERE
     ip: "{{ subnet }}.{{ id }}"
-    # mask: "255.255.255.0"
     gateway: "{{ subnet }}.1"
 
     ### DNS settings
-    domain: galea.lan
+    domain: galea.lan ### <-------------------------- YOUR DOMAIN HERE
     fqdn: "{{ inventory_hostname }}.{{ domain }}"
     dns: "{{ hostvars['pihole'].ip }}"
-    # backup_dns: 10.1.1.101
-    # backup_dns: 1.1.1.1
-    # backup_domain: galea.lan
 
     ### Ansible vars
     ansible_user: root
@@ -35,10 +30,13 @@ all:
     http_protocol: http
     disable_squid_deb_proxy: false
     homelab_git_url: https://github.com/jason-galea
+    requires_nested_docker: false
+    apt_packages: false
+    pip_packages: false
 
   hosts:
     prox:
-      id: 2
+      id: 2 ### <-------------------------- YOUR PROXMOX IP HERE
       port: 8006
       http_protocol: https
 
@@ -58,12 +56,12 @@ all:
         infra:
           hosts:
             squid:
-              id: 190
+              id: 100
               apt_packages: [squid-deb-proxy]
               port: 8000
               disable_squid_deb_proxy: true
             pihole:
-              id: 191
+              id: 101
               port: 80
               cname: "{{ domain }}"
               # git_repo: https://github.com/jason-galea/homelab_pihole.git

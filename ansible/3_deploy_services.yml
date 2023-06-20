@@ -3,7 +3,7 @@
   hosts: prox, portainer
   gather_facts: false
   roles:
-    - get-ssh-host
+    - set-ssh-host
 
 
 - name: Get portainer JWT token

@@ -8,7 +8,7 @@
   vars:
     use_ip_not_dns_name: true
   roles:
-    - get-ssh-host
+    - set-ssh-host
 
 
 - name: Destroy containers

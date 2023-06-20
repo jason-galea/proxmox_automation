@@ -1,11 +1,11 @@
 ---
-- name: Set SSH host(s)
+- name: Set SSH hosts
   hosts: prox, squid
   gather_facts: false
   vars:
     use_ip_not_dns_name: true
   roles:
-    - get-ssh-host
+    - set-ssh-host
 
 - name: Create Squid CT
   hosts: squid

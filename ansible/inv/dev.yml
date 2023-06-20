@@ -4,19 +4,14 @@ all:
   vars:
     env: dev
     ### Network settings
-    # subnet: "YOUR_SUBNET_HERE"
-    subnet: "10.1.1"
+    subnet: "10.1.1" ### <-------------------------- YOUR SUBNET HERE
     ip: "{{ subnet }}.{{ id }}"
-    # mask: "255.255.255.0"
     gateway: "{{ subnet }}.1"
 
     ### DNS settings
-    domain: test.lan
+    domain: test.lan ### <-------------------------- YOUR DOMAIN HERE
     fqdn: "{{ inventory_hostname }}.{{ domain }}"
     dns: "{{ hostvars['pihole'].ip }}"
-    backup_dns: 10.1.1.101
-    # backup_dns: 1.1.1.1
-    backup_domain: galea.lan
 
     ### Ansible vars
     ansible_user: root
@@ -34,11 +29,14 @@ all:
     # portainer_password_file: "{{ prox_repo_dir }}/portainer_password.txt"
     http_protocol: http
     disable_squid_deb_proxy: false
+    homelab_git_url: https://github.com/jason-galea
+    # requires_nested_docker: false
+    apt_packages: false
+    pip_packages: false
 
   hosts:
     prox:
-      # id: "YOUR_HOST_IP_AFFIX_HERE"
-      id: 240
+      id: 240 ### <-------------------------- YOUR PROXMOX IP HERE
       port: 8006
       http_protocol: https
 
@@ -47,48 +45,31 @@ all:
     cts:
       vars:
         ct_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
-      hosts:
-        squid:
-          id: 241
-          apt_packages: [squid-deb-proxy]
-          port: 8000
-          disable_squid_deb_proxy: true
-        pihole:
-          id: 242
-          apt_packages: [git]
-          port: 80
-          cname: "{{ domain }}"
-        gitlab:
-          id: 243
-          ct_template: ubuntu-22.04-standard_22.04-1_amd64.tar.zst
-          ct_cores: 4
-          ct_memory: 4096
-          ct_swap: 512
-          ct_disk: 16
-          disable_squid_deb_proxy: true
-          apt_packages: [curl, openssh-server, ca-certificates, tzdata, perl]
-          port: 80
-        portainer:
-          id: 244
-          ct_cores: 4
-          ct_memory: 4096
-          ct_swap: 512
-          ct_disk: 16
-          apt_packages: [docker.io, python3-pip, jq]
-          pip_packages: [requests==2.28.1, httpie] ### https://github.com/docker/docker-py/issues/3113
-          ct_features:
-            - nesting=1
-          ct_unprivileged: false ### Enable ports 0-1024. May need to "apt remove -y apparmor apparmor-utils"
-          # port: 8000 ### Remote agent polling https://github.com/portainer/portainer-docs/issues/91
-          port: 9000 ### HTTP
-          # port: 9443 ### HTTPS
+        # apt_packages: [ca-certificates, curl, gnupg, docker.io, python3-pip] ### ~90MB, thank you squid ;D
+        # pip_packages: [docker, docker-compose] ### For "community.docker.docker_compose"
+        # # pip_packages: [requests==2.28.1, httpie] ### https://github.com/docker/docker-py/issues/3113
 
-    docker_containers:
-      hosts:
-        nginx:
-          repo: https://github.com/jason-galea/price_scraper.git
-          port: 80
+      children:
 
-        scraper:
-          repo: https://github.com/jason-galea/price_scraper.git
-          port: 5000
+        infra:
+          hosts:
+            squid:
+              id: 241
+              ct_disk: 16
+              apt_packages: [squid-deb-proxy]
+              port: 8000
+              disable_squid_deb_proxy: true
+            pihole:
+              id: 242
+              ct_features:
+                - nesting=1
+              apt_packages: [python3-pip, git, docker.io]
+              pip_packages: [docker, docker-compose]
+              port: 80
+              infra_repo_name: homelab_pihole
+              # requires_nested_docker: true
+
+        services:
+          hosts:
+            nginx:
+              id: 195

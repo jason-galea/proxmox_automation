@@ -1,0 +1,3 @@
+- name: Set SSH hostname
+  ansible.builtin.set_fact:
+    ansible_ssh_host: "{{ (use_ip_not_dns_name is defined) | ternary(ip, fqdn) }}"
