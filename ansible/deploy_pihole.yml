@@ -33,12 +33,34 @@
     #   ansible.builtin.debug:
     #     var: cat_resolv.stdout_lines
 
-    - name: Restart Proxmox
-      ansible.builtin.reboot:
+    # - name: Restart Proxmox
+    #   ansible.builtin.reboot:
 
-    - name: Include role 'verify_webserver'
+    # - name: Include role 'verify_webserver'
+    #   ansible.builtin.include_role:
+    #     name: verify_webserver
+
+
+- name: Apply new dns server to CTs via restart
+  hosts: cts
+  gather_facts: false
+  tasks:
+
+    - name: Check if ct exists
+      delegate_to: prox
+      ansible.builtin.command: pct status {{ id }}
+      register: pct_status_id
+      changed_when: pct_status_id.rc != 0
+      failed_when: false
+
+    - name: Restart CTs
+      loop:
+        - stop
+        - start
       ansible.builtin.include_role:
-        name: verify_webserver
+        name: prox-lxc
+        tasks_from: "{{ item }}"
+      when: pct_status_id.rc == 0 ### RC of 2 means CT does not exist
 
 
 - name: Create Pihole container & install
@@ -131,12 +153,12 @@
     #     var: cat_resolv.stdout_lines
 
 
-    - name: Restart Proxmox
-      ansible.builtin.reboot:
+    # - name: Restart Proxmox
+    #   ansible.builtin.reboot:
 
-    - name: Include role 'verify_webserver'
-      ansible.builtin.include_role:
-        name: verify_webserver
+    # - name: Include role 'verify_webserver'
+    #   ansible.builtin.include_role:
+    #     name: verify_webserver
 
 
 - name: Apply new dns server to CTs via restart
@@ -152,18 +174,20 @@
       failed_when: false
 
     - name: Restart CTs
+      loop:
+        - stop
+        - start
+      ansible.builtin.include_role:
+        name: prox-lxc
+        tasks_from: "{{ item }}"
       when: pct_status_id.rc == 0 ### RC of 2 means CT does not exist
-      block:
 
-        - name: Stop CTs
-          ansible.builtin.include_role:
-            name: prox-lxc
-            tasks_from: stop
+    - name: Wait for Pihole to respond on port 53
+      ansible.builtin.wait_for:
+        port: 53
+        delay: 3
+      when: inventory_hostname == "pihole"
 
-        - name: Start CTs
-          ansible.builtin.include_role:
-            name: prox-lxc
-            tasks_from: start
 
 
 - name: Verify new DNS server from squid

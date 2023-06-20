@@ -1,12 +1,19 @@
-- name: Stop containers
-  delegate_to: localhost
-  community.general.proxmox:
-    node: prox
-    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-    api_user: root@pam
-    api_password: "{{ lookup('file', prox_password_file) }}"
+# - name: Stop containers
+#   delegate_to: localhost
+#   community.general.proxmox:
+#     node: prox
+#     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+#     api_user: root@pam
+#     api_password: "{{ lookup('file', prox_password_file) }}"
 
-    vmid: "{{ id }}"
-    state: stopped
-    force: true
-  failed_when: false ### Ignore if CT does not exist
+#     vmid: "{{ id }}"
+#     state: stopped
+#     force: true
+#   failed_when: false ### Ignore if CT does not exist
+
+- name: Stop container
+  delegate_to: prox
+  ansible.builtin.command: pct stop {{ id }}
+  register: pct_stop
+  changed_when: pct_stop.rc != 0
+  failed_when: false

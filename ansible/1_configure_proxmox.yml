@@ -21,6 +21,24 @@
         name: set-ssh-host
 
 
+    ### Reset DNS to backup if DNS container does not exist
+    - name: Check if ct exists
+      ansible.builtin.command: pct status {{ id }}
+      register: pct_status_id
+      changed_when: pct_status_id.rc != 0
+      failed_when: false
+
+    - name: Update DNS settings on prox {{ resolv }}
+      vars:
+        new_domain: "{{ domain }}"
+        new_dns: "{{ backup_dns }}"
+      ansible.builtin.template:
+        src: templates/resolv.conf.j2
+        dest: "{{ resolv }}"
+        mode: "644"
+      when: pct_status_id.rc == 0 ### RC of 2 means CT does not exist
+
+
     ### SSH
     - name: Include role 'ssh' with tasks to remove/create/scan/install an SSH key
       loop:

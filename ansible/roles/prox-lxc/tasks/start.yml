@@ -1,13 +1,20 @@
-- name: "Start container"
-  delegate_to: localhost
-  community.general.proxmox:
-    api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
-    api_user: root@pam
-    api_password: "{{ lookup('file', prox_password_file) }}"
+# - name: "Start container"
+#   delegate_to: localhost
+#   community.general.proxmox:
+#     api_host: "{{ hostvars['prox'].ansible_ssh_host }}"
+#     api_user: root@pam
+#     api_password: "{{ lookup('file', prox_password_file) }}"
 
-    vmid: "{{ id }}"
-    state: started
-  failed_when: false ### Ignore if CT does not exist
+#     vmid: "{{ id }}"
+#     state: started
+#   failed_when: false ### Ignore if CT does not exist
+
+- name: Start container
+  delegate_to: prox
+  ansible.builtin.command: pct start {{ id }}
+  register: pct_start
+  changed_when: pct_start.rc != 0
+  failed_when: false
 
 - name: Wait for container to respond
   ansible.builtin.wait_for_connection:
