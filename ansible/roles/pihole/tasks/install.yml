@@ -1,6 +1,7 @@
 - name: "Clone pihole git repo"
   ansible.builtin.git:
-    repo: https://github.com/pi-hole/pi-hole.git
+    # repo: https://github.com/pi-hole/pi-hole.git
+    repo: "{{ git_repo }}"
     dest: "{{ repo_dir }}"
 
 - name: "Create /etc/pihole"

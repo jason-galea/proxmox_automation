@@ -54,15 +54,16 @@ all:
 
         infra:
           hosts:
-            # squid:
-            #   id: 190
-            #   apt_packages: [squid-deb-proxy]
-            #   port: 8000
-            #   disable_squid_deb_proxy: true
+            squid:
+              id: 190
+              apt_packages: [squid-deb-proxy]
+              port: 8000
+              disable_squid_deb_proxy: true
             pihole:
               id: 191
               port: 80
-              # cname: "{{ domain }}"
+              cname: "{{ domain }}"
+              git_repo: https://github.com/jason-galea/homelab_pihole.git
 
         services:
           hosts:

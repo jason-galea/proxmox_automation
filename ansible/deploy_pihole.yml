@@ -11,6 +11,8 @@
 - name: Create Pihole container & install
   hosts: pihole
   gather_facts: false
+  vars:
+    use_ip_not_dns_name: true
   tasks:
 
     - name: Include role 'prox-lxc'
@@ -33,25 +35,25 @@
 #         tasks_from: update_resolv_conf
 
 
-# - name: Verify new DNS server from localhost
-#   hosts: localhost
-#   gather_facts: false
-#   tasks:
+- name: Verify new DNS server from localhost
+  hosts: localhost
+  gather_facts: false
+  tasks:
 
-#     - name: Verify A records
-#       loop: "{{ groups['all'] }}"
-#       ansible.builtin.command: nslookup {{ hostvars[item].fqdn }}
-#       register: verify_a_records
-#       changed_when: verify_a_records.rc != 0
-#       failed_when: verify_a_records.rc != 0
+    - name: Verify A records
+      loop: "{{ groups['all'] }}"
+      ansible.builtin.command: nslookup {{ hostvars[item].fqdn }} {{ dns }}
+      register: verify_a_records
+      changed_when: verify_a_records.rc != 0
+      failed_when: verify_a_records.rc != 0
 
-#     - name: Verify CNAME records
-#       loop: "{{ groups['all'] }}"
-#       ansible.builtin.command: nslookup {{ hostvars[item].cname }}
-#       register: verify_cname_records
-#       changed_when: verify_cname_records.rc != 0
-#       failed_when: verify_cname_records.rc != 0
-#       when: hostvars[item].cname is defined
+    - name: Verify CNAME records
+      loop: "{{ groups['all'] }}"
+      ansible.builtin.command: nslookup {{ hostvars[item].cname }}
+      register: verify_cname_records
+      changed_when: verify_cname_records.rc != 0
+      failed_when: verify_cname_records.rc != 0
+      when: hostvars[item].cname is defined
 
 
 # - name: Apply new dns server to CTs, by restarting Proxmox
