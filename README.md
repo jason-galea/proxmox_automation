@@ -39,10 +39,12 @@ It is advised to clear a range of IPs in your local subnet, as Proxmox + each VM
     - `vi prox_password.txt`
 
 6. Run initial Proxmox configuration:
-    - `ansible-playbook -i ansible/inv/dev.yml ansible/1_configure_proxmox.yml`
+    <!-- - `ansible-playbook -i ansible/inv/dev.yml ansible/1_configure_proxmox.yml` -->
+    - `./1_configure_proxmox.sh prod`
 
 7. Deploy infrastructure:
-    - `ansible-playbook -i ansible/inv/dev.yml ansible/2_deploy_infra.yml`
+    <!-- - `ansible-playbook -i ansible/inv/dev.yml ansible/2_deploy_infra.yml` -->
+    - `./2_deploy_infra.sh prod`
 
 <!-- 
 7. Deploy Pihole

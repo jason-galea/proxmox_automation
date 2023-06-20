@@ -1,7 +1,7 @@
-- name: "Check if pihole is already installed"
-  ansible.builtin.stat:
-    path: /usr/local/bin/pihole
-  register: stat_pihole_bin
+# - name: "Check if pihole is already installed"
+#   ansible.builtin.stat:
+#     path: /usr/local/bin/pihole
+#   register: stat_pihole_bin
 
 - name: "Check if pihole webserver is active"
   ansible.builtin.wait_for:
@@ -17,7 +17,7 @@
 - name: Include role 'pihole' with tasks from 'install' & 'populate_records'
   loop:
     - install
-    - populate_records
+    # - populate_records
   ansible.builtin.include_role:
     name: pihole
     tasks_from: "{{ item }}"

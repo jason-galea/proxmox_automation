@@ -1,6 +1,6 @@
 - name: Stop container(s)
   ansible.builtin.include_role:
-    name: prox_lxc
+    name: prox-lxc
     tasks_from: stop
 
 - name: Destroy containers

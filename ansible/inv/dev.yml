@@ -2,6 +2,7 @@
 
 all:
   vars:
+    env: dev
     ### Network settings
     # subnet: "YOUR_SUBNET_HERE"
     subnet: "10.1.1"
@@ -13,7 +14,7 @@ all:
     domain: test.lan
     fqdn: "{{ inventory_hostname }}.{{ domain }}"
     dns: "{{ hostvars['pihole'].ip }}"
-    backup_dns: 10.1.1.111
+    backup_dns: 10.1.1.101
     # backup_dns: 1.1.1.1
     backup_domain: galea.lan
 
@@ -29,8 +30,8 @@ all:
 
     ### Misc. vars
     repo_dir: "{{ inventory_dir | dirname | dirname }}"
-    prox_password_file: "{{ repo_dir }}/prox_password.txt"
-    portainer_password_file: "{{ repo_dir }}/portainer_password.txt"
+    prox_password_file: "{{ repo_dir }}/prox_password_{{ env }}.txt"
+    # portainer_password_file: "{{ repo_dir }}/portainer_password.txt"
     http_protocol: http
     disable_squid_deb_proxy: false
 

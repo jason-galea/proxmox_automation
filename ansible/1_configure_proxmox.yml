@@ -5,7 +5,7 @@
   vars:
     use_ip_not_dns_name: true
   roles:
-    - get_ssh_host
+    - get-ssh-host
 
 
 - name: Configure Proxmox
@@ -14,11 +14,11 @@
   tasks:
 
     ### Get host
-    - name: Include role 'get_ssh_host'
+    - name: Include role 'get-ssh-host'
       vars:
         use_ip_not_dns_name: true
       ansible.builtin.include_role:
-        name: get_ssh_host
+        name: get-ssh-host
 
 
     ### SSH
@@ -47,22 +47,22 @@
     #   ansible.builtin.debug:
     #     var: debian_version_nickname_result.stdout
 
-    - name: Disable enterprise repo list
-      vars:
-        debian_nickname: "{{ debian_version_nickname_result.stdout }}"
-      ansible.builtin.template:
-        src: "templates/pve-enterprise.list.j2"
-        dest: "/etc/apt/sources.list.d/pve-enterprise.list"
-        owner: root
-        group: root
-        mode: "644"
-
     - name: Add non-subscription repo
       vars:
         debian_nickname: "{{ debian_version_nickname_result.stdout }}"
       ansible.builtin.template:
         src: "templates/sources.list.j2"
         dest: "/etc/apt/sources.list"
+        owner: root
+        group: root
+        mode: "644"
+
+    - name: Disable enterprise repo list
+      vars:
+        debian_nickname: "{{ debian_version_nickname_result.stdout }}"
+      ansible.builtin.template:
+        src: "templates/pve-enterprise.list.j2"
+        dest: "/etc/apt/sources.list.d/pve-enterprise.list"
         owner: root
         group: root
         mode: "644"
@@ -118,8 +118,8 @@
         regexp: "^# set bell-style none"
         line: "set bell-style none"
 
-    - name: "MISC: Restart Proxmox to apply changes"
-      ansible.builtin.reboot:
+    # - name: "MISC: Restart Proxmox to apply changes"
+    #   ansible.builtin.reboot:
 
 
     ### END

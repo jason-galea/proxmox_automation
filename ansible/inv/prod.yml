@@ -1,0 +1,70 @@
+---
+
+all:
+  vars:
+    env: prod
+    ### Network settings
+    # subnet: "YOUR_SUBNET_HERE"
+    subnet: "10.1.1"
+    ip: "{{ subnet }}.{{ id }}"
+    # mask: "255.255.255.0"
+    gateway: "{{ subnet }}.1"
+
+    ### DNS settings
+    domain: galea.lan
+    fqdn: "{{ inventory_hostname }}.{{ domain }}"
+    dns: "{{ hostvars['pihole'].ip }}"
+    # backup_dns: 10.1.1.101
+    # backup_dns: 1.1.1.1
+    # backup_domain: galea.lan
+
+    ### Ansible vars
+    ansible_user: root
+    ansible_ssh_private_key_file: ~/.ssh/prox_automation_{{ inventory_hostname }}
+    ansible_ssh_public_key_file: "{{ ansible_ssh_private_key_file }}.pub"
+    ansible_ssh_common_args: -o StrictHostKeyChecking=no
+
+    ### Proxmox vars
+    prox_ct_template_dir: /var/lib/vz/template/cache
+    # prox_iso_dir: /var/lib/vz/template/iso ### Not using VMs at the moment
+
+    ### Misc. vars
+    repo_dir: "{{ inventory_dir | dirname | dirname }}"
+    prox_password_file: "{{ repo_dir }}/prox_password_{{ env }}.txt"
+    # portainer_password_file: "{{ repo_dir }}/portainer_password.txt"
+    http_protocol: http
+    disable_squid_deb_proxy: false
+
+  hosts:
+    prox:
+      id: 2
+      port: 8006
+      http_protocol: https
+
+  children:
+
+    cts:
+      vars:
+        ct_template: ubuntu-22.10-standard_22.10-1_amd64.tar.zst
+        ct_features:
+          - nesting=1
+        apt_packages: [docker.io]
+
+      children:
+
+        infra:
+          hosts:
+            # squid:
+            #   id: 190
+            #   apt_packages: [squid-deb-proxy]
+            #   port: 8000
+            #   disable_squid_deb_proxy: true
+            pihole:
+              id: 191
+              port: 80
+              # cname: "{{ domain }}"
+
+        services:
+          hosts:
+            nginx:
+              id: 195

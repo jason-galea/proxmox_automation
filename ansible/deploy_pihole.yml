@@ -1,14 +1,11 @@
 ---
-- ansible.builtin.import_playbook: get_localhost_sudo_password.yml
-
-
 - name: Set SSH host(s)
   hosts: prox, pihole
   gather_facts: false
   vars:
     use_ip_not_dns_name: true
   roles:
-    - get_ssh_host
+    - get-ssh-host
 
 
 - name: Create Pihole container & install
@@ -16,17 +13,16 @@
   gather_facts: false
   tasks:
 
-    - name: Include role 'prox_lxc'
+    - name: Include role 'prox-lxc'
       ansible.builtin.include_role:
-        name: prox_lxc
+        name: prox-lxc
 
     - name: Include role 'pihole'
       ansible.builtin.include_role:
         name: pihole
 
-
-- name: Apply new DNS server to localhost & prox
-  hosts: localhost, prox
+- name: Apply new DNS server to prox
+  hosts: prox
   gather_facts: false
   tasks:
 
@@ -78,28 +74,21 @@
       delegate_to: prox
       ansible.builtin.command: pct status {{ id }}
       register: pct_status_id
+      changed_when: pct_status_id.rc != 0
       failed_when: false
 
-    # - name: Restart CTs
-    #   loop:
-    #     - stop
-    #     - start
-    #   ansible.builtin.include_role:
-    #     name: prox_lxc
-    #     tasks_from: "{{ item }}"
-    #   when: pct_status_id.rc == 0 ### RC of 2 means CT does not exist
     - name: Restart CTs
       when: pct_status_id.rc == 0 ### RC of 2 means CT does not exist
       block:
 
         - name: Stop CTs
           ansible.builtin.include_role:
-            name: prox_lxc
+            name: prox-lxc
             tasks_from: stop
 
         - name: Start CTs
           ansible.builtin.include_role:
-            name: prox_lxc
+            name: prox-lxc
             tasks_from: start
 
 
@@ -131,7 +120,7 @@
 
 #     - name: Set Proxmox SSH host to DNS name
 #       ansible.builtin.include_role:
-#         name: get_ssh_host
+#         name: get-ssh-host
 
 #     # - name: Run dummy command 'id'
 #     #   ansible.builtin.command: id

@@ -19,11 +19,11 @@
     # - name: Include task file 'destroy.yml'
     #   ansible.builtin.include_tasks: destroy.yml
 
-    - name: Include role 'prox_lxc' with tasks from 'create'
+    - name: Include role 'prox-lxc' with tasks from 'create'
       ansible.builtin.include_role:
-        name: prox_lxc
+        name: prox-lxc
         tasks_from: create
 
-    - name: Include role 'install_packages'
+    - name: Include role 'install-packages'
       ansible.builtin.include_role:
-        name: install_packages
+        name: install-packages
