@@ -29,11 +29,12 @@ all:
     # prox_iso_dir: /var/lib/vz/template/iso ### Not using VMs at the moment
 
     ### Misc. vars
-    repo_dir: "{{ inventory_dir | dirname | dirname }}"
-    prox_password_file: "{{ repo_dir }}/prox_password_{{ env }}.txt"
-    # portainer_password_file: "{{ repo_dir }}/portainer_password.txt"
+    prox_repo_dir: "{{ inventory_dir | dirname | dirname }}"
+    prox_password_file: "{{ prox_repo_dir }}/prox_password_{{ env }}.txt"
+    # portainer_password_file: "{{ prox_repo_dir }}/portainer_password.txt"
     http_protocol: http
     disable_squid_deb_proxy: false
+    homelab_git_url: https://github.com/jason-galea
 
   hosts:
     prox:
@@ -63,7 +64,8 @@ all:
               id: 191
               port: 80
               cname: "{{ domain }}"
-              git_repo: https://github.com/jason-galea/homelab_pihole.git
+              # git_repo: https://github.com/jason-galea/homelab_pihole.git
+              infra_repo_name: homelab_pihole
 
         services:
           hosts:

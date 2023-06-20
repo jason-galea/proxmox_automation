@@ -19,20 +19,30 @@
       ansible.builtin.include_role:
         name: prox-lxc
 
-    - name: Include role 'pihole'
-      ansible.builtin.include_role:
-        name: pihole
+    # - name: Include role 'pihole'
+    #   ansible.builtin.include_role:
+    #     name: pihole
 
-# - name: Apply new DNS server to prox
-#   hosts: prox
-#   gather_facts: false
-#   tasks:
+    - name: "Check if pihole webserver is active"
+      ansible.builtin.wait_for:
+        port: "{{ port }}"
+        timeout: 3
+      register: wait_for_pihole_webserver
+      failed_when: false ### Ignore fails, we just want the return code
 
-#     ### NOTE: Vars 'domain' and 'dns' are set in the inventory
-#     - name: Include role 'pihole' with tasks from 'update_resolv_conf'
-#       ansible.builtin.include_role:
-#         name: pihole
-#         tasks_from: update_resolv_conf
+    - name: Install pihole
+      when: wait_for_pihole_webserver.state != 'started'
+      block:
+
+        - name: Clone pihole git repo
+          ansible.builtin.git:
+            repo: "{{ homelab_git_url }}/{{ infra_repo_name }}.git"
+            dest: /root/{{ infra_repo_name }}
+
+        
+        - name: Docker compose up
+          community.docker.docker_compose:
+            project_src: /root/{{ infra_repo_name }}
 
 
 - name: Verify new DNS server from localhost
@@ -54,6 +64,18 @@
       changed_when: verify_cname_records.rc != 0
       failed_when: verify_cname_records.rc != 0
       when: hostvars[item].cname is defined
+
+
+# - name: Apply new DNS server to prox
+#   hosts: prox
+#   gather_facts: false
+#   tasks:
+
+#     ### NOTE: Vars 'domain' and 'dns' are set in the inventory
+#     - name: Include role 'pihole' with tasks from 'update_resolv_conf'
+#       ansible.builtin.include_role:
+#         name: pihole
+#         tasks_from: update_resolv_conf
 
 
 # - name: Apply new dns server to CTs, by restarting Proxmox

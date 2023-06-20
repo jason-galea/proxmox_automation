@@ -29,9 +29,9 @@ all:
     # prox_iso_dir: /var/lib/vz/template/iso ### Not using VMs at the moment
 
     ### Misc. vars
-    repo_dir: "{{ inventory_dir | dirname | dirname }}"
-    prox_password_file: "{{ repo_dir }}/prox_password_{{ env }}.txt"
-    # portainer_password_file: "{{ repo_dir }}/portainer_password.txt"
+    prox_repo_dir: "{{ inventory_dir | dirname | dirname }}"
+    prox_password_file: "{{ prox_repo_dir }}/prox_password_{{ env }}.txt"
+    # portainer_password_file: "{{ prox_repo_dir }}/portainer_password.txt"
     http_protocol: http
     disable_squid_deb_proxy: false
 

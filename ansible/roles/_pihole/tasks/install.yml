@@ -1,0 +1,48 @@
+- name: "Clone pihole git repo"
+  ansible.builtin.git:
+    # repo: https://github.com/pi-hole/pi-hole.git
+    repo: "{{ git_repo }}"
+    dest: "{{ pihole_repo_dir }}"
+
+# - name: "Create /etc/pihole"
+#   ansible.builtin.file:
+#     path: "/etc/pihole"
+#     state: directory
+#     owner: root
+#     group: root
+#     mode: "644"
+
+# - name: "Populate {{ answers_file }}"
+#   ansible.builtin.template:
+#     src: "templates/pihole_answers_file.txt.j2"
+#     dest: "{{ answers_file }}"
+#     owner: root
+#     group: root
+#     mode: "644"
+
+# - name: "DEBUG: Fetch contents of {{ answers_file }}"
+#   ansible.builtin.command: "cat {{ answers_file }}"
+#   register: answers_file_contents
+#   changed_when: answers_file_contents.rc != 0
+
+# - name: "DEBUG: Show contents of {{ answers_file }}"
+#   ansible.builtin.debug:
+#     var: answers_file_contents.stdout_lines
+
+# - name: "Install Pihole"
+#   ansible.builtin.command: "bash {{ install_script }} --unattended"
+#   register: install_pihole
+#   changed_when: install_pihole.rc != 0
+
+# - name: "DEBUG: Show Pihole install script output"
+#   ansible.builtin.debug:
+#     var: install_pihole.stdout_lines
+
+# - name: "Show new Pihole password (Don't forget it!)"
+#   ansible.builtin.debug:
+#     var: install_pihole.stdout_lines[-10]
+
+
+- name: Include role 'verify_webserver'
+  ansible.builtin.include_role:
+    name: verify_webserver

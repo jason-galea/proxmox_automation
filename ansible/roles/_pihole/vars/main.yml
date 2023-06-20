@@ -1,5 +1,5 @@
-repo_dir: "/root/pi-hole"
-install_script: "{{ repo_dir }}/automated\\ install/basic-install.sh"
+pihole_repo_dir: "/root/pi-hole"
+install_script: "{{ pihole_repo_dir }}/automated\\ install/basic-install.sh"
 answers_file: "/etc/pihole/setupVars.conf"
 
 ### For 'populate_records.yml'
