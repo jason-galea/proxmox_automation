@@ -43,30 +43,79 @@
     #     upgrade: true
 
 
-# ### Pip
-# - name: Install pip packages
-#   when: pip_packages is defined
-#   block:
+    ### Docker
+    ### https://docs.docker.com/engine/install/ubuntu/#set-up-the-repository
+    - name: Install docker repo & packages
+      when: requires_nested_docker
+      block:
+        - name: Install docker repo prerequisites
+          ansible.builtin.apt:
+            pkg:
+              - ca-certificates
+              - curl
+              - gnupg
 
-#     - name: Find local python3 version
-#       ansible.builtin.shell:
-#         cmd: |
-#           set -o pipefail
-#           ls /usr/bin/python3.* | head -n1
-#         executable: /bin/bash
-#       register: local_python3_bin
-#       changed_when: local_python3_bin.rc != 0
+        - name: Add Docker's GPG key
+          ansible.builtin.shell: |
+            set -o pipefail
+            sudo install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            sudo chmod a+r /etc/apt/keyrings/docker.gpg
+          register: add_docker_gpg_key
+          changed_when: add_docker_gpg_key.rc != 0
 
-#     # - name: Set local python3 version as fact
-#     #   ansible.builtin.set_fact:
-#     #     local_python3_bin: "{{ local_python3_bin.stdout }}"
+        - name: Add Docker apt repo
+          ansible.builtin.shell: |
+            set -o pipefail
+            echo \
+              "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+              "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+              sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          register: add_docker_apt_repo
+          changed_when: add_docker_apt_repo.rc != 0
 
-#     - name: Upgrade pip
-#       ansible.builtin.command:
-#         "{{ local_python3_bin.stdout }} -m pip install -U pip setuptools wheel"
-#       register: upgrade_pip
-#       changed_when: upgrade_pip.rc != 0
+        - name: Update apt package list
+          ansible.builtin.apt:
+            update_cache: true
 
-#     - name: Install pip packages
-#       ansible.builtin.pip:
-#         name: "{{ pip_packages }}"
+        - name: Install docker repo prerequisites
+          ansible.builtin.apt:
+            pkg:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+
+### Pip
+- name: Install pip packages
+  when: pip_packages is defined
+  block:
+
+    - name: Find local python3 version
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          ls /usr/bin/python3.* | head -n1
+        executable: /bin/bash
+      register: local_python3_bin
+      changed_when: local_python3_bin.rc != 0
+
+    # - name: Set local python3 version as fact
+    #   ansible.builtin.set_fact:
+    #     local_python3_bin: "{{ local_python3_bin.stdout }}"
+
+    - name: Upgrade pip
+      ansible.builtin.command:
+        "{{ local_python3_bin.stdout }} -m pip install -U pip setuptools wheel"
+      register: upgrade_pip
+      changed_when: upgrade_pip.rc != 0
+
+    - name: Install pip packages
+      ansible.builtin.pip:
+        name: "{{ pip_packages }}"
+
+    # - name: Install pip packages for docker-compose
+    #   ansible.builtin.pip:
+    #     name: "{{ pip_packages }}"
+    #   when: requires_nested_docker

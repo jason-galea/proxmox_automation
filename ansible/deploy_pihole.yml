@@ -30,16 +30,19 @@
       register: wait_for_pihole_webserver
       failed_when: false ### Ignore fails, we just want the return code
 
+    # - debug:
+    #     var: wait_for_pihole_webserver
+
     - name: Install pihole
-      when: wait_for_pihole_webserver.state != 'started'
+      when: not ((wait_for_pihole_webserver.state is defined) and (wait_for_pihole_webserver.state != 'started'))
       block:
 
-        - name: Clone pihole git repo
-          ansible.builtin.git:
-            repo: "{{ homelab_git_url }}/{{ infra_repo_name }}.git"
-            dest: /root/{{ infra_repo_name }}
+        # - name: Clone pihole git repo
+        #   ansible.builtin.git:
+        #     repo: "{{ homelab_git_url }}/{{ infra_repo_name }}.git"
+        #     dest: /root/{{ infra_repo_name }}
 
-        
+
         - name: Docker compose up
           community.docker.docker_compose:
             project_src: /root/{{ infra_repo_name }}
@@ -89,6 +92,7 @@
 #     - name: Include role 'verify_webserver'
 #       ansible.builtin.include_role:
 #         name: verify_webserver
+
 - name: Apply new dns server to CTs via restart
   hosts: cts
   gather_facts: false
