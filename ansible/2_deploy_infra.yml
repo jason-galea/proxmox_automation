@@ -1,7 +1,7 @@
 ---
 # - ansible.builtin.import_playbook: get_localhost_sudo_password.yml
-# - name: Deploy Squid
-#   ansible.builtin.import_playbook: deploy_squid.yml
+- name: Deploy Squid
+  ansible.builtin.import_playbook: deploy_squid.yml
 - name: Deploy Pihole
   ansible.builtin.import_playbook: deploy_pihole.yml
 # - ansible.builtin.import_playbook: deploy_gitlab.yml

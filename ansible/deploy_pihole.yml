@@ -21,16 +21,16 @@
       ansible.builtin.include_role:
         name: pihole
 
-- name: Apply new DNS server to prox
-  hosts: prox
-  gather_facts: false
-  tasks:
+# - name: Apply new DNS server to prox
+#   hosts: prox
+#   gather_facts: false
+#   tasks:
 
-    ### NOTE: Vars 'domain' and 'dns' are set in the inventory
-    - name: Include role 'pihole' with tasks from 'update_resolv_conf'
-      ansible.builtin.include_role:
-        name: pihole
-        tasks_from: update_resolv_conf
+#     ### NOTE: Vars 'domain' and 'dns' are set in the inventory
+#     - name: Include role 'pihole' with tasks from 'update_resolv_conf'
+#       ansible.builtin.include_role:
+#         name: pihole
+#         tasks_from: update_resolv_conf
 
 
 # - name: Verify new DNS server from localhost
@@ -92,25 +92,25 @@
             tasks_from: start
 
 
-- name: Verify new DNS server from localhost
-  hosts: localhost
-  gather_facts: false
-  tasks:
+# - name: Verify new DNS server from localhost
+#   hosts: localhost
+#   gather_facts: false
+#   tasks:
 
-    - name: Verify A records
-      loop: "{{ groups['all'] }}"
-      ansible.builtin.command: nslookup {{ hostvars[item].fqdn }}
-      register: verify_a_records
-      changed_when: verify_a_records.rc != 0
-      failed_when: verify_a_records.rc != 0
+#     - name: Verify A records
+#       loop: "{{ groups['all'] }}"
+#       ansible.builtin.command: nslookup {{ hostvars[item].fqdn }}
+#       register: verify_a_records
+#       changed_when: verify_a_records.rc != 0
+#       failed_when: verify_a_records.rc != 0
 
-    - name: Verify CNAME records
-      loop: "{{ groups['all'] }}"
-      ansible.builtin.command: nslookup {{ hostvars[item].cname }}
-      register: verify_cname_records
-      changed_when: verify_cname_records.rc != 0
-      failed_when: verify_cname_records.rc != 0
-      when: hostvars[item].cname is defined
+#     - name: Verify CNAME records
+#       loop: "{{ groups['all'] }}"
+#       ansible.builtin.command: nslookup {{ hostvars[item].cname }}
+#       register: verify_cname_records
+#       changed_when: verify_cname_records.rc != 0
+#       failed_when: verify_cname_records.rc != 0
+#       when: hostvars[item].cname is defined
 
 
 # - name: Verify SSH connection to Proxmox with DNS name
