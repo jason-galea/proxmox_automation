@@ -8,59 +8,60 @@
     - set-ssh-host
 
 
-- name: Migrate Proxmox to backup DNS
-  hosts: prox
-  gather_facts: false
-  vars:
-    resolv: /etc/resolv.conf
-  tasks:
+# - name: Migrate Proxmox to backup DNS
+#   hosts: prox
+#   gather_facts: false
+#   vars:
+#     resolv: /etc/resolv.conf
+#   tasks:
 
-    - name: Update DNS settings on prox {{ resolv }}
-      vars:
-        new_domain: "{{ domain }}"
-        new_dns: "{{ backup_dns }}"
-      ansible.builtin.template:
-        src: templates/resolv.conf.j2
-        dest: "{{ resolv }}"
-        mode: "644"
+#     - name: Update DNS settings on prox {{ resolv }}
+#       vars:
+#         new_domain: "{{ domain }}"
+#         new_dns: "{{ backup_dns }}"
+#       ansible.builtin.template:
+#         src: templates/resolv.conf.j2
+#         dest: "{{ resolv }}"
+#         mode: "644"
 
-    # - name: "DEBUG: Get contents of {{ resolv }}"
-    #   ansible.builtin.command: cat {{ resolv }}
-    #   register: cat_resolv
-    #   changed_when: cat_resolv.rc != 0
+#     # - name: "DEBUG: Get contents of {{ resolv }}"
+#     #   ansible.builtin.command: cat {{ resolv }}
+#     #   register: cat_resolv
+#     #   changed_when: cat_resolv.rc != 0
 
-    # - name: "DEBUG: Show contents of {{ resolv }}"
-    #   ansible.builtin.debug:
-    #     var: cat_resolv.stdout_lines
+#     # - name: "DEBUG: Show contents of {{ resolv }}"
+#     #   ansible.builtin.debug:
+#     #     var: cat_resolv.stdout_lines
 
-    # - name: Restart Proxmox
-    #   ansible.builtin.reboot:
+#     # - name: Restart Proxmox
+#     #   ansible.builtin.reboot:
 
-    # - name: Include role 'verify_webserver'
-    #   ansible.builtin.include_role:
-    #     name: verify_webserver
+#     # - name: Include role 'verify_webserver'
+#     #   ansible.builtin.include_role:
+#     #     name: verify_webserver
 
 
-- name: Apply new dns server to CTs via restart
-  hosts: cts
-  gather_facts: false
-  tasks:
+# - name: Apply new dns server to CTs via restart
+#   # hosts: cts
+#   hosts: pihole
+#   gather_facts: false
+#   tasks:
 
-    - name: Check if ct exists
-      delegate_to: prox
-      ansible.builtin.command: pct status {{ id }}
-      register: pct_status_id
-      changed_when: pct_status_id.rc != 0
-      failed_when: false
+#     - name: Check if ct exists
+#       delegate_to: prox
+#       ansible.builtin.command: pct status {{ id }}
+#       register: pct_status_id
+#       changed_when: pct_status_id.rc != 0
+#       failed_when: false
 
-    - name: Restart CTs
-      loop:
-        - stop
-        - start
-      ansible.builtin.include_role:
-        name: prox-lxc
-        tasks_from: "{{ item }}"
-      when: pct_status_id.rc == 0 ### RC of 2 means CT does not exist
+#     - name: Restart CTs
+#       loop:
+#         - stop
+#         - start
+#       ansible.builtin.include_role:
+#         name: prox-lxc
+#         tasks_from: "{{ item }}"
+#       when: pct_status_id.rc == 0 ### RC of 2 means CT does not exist
 
 
 - name: Create Pihole container & install
@@ -161,33 +162,34 @@
     #     name: verify_webserver
 
 
-- name: Apply new dns server to CTs via restart
-  hosts: cts
-  gather_facts: false
-  tasks:
+### NOTE: Assuming CTs aren't restarted during this playbook, they should still have the correct DNS IP.
+# - name: Apply new dns server to CTs via restart
+#   hosts: cts
+#   # hosts: pihole
+#   gather_facts: false
+#   tasks:
 
-    - name: Check if ct exists
-      delegate_to: prox
-      ansible.builtin.command: pct status {{ id }}
-      register: pct_status_id
-      changed_when: pct_status_id.rc != 0
-      failed_when: false
+#     - name: Check if ct exists
+#       delegate_to: prox
+#       ansible.builtin.command: pct status {{ id }}
+#       register: pct_status_id
+#       changed_when: pct_status_id.rc != 0
+#       failed_when: false
 
-    - name: Restart CTs
-      loop:
-        - stop
-        - start
-      ansible.builtin.include_role:
-        name: prox-lxc
-        tasks_from: "{{ item }}"
-      when: pct_status_id.rc == 0 ### RC of 2 means CT does not exist
+#     - name: Restart CTs
+#       loop:
+#         - stop
+#         - start
+#       ansible.builtin.include_role:
+#         name: prox-lxc
+#         tasks_from: "{{ item }}"
+#       when: pct_status_id.rc == 0 ### RC of 2 means CT does not exist
 
-    - name: Wait for Pihole to respond on port 53
-      ansible.builtin.wait_for:
-        port: 53
-        delay: 3
-      when: inventory_hostname == "pihole"
-
+#     - name: Wait for Pihole to respond on port 53
+#       ansible.builtin.wait_for:
+#         port: 53
+#         delay: 3
+#       when: inventory_hostname == "pihole"
 
 
 - name: Verify new DNS server from squid

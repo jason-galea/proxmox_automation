@@ -1,0 +1,1 @@
+{"changed": false, "msg": "Failed to connect to the host via ssh: Warning: Permanently added 'squid,10.1.1.241' (ECDSA) to the list of known hosts.root@squid: Permission denied (publickey,password).", "unreachable": true}
