@@ -10,7 +10,7 @@ echo -e "\n==> Upgrade pip"
 python3 -m pip install -U pip setuptools wheel
 
 echo -e "\n==> Install pip requirements"
-python3 -m pip install -r reqs.txt
+python3 -m pip install ansible ansible-lint proxmoxer requests
 
 echo -e "\n==> Install ansible-galaxy requirements"
 ansible-galaxy collection install community.crypto ansible-galaxy ansible.posix
