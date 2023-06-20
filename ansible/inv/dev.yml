@@ -12,10 +12,11 @@ all:
     domain: test.lan ### <-------------------------- YOUR DOMAIN HERE
     fqdn: "{{ inventory_hostname }}.{{ domain }}"
     dns: "{{ hostvars['pihole'].ip }}"
+    backup_dns: "1.1.1.1"
 
     ### Ansible vars
     ansible_user: root
-    ansible_ssh_private_key_file: ~/.ssh/prox_automation_{{ inventory_hostname }}
+    ansible_ssh_private_key_file: ~/.ssh/prox_automation_{{ env }}_{{ inventory_hostname }}
     ansible_ssh_public_key_file: "{{ ansible_ssh_private_key_file }}.pub"
     ansible_ssh_common_args: -o StrictHostKeyChecking=no
 
