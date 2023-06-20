@@ -36,10 +36,10 @@
     ### Non-subscription repo
     - name: Detect debian version nickname
       ansible.builtin.shell:
+        executable: /bin/bash
         cmd: |
           set -o pipefail
           cat /etc/apt/sources.list | head -n1 | awk '{print $3}'
-        executable: /bin/bash
       register: debian_version_nickname_result
       changed_when: debian_version_nickname_result != 0
 

@@ -1,6 +1,5 @@
 ### APT
 - name: Install apt packages
-  when: apt_packages is defined
   block:
 
     ###
@@ -36,7 +35,8 @@
 
     - name: Install apt packages
       ansible.builtin.apt:
-        pkg: "{{ apt_packages }}"
+        pkg: "{{ ['python3-pip'] + apt_packages }}"
+      # when: apt_packages is defined ### Always defined
 
     # - name: "Upgrade apt packages"
     #   ansible.builtin.apt:
@@ -46,7 +46,7 @@
     ### Docker
     ### https://docs.docker.com/engine/install/ubuntu/#set-up-the-repository
     - name: Install docker repo & packages
-      when: requires_nested_docker
+      when: (requires_nested_docker | default(false)) or (inventory_hostname == "squid") ### Allow squid to cache docker apt repo
       block:
         - name: Install docker repo prerequisites
           ansible.builtin.apt:
@@ -56,25 +56,29 @@
               - gnupg
 
         - name: Add Docker's GPG key
-          ansible.builtin.shell: |
-            set -o pipefail
-            sudo install -m 0755 -d /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-            sudo chmod a+r /etc/apt/keyrings/docker.gpg
+          ansible.builtin.shell:
+            executable: /bin/bash
+            cmd: |
+              set -o pipefail
+              sudo install -m 0755 -d /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              sudo chmod a+r /etc/apt/keyrings/docker.gpg
           register: add_docker_gpg_key
           changed_when: add_docker_gpg_key.rc != 0
 
         - name: Add Docker apt repo
-          ansible.builtin.shell: |
-            set -o pipefail
-            echo \
-              "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-              "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
-              sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          ansible.builtin.shell:
+            executable: /bin/bash
+            cmd: |
+              set -o pipefail
+              echo \
+                "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+                "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+                sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
           register: add_docker_apt_repo
           changed_when: add_docker_apt_repo.rc != 0
 
-        - name: Update apt package list
+        - name: Fetch new package info from Docker repo
           ansible.builtin.apt:
             update_cache: true
 
@@ -86,18 +90,18 @@
               - containerd.io
               - docker-buildx-plugin
               - docker-compose-plugin
+          when: requires_nested_docker ### Exclude squid
 
 ### Pip
 - name: Install pip packages
-  when: pip_packages is defined
   block:
 
     - name: Find local python3 version
       ansible.builtin.shell:
+        executable: /bin/bash
         cmd: |
           set -o pipefail
           ls /usr/bin/python3.* | head -n1
-        executable: /bin/bash
       register: local_python3_bin
       changed_when: local_python3_bin.rc != 0
 
@@ -114,6 +118,7 @@
     - name: Install pip packages
       ansible.builtin.pip:
         name: "{{ pip_packages }}"
+      when: pip_packages is defined
 
     # - name: Install pip packages for docker-compose
     #   ansible.builtin.pip:

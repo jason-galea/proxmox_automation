@@ -21,19 +21,19 @@
           | jq -r .'jwt'
 
     ### TODO: Proper secret management
-#     - name: Get JWT token
-#       delegate_to: localhost
-#       ansible.builtin.shell:
-#         cmd: |
-#           set -o pipefail
-#           http POST \
-#             http://{{ ansible_ssh_host }}:{{ port }}/api/auth \
-#             Username='admin' \
-#             Password='{{ lookup('file', portainer_password_file) }}' \
-#           | jq -r .'jwt'
-#         executable: /bin/bash
-#       register: portainer_jwt_token
-#       changed_when: portainer_jwt_token.rc != 0
+    # - name: Get JWT token
+    #   delegate_to: localhost
+    #   ansible.builtin.shell:
+    #     executable: /bin/bash
+    #     cmd: |
+    #       set -o pipefail
+    #       http POST \
+    #         http://{{ ansible_ssh_host }}:{{ port }}/api/auth \
+    #         Username='admin' \
+    #         Password='{{ lookup('file', portainer_password_file) }}' \
+    #       | jq -r .'jwt'
+    #   register: portainer_jwt_token
+    #   changed_when: portainer_jwt_token.rc != 0
 
 #     - name: Save portainer auth header as fact
 #       ansible.builtin.set_fact:
