@@ -5,13 +5,13 @@ ENV=$1
 PLAYBOOK=$2
 
 if [ "$ENV" == "" ] || [ "$PLAYBOOK" == "" ]; then
-    echo -e "==> Example usage:\n\t$ ./$PLAYBOOK.sh dev|prod"
+    echo -e "==> Example usage:\n\t$ ./$PLAYBOOK.sh dev|prod playbook_name"
     exit
 fi
 
 if [[ ( "$ENV" != "dev" ) && ( "$ENV" != "prod" ) ]]; then
     echo -e "==> Invalid ENV"
-    echo -e "==> Example usage:\n\t$ ./$PLAYBOOK.sh dev|prod"
+    echo -e "==> Example usage:\n\t$ ./$PLAYBOOK.sh dev|prod playbook_name"
     exit
 fi
 

@@ -1,0 +1,44 @@
+---
+- name: Set SSH host(s)
+  hosts: prox, nginx
+  gather_facts: false
+  vars:
+    use_ip_not_dns_name: true
+  roles:
+    - set-ssh-host
+
+
+- name: Create Nginx container & install
+  hosts: nginx
+  gather_facts: false
+  tasks:
+
+    - name: Include role 'prox-lxc'
+      ansible.builtin.include_role:
+        name: prox-lxc
+
+    - name: Check if nginx webserver is active
+      ansible.builtin.wait_for:
+        port: "{{ port }}"
+        timeout: 3
+      register: wait_for_pihole_webserver
+      failed_when: false ### Ignore fails, we just want the return code
+
+    - name: Install pihole
+      when: not ((wait_for_pihole_webserver.state is defined) and (wait_for_pihole_webserver.state != 'started'))
+      block:
+
+        - name: Clone pihole git repo ### stoopid warnings
+          ansible.builtin.git:
+            repo: "{{ homelab_git_url }}/{{ infra_repo_name }}.git"
+            dest: /root/{{ infra_repo_name }}
+
+        - name: Stop 'systemd-resolved' service
+          ansible.builtin.systemd:
+            name: systemd-resolved
+            state: stopped
+            enabled: false
+
+        - name: Docker compose up
+          community.docker.docker_compose:
+            project_src: /root/{{ infra_repo_name }}

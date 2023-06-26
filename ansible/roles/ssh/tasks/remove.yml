@@ -12,9 +12,11 @@
 
 - name: "Remove SSH key files from localhost"
   delegate_to: localhost
+  loop_control:
+    loop_var: file
   loop:
     - "{{ ansible_ssh_private_key_file }}"
     - "{{ ansible_ssh_public_key_file }}"
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ file }}"
     state: absent
