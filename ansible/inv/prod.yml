@@ -72,6 +72,14 @@ all:
 
         services:
           hosts:
+            scraper:
+              id: 160
+              ct_features:
+                - nesting=1
+              apt_packages: [python3-pip, git, docker.io]
+              pip_packages: [docker, docker-compose]
+              port: 5000
+              infra_repo_name: price_scraper
             nginx:
               id: 180
               ct_features:

@@ -42,3 +42,7 @@
         - name: Docker compose up
           community.docker.docker_compose:
             project_src: /root/{{ infra_repo_name }}
+
+    - name: Include role 'verify_webserver'
+      ansible.builtin.include_role:
+        name: verify_webserver
