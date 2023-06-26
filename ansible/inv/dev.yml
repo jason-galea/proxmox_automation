@@ -66,9 +66,8 @@ all:
                 - nesting=1
               apt_packages: [python3-pip, git, docker.io]
               pip_packages: [docker, docker-compose]
-              port: 80
+              port: 8053
               infra_repo_name: homelab_pihole
-              # requires_nested_docker: true
 
         services:
           hosts:
@@ -80,4 +79,3 @@ all:
               pip_packages: [docker, docker-compose]
               port: 80
               infra_repo_name: homelab_nginx
-              # requires_nested_docker: true
