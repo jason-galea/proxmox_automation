@@ -1,6 +1,6 @@
 ---
 - name: Set SSH host(s)
-  hosts: prox, nginx
+  hosts: prox, scraper
   gather_facts: false
   vars:
     use_ip_not_dns_name: true
@@ -8,8 +8,8 @@
     - set-ssh-host
 
 
-- name: Create Nginx container & install
-  hosts: nginx
+- name: Create Scraper container & install
+  hosts: scraper
   gather_facts: false
   tasks:
 
@@ -17,18 +17,18 @@
       ansible.builtin.include_role:
         name: prox-lxc
 
-    - name: Check if nginx webserver is active
+    - name: Check if scraper webserver is active
       ansible.builtin.wait_for:
         port: "{{ port }}"
         timeout: 3
-      register: wait_for_nginx_webserver
+      register: wait_for_scraper_webserver
       failed_when: false ### Ignore fails, we just want the return code
 
-    - name: Install nginx
-      when: not ((wait_for_nginx_webserver.state is defined) and (wait_for_nginx_webserver.state != 'started'))
+    - name: Install scraper
+      when: not ((wait_for_scraper_webserver.state is defined) and (wait_for_scraper_webserver.state != 'started'))
       block:
 
-        - name: Clone nginx git repo ### stoopid warnings
+        - name: Clone scraper git repo ### stoopid warnings
           ansible.builtin.git:
             repo: "{{ homelab_git_url }}/{{ infra_repo_name }}.git"
             dest: /root/{{ infra_repo_name }}
