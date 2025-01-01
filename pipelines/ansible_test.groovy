@@ -2,7 +2,7 @@
 pipeline {
     agent {
         docker {
-            image("local_docker_image")
+            image("local_ansible")
         }
     }
     // agent {
@@ -18,7 +18,7 @@ pipeline {
                 // sh("docker ps")
 
 
-                sh("cat a.txt")
+                sh("ansible --version")
             }
         }
     }
