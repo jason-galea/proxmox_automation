@@ -2,7 +2,8 @@
 pipeline {
     agent {
         docker {
-            image("local_ansible")
+            // image("quay.io/ansible/awx-ee") // 2.12GB?????
+            image("geerlingguy/docker-debian12-ansible") // 1.05GB, not AS bad lol
         }
     }
     // agent {
@@ -11,14 +12,14 @@ pipeline {
     stages {
         stage('build') {
             steps {
-                // sh 'mvn --version'
-                // sh("pwd")
-                // sh("uname -a")
-                // sh("env")
-                // sh("docker ps")
-
+                sh("env")
+                sh("uname -a")
+                sh("pwd")
+                sh("ls -lha")
 
                 sh("ansible --version")
+
+                // sh("git clone ")
             }
         }
     }
